@@ -1,0 +1,70 @@
+Code Terraform keeps this folder in sync with the game. Each .py file here is one script, Libraries live under lib/, and while the game runs it picks up a saved file within a fraction of a second and writes in-game edits back out.
+
+VS Code: in the game, open Settings > Editor > External Editor and choose Set Up VS Code. This installs the bundled extension and opens this save's scripts. Later the button says Open in VS Code and also updates the extension when needed. VS Code must already be installed. Nothing is installed when the game launches. Show Extension Package remains available for custom installations.
+
+Game scripts switch to the Code Terraform language mode automatically; no Python interpreter is required. The Command Palette has Code Terraform commands to create or import Libraries, rename a Library and update its imports, and run or stop scripts in the game. Save edits and resolve source conflicts before running. Unregistered files offer an Import as Game Library action. Attach and delete scripts in the game. The language service does not execute Python on your computer.
+
+Completion and diagnostics use the latest exported save context and unsaved Library documents. Keep the save open while editing to refresh machine ownership, research and names.
+
+Console output: the game mirrors it to logs/all.log in this folder from the first time you open the folder or the extension package. In VS Code, Code Terraform: Open Game Output follows it live in the Output panel; other editors can tail the file.
+
+Other editors (neovim, Helix, Sublime Text, anything that speaks LSP): the game installs its language server at
+  C:\Users\jobsb\AppData\Roaming\io.codeterraform.game\external-ide\server\server.cjs
+and keeps that file current on every launch. Launch it with Node.js 20 or later as
+  node "C:\Users\jobsb\AppData\Roaming\io.codeterraform.game\external-ide\server\server.cjs" --stdio
+with this scripts folder as the workspace root, one server per save. The root marker is codeterraform-workspace.json; use the server for the Python files in this folder.
+
+neovim (Neovim 0.11 or later, nvim-lspconfig):
+  vim.lsp.config("codeterraform", {
+    cmd = { "node", "C:/Users/jobsb/AppData/Roaming/io.codeterraform.game/external-ide/server/server.cjs", "--stdio" },
+    filetypes = { "python" },
+    root_markers = { "codeterraform-workspace.json" },
+  })
+  vim.lsp.enable("codeterraform")
+
+Helix (languages.toml):
+  [language-server.codeterraform]
+  command = "node"
+  args = ["C:/Users/jobsb/AppData/Roaming/io.codeterraform.game/external-ide/server/server.cjs", "--stdio"]
+
+  [[language]]
+  name = "python"
+  roots = ["codeterraform-workspace.json"]
+  language-servers = ["codeterraform"]
+
+Sublime Text (LSP package, LSP.sublime-settings):
+  {
+    "clients": {
+      "codeterraform": {
+        "enabled": true,
+        "command": ["node", "C:/Users/jobsb/AppData/Roaming/io.codeterraform.game/external-ide/server/server.cjs", "--stdio"],
+        "selector": "source.python"
+      }
+    }
+  }
+
+PyCharm needs an LSP plugin that can launch this server; its own Python checker does not know the game's owner globals and runtime rules.
+
+## Debugging in the game
+
+Keep this save open and the game unpaused. In VS Code, open a machine, panel, or contract script, set a breakpoint, and press F5. An idle script starts; a running script attaches without restarting. Breakpoints, conditions, logpoints, call stacks, locals, watches, hover inspection, and Step Over/Into/Out use the game's interpreter. Library breakpoints are reached through a script that imports that Library. Each session controls one script.
+
+Shift+F5 or closing the debug session disconnects and leaves the script running. Use **Stop Script in Game** to stop it. Watches and the Debug Console accept read-only expressions; they cannot execute world actions or assign variables. Save your files first. To run changed main-script code, use **Run Script in Game** before attaching again. Apply edited Libraries in the game and resolve any source conflicts. If you enabled **Pause When Inactive**, turn it off when you want execution to continue while the game is minimized.
+
+Other editors with a Debug Adapter Protocol client can launch `node /path/to/debug-adapter.cjs`. That file lives beside the installed `server.cjs`. Use a `launch` request to attach and run an idle script, or `attach` to inspect an existing runtime. Set `workspace` to this save's scripts directory and `script` to the script's file path. The adapter uses standard input/output. It needs Node.js 20 or later outside VS Code.
+
+
+Files in this folder:
+  <name>.py            one file per machine, panel or contract script, named as in the in-game editor
+  lib/<name>.py        Library scripts
+  user_stubs.py        yours, never overwritten: type aliases, TypedDicts and re-exported Library types that the in-game editor and the extension both read
+  logs/                mirrored console output (all.log plus one file per script), rotated by size
+  codeterraform-workspace.json   read-only analysis snapshot for the language server; do not edit
+  codeterraform-scripts.json     the sync manifest (filename aliases after renames); do not edit
+  CODE-TERRAFORM-IDE.txt         this guide
+  *.pyi, pyrightconfig.codeterraform.json   fallback stubs for generic Python editors; they cannot represent every game rule or owner-specific self/panel binding, and a new pyrightconfig.json extends the generated one
+  .codeterraform/      transient files the editor and the game exchange while a command runs (Run, Stop, Library operations, debugging); safe to ignore
+  *.codeterraform-retired-<token>.bak   recovery archives the game keeps when a file is renamed, deleted, replaced or in conflict, so an editor writing through a stale handle can never lose code; delete old ones whenever you like
+  *.codeterraform-write.bak      a crash-safety copy that exists only during an atomic write; the game removes it
+Only each script's running source is a file. The Variants and Notes tabs live in the save, not in this folder, so named variants cannot be listed, switched or edited from outside the game.
+Freeze Stubs in the game settings does not freeze the game-aware language service.
