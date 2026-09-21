@@ -50,6 +50,9 @@ class BioOrderWrapper(wrapper.WrapperBase):
   def is_available(self) -> bool:
     return self.status == BioOrderStatus.AVAILABLE
 
+  def fragments_needed_by_id(self) -> dict[str, int]:
+    return {fragment.id: fragment.needed for fragment in self.fragments if fragment.needed}
+
   def total_fragments_needed(self) -> int:
     return sum(fragment.needed for fragment in self.fragments)
 
@@ -63,9 +66,12 @@ def known_fragment_ids_around_outpost(outpost: OutpostRef) -> list[str]:
   return []
 
 class BioExchangeWrapper(wrapper.WrapperBase):
-  def __init__(self, value: BioExchange):
+  def __init__(self, value: BioExchange, comms: Comms):
+    if comms is None:
+      raise TypeError("`comms` cannot be None")
     super().__init__(value)
     self._value = value
+    self._comms = comms
 
   def orders(self) -> tuple[BioOrderWrapper]:
     return tuple(BioOrderWrapper(order) for order in self._value.orders())
@@ -77,6 +83,8 @@ class BioExchangeWrapper(wrapper.WrapperBase):
     if (order := self._value.active_order()) is None:
       return None
     return BioOrderWrapper(order)
+
+  # TODO: override BioExchange.clear_order(); have it cancel requested fragments (but only the ones requested by this bio exchange).
 
   def best_viable_order(self) -> BioOrderWrapper | None:
     viable_orders = [order for order in self.available_orders() if self.outpost.biome == order.biome]
@@ -96,7 +104,30 @@ class BioExchangeWrapper(wrapper.WrapperBase):
       return viable_local_orders[0]
     return None
 
-bio_exchange = BioExchangeWrapper(self)
+  def request_needed_fragments(self) -> None:
+    if (order := self.active_order()) is None:
+      raise RuntimeError(f"{self.id!r}: request_needed_fragments() called with no active order")
+    if not (fragments_needed_by_id := order.fragments_needed_by_id()):
+      warn(f"{self.id!r}: request_needed_fragments() called with no fragments needed")
+      return
+    for fragment_id, needed_count in fragments_needed_by_id.items():
+      for _ in range(needed_count):
+        # TODO: Replace hardcoded channel name with pseudo-enum.
+        if (result := self._comms.send("requested_fragments", fragment_id)).status != "ok":
+          raise RuntimeError(result.message)
+        # TODO: store result.message_id in Data Archive to allow restart-safe work cancellation.
+
+  def set_order(self, order_id: str) -> None:
+    result = self._value.set_order(order_id)
+    if result.status == "unknown_order":
+      raise ValueError(result.message)
+    if result.status == "completed":
+      # Unlikely timing, but should be fine.
+      print(f"{self.id!r}: tried to activate {order_id!r}, but it was already completed.")
+      return
+    self.request_needed_fragments()
+
+bio_exchange = BioExchangeWrapper(self, get_component("comms"))
 
 wall_seconds_per_game_hour = get_component("clock").real_seconds_per_hour()
 SLEEP_GAME_HOURS_NO_ORDERS = 3
@@ -126,4 +157,4 @@ while True:
 #   print_order(odr)
 
 # print(bio_exchange.best_viable_order())
-
+# print(bio_exchange.clear_order())
