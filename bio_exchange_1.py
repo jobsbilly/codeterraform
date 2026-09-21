@@ -74,7 +74,7 @@ class BioExchangeWrapper(wrapper.WrapperBase):
     return tuple(order for order in self.orders() if order.is_available())
 
   def active_order(self) -> BioOrderWrapper | None:
-    if order := self._value.active_order() is None:
+    if (order := self._value.active_order()) is None:
       return None
     return BioOrderWrapper(order)
 
