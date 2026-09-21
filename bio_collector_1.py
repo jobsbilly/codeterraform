@@ -33,15 +33,21 @@ class BioCollectorWrapper(wrapper.WrapperBase):
 
 bio_collector = BioCollectorWrapper(self, get_component("clock"))
 
+SECONDS_BETWEEN_CARGO_CHECKS = 1
 TOO_MANY_GAME_HOURS_FOR_CARGO_UNLOADING = 2  # TODO: refine this value (currently a wild guess).
 
 while True:
   # Check if self.cargo has stuff in it.
-  # TODO: Figure out what to do with unexpectedly-occupied cargo.
-  game_hours_with_cargo_full = bio_collector.game_hours_with_cargo_full()
-  if game_hours_with_cargo_full > TOO_MANY_GAME_HOURS_FOR_CARGO_UNLOADING:
-    notify(f"{bio_collector.id!r} has been stuck with full cargo for {game_hours_with_cargo_full:.2f} game hours",
-           level="warn", duration_seconds=0)
+  if bio_collector.cargo is not None:
+    wait_seconds = SECONDS_BETWEEN_CARGO_CHECKS
+    game_hours_with_cargo_full = bio_collector.game_hours_with_cargo_full()
+    if game_hours_with_cargo_full > TOO_MANY_GAME_HOURS_FOR_CARGO_UNLOADING:
+      notify(f"{bio_collector.id!r} has been stuck with full cargo for {game_hours_with_cargo_full:.2f} game hours",
+             level="warn", duration_seconds=0)
+      wait_seconds += 300  # Unlikely to be fixed faster than this, and player can always restart the script early.
+    sleep(wait_seconds)
+    continue
+
 
   # Once it's known that self isn't mid-task, choose a task to work on.
   # Possible tasks:
@@ -60,6 +66,3 @@ while True:
 #
 # for fragment in self.scan():
 #   print(fragment)
-
-for fragment in self.scan():
-  print(fragment)
