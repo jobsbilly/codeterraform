@@ -6,8 +6,9 @@ import wrapper
 
 print(f"Starting up: {self.id!r}")
 
-# TODO: Replace hardcoded channel name with pseudo-enum.
+# TODO: Replace hardcoded channel names with pseudo-enum.
 REQUESTED_FRAGMENTS_CHANNEL = "requested_fragments"
+COLLECTED_FRAGMENTS_CHANNEL = "collected_fragments"
 
 class BioCollectorWrapper(wrapper.WrapperBase):
   def __init__(self, value: BioCollector, clock: Clock, comms: Comms):
@@ -22,6 +23,7 @@ class BioCollectorWrapper(wrapper.WrapperBase):
     if self.cargo is not None:
       self._mark_cargo_full()
     self._comms = comms
+    self._biome_fully_explored = False
 
   def _mark_cargo_full(self) -> None:
     if self.cargo is None:
@@ -39,37 +41,42 @@ class BioCollectorWrapper(wrapper.WrapperBase):
       return 0
     return self._clock.elapsed_game_hours() - self._cargo_filled_at
 
-  def next_order_fragment_location(self) -> FragmentLocation | None:
-    if not self._comms.queue_size(REQUESTED_FRAGMENTS_CHANNEL):
-      return None
-    nearest_location_by_fragment_id = {}
-    for found in self.scan():
-      # scan() returns nearest-first, so only keep the first location for each fragment ID.
-      if found.cataloged and found.fragment_id not in nearest_location_by_fragment_id:
-        nearest_location_by_fragment_id[found.fragment_id] = found
-    for request in self._comms.pending(REQUESTED_FRAGMENTS_CHANNEL):
-      if (location := nearest_location_by_fragment_id.get(request.value, None)) is not None:
-        result = self._comms.receive(REQUESTED_FRAGMENTS_CHANNEL, request.id)
-        if result.status == "ok":
-          return location
-        if result.status == "not_found":
-          # Something else claimed or cancelled this request between pending() and receive() calls.
-          continue
-        raise RuntimeError(result.message)
-    return None
+  def next_requested_work_order(self) -> dict[str, Any] | None:
+    # Always check for requested fragments, but only wait if biome is fully explored.
+    # Note: This function assumes everything in REQUESTED_FRAGMENTS_CHANNEL is fetchable by this collector.
+    result = self._comms.receive(REQUESTED_FRAGMENTS_CHANNEL)
+    if result.status == "empty":
+      if not self._biome_fully_explored:
+        return None
+      result = self._comms.wait(REQUESTED_FRAGMENTS_CHANNEL)
+    if result.status != "ok":
+      raise RuntimeError(result.message)
+    # TODO: have the BioExchange include the location in the request instead of scanning.
+    for location in self.scan():
+      if location.fragment_id == result.packet.value:
+        return {
+          "requester": result.packet.sender,
+          "fragment": result.packet.value,
+          "coords": list(location.coords)
+        }
+    raise RuntimeError(f"{self.id!r} claimed work from {REQUESTED_FRAGMENTS_CHANNEL!r} queue, but "
+                       f"the requested fragment wasn't found in scan(). Work order: {result.packet}")
 
-  def next_unidentified_fragment_location(self) -> FragmentLocation | None:
+  def next_exploration_work_order(self) -> dict[str, Any] | None:
     for location in self.scan():
       if not location.cataloged:
-        return location
+        return {"coords": list(location.coords)}
+    self._biome_fully_explored = True
     return None
 
   def collect_next_thing(self) -> None:
     if self.cargo is not None:
       raise RuntimeError("Cargo must be empty to collect anything")
-    target_location = self.next_order_fragment_location() or self.next_unidentified_fragment_location()
-    if target_location is not None:
-      self.collect(list(target_location.coords))
+    work_order = self.next_requested_work_order() or self.next_exploration_work_order()
+    if work_order is not None:
+      self.collect(work_order["coords"])
+      if (result := self._comms.send(COLLECTED_FRAGMENTS_CHANNEL, work_order)).status != "ok":
+        raise RuntimeError(result.message)
 
 bio_collector = BioCollectorWrapper(self, get_component("clock"), get_component("comms"))
 
@@ -88,9 +95,9 @@ while True:
     sleep(wait_seconds)
     continue
 
+  # TODO: instead (?) of all the above, wait for a broadcast from the bio lab after collecting.
+
   bio_collector.collect_next_thing()
-  # TODO: figure out whether I should have a short sleep() here or not.
-  # TODO: find some way to wait - if collected, wait for BioLab to take; otherwise, wait for new BioExchange request.
 
   break  # TODO: delete this line when script is complete.
 
