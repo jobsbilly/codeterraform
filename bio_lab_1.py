@@ -31,11 +31,16 @@ class BioLabWrapper(wrapper.WrapperBase):
     work_order_packet = result.packet
     if (result := self._value.take_from({"id": work_order_packet.sender})).status != "ok":
       raise BioLabError(result.message)
+    # Release the collector by pinging the channel.
+    # Note: if multiple collectors are listening, they'll all wake up, so they need to check their cargo before leaving.
+    if (result := self._comms.broadcast(COLLECTED_FRAGMENTS_CHANNEL, work_order_packet.sender)).status != "ok":
+      raise BioLabError(result.message)
 
   def run(self) -> None:
     self._prepare_for_main_loop()
     while True:
       self._do_loopy_things()
+      break  # TODO: delete this line when script is complete.
 
 
 # TODO: find a way to broadcast when a new fragment_id has been analyzed.
@@ -43,15 +48,4 @@ class BioLabWrapper(wrapper.WrapperBase):
 
 bio_lab = BioLabWrapper(self, get_component("comms"))
 
-while True:
-  # if (specimen := bio_lab._value.specimen) is not None:
-  #   blah = specimen.stage
-
-
-  # Is the lab already busy analyzing or extracting?
-  # Is there already a specimen in the chamber?
-  # Does it need to be analyzed?
-  # Are reagents loaded?
-  # Does it have somewhere to go (or, if no specimen, is the output occupied)?
-
-  break  # TODO: delete this line when script is complete.
+# bio_lab.run()

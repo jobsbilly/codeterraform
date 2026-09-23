@@ -11,35 +11,13 @@ REQUESTED_FRAGMENTS_CHANNEL = "requested_fragments"
 COLLECTED_FRAGMENTS_CHANNEL = "collected_fragments"
 
 class BioCollectorWrapper(wrapper.WrapperBase):
-  def __init__(self, value: BioCollector, clock: Clock, comms: Comms):
-    if clock is None:
-      raise TypeError("`clock` cannot be None")
+  def __init__(self, value: BioCollector, comms: Comms):
     if comms is None:
       raise TypeError("`comms` cannot be None")
     super().__init__(value)
     self._value = value
-    self._clock = clock
-    self._cargo_filled_at: float | None = None
-    if self.cargo is not None:
-      self._mark_cargo_full()
     self._comms = comms
     self._biome_fully_explored = False
-
-  def _mark_cargo_full(self) -> None:
-    if self.cargo is None:
-      raise RuntimeError("Cargo was not full")
-    self._cargo_filled_at = float(self._clock.elapsed_game_hours())
-
-  def collect(self, coords: list[Any]) -> None:
-    if (result := self._value.collect(coords)).status != "ok":
-      raise RuntimeError(result.message)
-    self._mark_cargo_full()
-
-  def game_hours_with_cargo_full(self) -> float:
-    # if not self._cargo_filled_at:
-    if self.cargo is None:
-      return 0
-    return self._clock.elapsed_game_hours() - self._cargo_filled_at
 
   def next_requested_work_order(self) -> dict[str, Any] | None:
     # Always check for requested fragments, but only wait if biome is fully explored.
@@ -69,41 +47,34 @@ class BioCollectorWrapper(wrapper.WrapperBase):
     self._biome_fully_explored = True
     return None
 
-  def collect_next_thing(self) -> None:
-    if self.cargo is not None:
-      raise RuntimeError("Cargo must be empty to collect anything")
-    work_order = self.next_requested_work_order() or self.next_exploration_work_order()
-    if work_order is not None:
-      self.collect(work_order["coords"])
-      if (result := self._comms.send(COLLECTED_FRAGMENTS_CHANNEL, work_order)).status != "ok":
+  def block_until_cargo_emptied(self) -> None:
+    while self.cargo is not None:
+      # Wait for a bio lab's signal that it took a fragment, then check if it was from this collector.
+      if (result := self._comms.wait_broadcast(COLLECTED_FRAGMENTS_CHANNEL)).status != "ok":
         raise RuntimeError(result.message)
+      if self.cargo is not None and result.broadcast.value == self.id:
+        raise RuntimeError(f"{self.id!r} still has cargo after {result.broadcast.sender!r} broadcast it took it.")
 
-bio_collector = BioCollectorWrapper(self, get_component("clock"), get_component("comms"))
+  def _prepare_for_main_loop(self) -> None:
+    self.block_until_cargo_emptied()
 
-SECONDS_BETWEEN_CARGO_CHECKS = 1
-TOO_MANY_GAME_HOURS_FOR_CARGO_UNLOADING = 2  # TODO: refine this value (currently a wild guess).
+  # TODO: rename this to something less silly.
+  def _do_loopy_things(self) -> None:
+    work_order = self.next_requested_work_order() or self.next_exploration_work_order()
+    if work_order is None:
+      return  # Nothing to do.
+    if (result := self._value.collect(work_order["coords"])).status != "ok":
+      raise RuntimeError(result.message)
+    if (result := self._comms.send(COLLECTED_FRAGMENTS_CHANNEL, work_order)).status != "ok":
+      raise RuntimeError(result.message)
+    self.block_until_cargo_emptied()
 
-while True:
-  # Check if self.cargo has stuff in it.
-  if bio_collector.cargo is not None:
-    wait_seconds = SECONDS_BETWEEN_CARGO_CHECKS
-    game_hours_with_cargo_full = bio_collector.game_hours_with_cargo_full()
-    if game_hours_with_cargo_full > TOO_MANY_GAME_HOURS_FOR_CARGO_UNLOADING:
-      notify(f"{bio_collector.id!r} has been stuck with full cargo for {game_hours_with_cargo_full:.2f} game hours",
-             level="warn", duration_seconds=0)
-      wait_seconds += 300  # Unlikely to be fixed faster than this, and player can always restart the script early.
-    sleep(wait_seconds)
-    continue
+  def run(self) -> None:
+    self._prepare_for_main_loop()
+    while True:
+      self._do_loopy_things()
+      break  # TODO: delete this line when script is complete.
 
-  # TODO: instead (?) of all the above, wait for a broadcast from the bio lab after collecting.
+bio_collector = BioCollectorWrapper(self, get_component("comms"))
 
-  bio_collector.collect_next_thing()
-
-  break  # TODO: delete this line when script is complete.
-
-# print(self.outpost)
-
-# print(f"{self.type_id=}")
-#
-# for fragment in self.scan():
-#   print(fragment)
+bio_collector.run()
