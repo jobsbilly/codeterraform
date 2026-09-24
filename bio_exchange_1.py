@@ -6,8 +6,8 @@ import wrapper
 
 print(f"Starting up: {self.id!r}")
 
-# collector = get_component("bio_collector_1")
-# comms = get_component("comms")
+# TODO: Replace hardcoded channel names with pseudo-enum.
+REQUESTED_FRAGMENTS_CHANNEL = "requested_fragments"
 
 @dataclasses.dataclass()
 class OrderFragment:
@@ -111,9 +111,9 @@ class BioExchangeWrapper(wrapper.WrapperBase):
       warn(f"{self.id!r}: request_needed_fragments() called with no fragments needed")
       return
     for fragment_id, needed_count in fragments_needed_by_id.items():
+      work_order = {"order": order.id, "fragment": fragment_id}
       for _ in range(needed_count):
-        # TODO: Replace hardcoded channel name with pseudo-enum.
-        if (result := self._comms.send("requested_fragments", fragment_id)).status != "ok":
+        if (result := self._comms.send(REQUESTED_FRAGMENTS_CHANNEL, work_order)).status != "ok":
           raise RuntimeError(result.message)
         # TODO: store result.message_id in Data Archive to allow restart-safe work cancellation.
 

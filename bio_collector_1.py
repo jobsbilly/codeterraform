@@ -30,11 +30,11 @@ class BioCollectorWrapper(wrapper.WrapperBase):
     if result.status != "ok":
       raise RuntimeError(result.message)
     # TODO: have the BioExchange include the location in the request instead of scanning.
+    work_order: dict[str, Any] = result.packet.value
     for location in self.scan():
-      if location.fragment_id == result.packet.value:
-        return {
+      if location.fragment_id == work_order["fragment"]:
+        return work_order |  {
           "requester": result.packet.sender,
-          "fragment": result.packet.value,
           "coords": list(location.coords)
         }
     raise RuntimeError(f"{self.id!r} claimed work from {REQUESTED_FRAGMENTS_CHANNEL!r} queue, but "
