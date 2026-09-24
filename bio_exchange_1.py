@@ -2,6 +2,7 @@ from __builtins__ import *
 
 import dataclasses
 
+from workorders import BioWorkOrder
 import wrapper
 
 print(f"Starting up: {self.id!r}")
@@ -111,9 +112,9 @@ class BioExchangeWrapper(wrapper.WrapperBase):
       warn(f"{self.id!r}: request_needed_fragments() called with no fragments needed")
       return
     for fragment_id, needed_count in fragments_needed_by_id.items():
-      work_order = {"order": order.id, "fragment": fragment_id}
+      work_order = BioWorkOrder(order=order.id, fragment=fragment_id, requester=self.id)
       for _ in range(needed_count):
-        if (result := self._comms.send(REQUESTED_FRAGMENTS_CHANNEL, work_order)).status != "ok":
+        if (result := self._comms.send(REQUESTED_FRAGMENTS_CHANNEL, work_order.to_json())).status != "ok":
           raise RuntimeError(result.message)
         # TODO: store result.message_id in Data Archive to allow restart-safe work cancellation.
 

@@ -2,6 +2,7 @@ from __builtins__ import *
 
 from typing import Any
 
+from workorders import BioWorkOrder
 import wrapper
 
 print(f"Starting up: {self.id!r}")
@@ -19,7 +20,7 @@ class BioCollectorWrapper(wrapper.WrapperBase):
     self._comms = comms
     self._biome_fully_explored = False
 
-  def next_requested_work_order(self) -> dict[str, Any] | None:
+  def next_requested_work_order(self) -> BioWorkOrder | None:
     # Always check for requested fragments, but only wait if biome is fully explored.
     # Note: This function assumes everything in REQUESTED_FRAGMENTS_CHANNEL is fetchable by this collector.
     result = self._comms.receive(REQUESTED_FRAGMENTS_CHANNEL)
@@ -30,20 +31,18 @@ class BioCollectorWrapper(wrapper.WrapperBase):
     if result.status != "ok":
       raise RuntimeError(result.message)
     # TODO: have the BioExchange include the location in the request instead of scanning.
-    work_order: dict[str, Any] = result.packet.value
+    work_order = BioWorkOrder.from_json(result.packet.value)
     for location in self.scan():
-      if location.fragment_id == work_order["fragment"]:
-        return work_order |  {
-          "requester": result.packet.sender,
-          "coords": list(location.coords)
-        }
+      if location.fragment_id == work_order.fragment:
+        work_order.coords = list(location.coords)
+        return work_order
     raise RuntimeError(f"{self.id!r} claimed work from {REQUESTED_FRAGMENTS_CHANNEL!r} queue, but "
                        f"the requested fragment wasn't found in scan(). Work order: {result.packet}")
 
-  def next_exploration_work_order(self) -> dict[str, Any] | None:
+  def next_exploration_work_order(self) -> BioWorkOrder | None:
     for location in self.scan():
       if not location.cataloged:
-        return {"coords": list(location.coords)}
+        return BioWorkOrder(coords=list(location.coords))
     self._biome_fully_explored = True
     return None
 
@@ -62,10 +61,10 @@ class BioCollectorWrapper(wrapper.WrapperBase):
   def _do_loopy_things(self) -> None:
     work_order = self.next_requested_work_order() or self.next_exploration_work_order()
     if work_order is None:
-      return  # Nothing to do.
-    if (result := self._value.collect(work_order["coords"])).status != "ok":
+      return  # Nothing to do; next iteration will block waiting for work.
+    if (result := self._value.collect(work_order.coords)).status != "ok":
       raise RuntimeError(result.message)
-    if (result := self._comms.send(COLLECTED_FRAGMENTS_CHANNEL, work_order)).status != "ok":
+    if (result := self._comms.send(COLLECTED_FRAGMENTS_CHANNEL, work_order.to_json())).status != "ok":
       raise RuntimeError(result.message)
     self.block_until_cargo_emptied()
 
