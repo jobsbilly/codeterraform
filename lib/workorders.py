@@ -5,17 +5,20 @@ from typing import Any, Callable, Self
 
 WORK_ORDERS_KEY = "work_orders_by_worker_id"
 
-@dataclasses.dataclass
-class BioWorkOrder:
-  order: str | None = None
-  fragment: str | None = None
-  requester: str | None = None
-  coords: list[float | int] | None = None
-  collector: str | None = None
-  lab: str | None = None
+class _WorkOrderBase:
+  def to_json(self) -> dict[str, JsonValue]:
+    return {k: v for k, v in dataclasses.asdict(self).items() if v is not None}
+
+  @classmethod
+  def from_json(cls, value: dict[str, JsonValue]) -> Self:
+    return cls(**value)
+
+  @classmethod
+  def from_comms_message(cls, packet: Any) -> Self:
+    return cls.from_json(packet.value)
 
   def tx_setter(self, worker_id: str) -> Callable[[dict[str, JsonValue]], dict[str, JsonValue]]:
-    work_order = dataclasses.asdict(self)
+    work_order = self.to_json()
     def fn(work_orders_by_worker_id: dict[str, JsonValue]) -> dict[str, JsonValue]:
       work_orders_by_worker_id[worker_id] = work_order
       return work_orders_by_worker_id
@@ -28,13 +31,12 @@ class BioWorkOrder:
       return work_orders_by_worker_id
     return fn
 
-  def to_json(self) -> dict[str, JsonValue]:
-    return {k: v for k, v in dataclasses.asdict(self).items() if v is not None}
 
-  @classmethod
-  def from_json(cls, value: dict[str, JsonValue]) -> Self:
-    return cls(**value)
-
-  @classmethod
-  def from_comms_message(cls, packet: Any) -> Self:
-    return cls.from_json(packet.value)
+@dataclasses.dataclass
+class BioWorkOrder(_WorkOrderBase):
+  order: str | None = None
+  fragment: str | None = None
+  requester: str | None = None
+  coords: list[float | int] | None = None
+  collector: str | None = None
+  lab: str | None = None
