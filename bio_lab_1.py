@@ -49,7 +49,7 @@ class BioLabWrapper(wrapper.WrapperBase):
       assign_or_raise(self._comms.wait(COLLECTED_FRAGMENTS_CHANNEL), cls=BioLabError))
 
     # Persist the work order to make sure it isn't lost if the script stops.
-    raise_if_error(self._notebook.transaction(WORK_ORDERS_KEY, {}, work_order.tx_setter(self.id)), cls=BioLabError)
+    raise_if_error(work_order.claim(self.id, self._notebook), cls=BioLabError)
 
     # Take the collector's fragment.
     raise_if_error(self._value.take_from({"id": work_order.collector}), cls=BioLabError)
@@ -72,7 +72,9 @@ class BioLabWrapper(wrapper.WrapperBase):
       raise_if_error(self._value.load(reagent_id, required), cls=BioLabError)
 
   def _prepare_for_main_loop(self) -> None:
-    # Make sure input is connected to inventory.
+    work_order = BioWorkOrder.get_claimed(self.id, self._notebook)
+
+    # TODO: Make sure input is connected to inventory.
     raise NotImplementedError()
 
   # TODO: rename this to something less silly.
@@ -99,7 +101,7 @@ class BioLabWrapper(wrapper.WrapperBase):
     raise_if_error(self._comms.send(PREPARED_SAMPLES_CHANNEL, work_order.to_json()))
 
     # Un-persist the work order after passing it along.
-    raise_if_error(self._notebook.transaction(WORK_ORDERS_KEY, {}, work_order.tx_deleter(self.id)), cls=BioLabError)
+    raise_if_error(work_order.release(self.id, self._notebook), cls=BioLabError)
 
 
   def run(self) -> None:

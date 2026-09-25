@@ -3,6 +3,8 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 import dataclasses
 from typing import Any, Callable, Self
 
+import notebook as notebook_
+
 WORK_ORDERS_KEY = "work_orders_by_worker_id"
 
 class _WorkOrderBase:
@@ -30,6 +32,20 @@ class _WorkOrderBase:
       del work_orders_by_worker_id[worker_id]
       return work_orders_by_worker_id
     return fn
+
+  def claim(self, worker_id: str, notebook: notebook_.NotebookWrapper) -> ActionResult:
+    return notebook.transaction(WORK_ORDERS_KEY, {}, self.tx_setter(worker_id))
+
+  @classmethod
+  def release(cls, worker_id: str, notebook: notebook_.NotebookWrapper) -> ActionResult:
+    return notebook.transaction(WORK_ORDERS_KEY, {}, cls.tx_deleter(worker_id))
+
+  @classmethod
+  def get_claimed(cls, worker_id: str, notebook: notebook_.NotebookWrapper) -> Self | None:
+    work_order_by_worker_id = notebook.get(WORK_ORDERS_KEY, {})
+    if (work_order_json := work_order_by_worker_id.get(worker_id, None)) is None:
+      return None
+    return cls.from_json(work_order_json)
 
 
 @dataclasses.dataclass
