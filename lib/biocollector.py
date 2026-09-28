@@ -25,14 +25,7 @@ class BioCollectorWrapper(wrapper.WrapperBase):
       if not self._biome_fully_explored:
         return None
       result = self._comms.wait(REQUESTED_FRAGMENTS_CHANNEL)
-    # TODO: have the BioExchange include the location in the request instead of scanning.
-    work_order = BioWorkOrder.from_json(assign_or_raise(result).value)
-    for location in self.scan():
-      if location.fragment_id == work_order.fragment:
-        work_order.coords = list(location.coords)
-        return work_order
-    raise RuntimeError(f"{self.id!r} claimed work from {REQUESTED_FRAGMENTS_CHANNEL!r} queue, but "
-                       f"the requested fragment wasn't found in scan(). Work order: {result.packet}")
+    return BioWorkOrder.from_json(assign_or_raise(result).value)
 
   def next_exploration_work_order(self) -> BioWorkOrder | None:
     for location in self.scan():
@@ -58,7 +51,7 @@ class BioCollectorWrapper(wrapper.WrapperBase):
     work_order = self.next_requested_work_order() or self.next_exploration_work_order()
     if work_order is None:
       return  # Nothing to do; next iteration will block waiting for work.
-    raise_if_error(self._value.collect(work_order.coords))
+    raise_if_error(self.collect(work_order.coords))
     raise_if_error(self._comms.send(COLLECTED_FRAGMENTS_CHANNEL, work_order.to_json()))
     self.block_until_cargo_emptied()
 
