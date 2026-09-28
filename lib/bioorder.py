@@ -139,24 +139,12 @@ def claim_order(
   raise_if_error(notebook.transaction(BIO_ORDERS_KEY, None, tx_fn))
   return tx_return_values.order
 
-def _tx_populate_table_if_not_exists(bio_exchange: BioExchange, journal: Journal) -> Callable[[JsonValue], JsonValue]:
+def _tx_populate_table_if_not_exists(table_json: JsonValue) -> Callable[[JsonValue], JsonValue]:
   def fn(value: JsonValue) -> JsonValue:
     if value is not None:
       return value
     print(f"{BIO_ORDERS_KEY!r} table not found in Data Archive; populating now...")
-    table = {
-      "unclaimed_orders": [],
-      "claimed_by_owner_id": {},
-      "completed_or_fully_assigned_order_ids": []
-    }
-    coords_by_fragment_id = {f.fragment_id: f.coords for f in journal.cataloged_fragments("nocturna")}
-    for order in bio_exchange.orders():
-      if order.status == "complete":
-        table["completed_or_fully_assigned_order_ids"].append(order.id)
-        continue
-      unfinished_order = UnfinishedBioOrder.from_bio_order(order, coords_by_fragment_id)
-      table["unclaimed_orders"].append(unfinished_order.to_json())
-    return table
+    return table_json
   return fn
 
 def populate_table_if_not_exists(
@@ -164,10 +152,26 @@ def populate_table_if_not_exists(
     journal: Journal,
     notebook: notebook_.NotebookWrapper
 ) -> None:
+  if notebook.get(BIO_ORDERS_KEY, None) is not None:
+    return
   # TODO: add support for populating new-to-the-game BioOrders.
   if len(bio_exchange.orders()) != _TOTAL_ORDER_COUNT:
     raise error.CodeTerraformError("Time to add support for populating new-to-the-game BioOrders")
-  tx_fn = _tx_populate_table_if_not_exists(bio_exchange, journal)
+
+  table_json = {
+    "unclaimed_orders": [],
+    "claimed_by_owner_id": {},
+    "completed_or_fully_assigned_order_ids": []
+  }
+  coords_by_fragment_id = {f.fragment_id: f.coords for f in journal.cataloged_fragments("nocturna")}
+  for order in bio_exchange.orders():
+    if order.status == "complete":
+      table_json["completed_or_fully_assigned_order_ids"].append(order.id)
+      continue
+    unfinished_order = UnfinishedBioOrder.from_bio_order(order, coords_by_fragment_id)
+    table_json["unclaimed_orders"].append(unfinished_order.to_json())
+
+  tx_fn = _tx_populate_table_if_not_exists(table_json)
   raise_if_error(notebook.transaction(BIO_ORDERS_KEY, None, tx_fn))
 
 def all_work_assigned(biome: str, notebook: notebook_.NotebookWrapper) -> bool:
