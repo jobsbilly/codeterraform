@@ -67,7 +67,7 @@ class BioLabWrapper(wrapper.WrapperBase):
         raise BioLabError(f"Recipe for {self.specimen.fragment_id!r} requires {required} units of {reagent_id}, "
                           f"but biolab input only has capacity for {self.input.capacity()}")
       needed = required - self._inventory.count(reagent_id)
-      if needed:
+      if needed > 0:
         self._shop.buy(reagent_id, needed)
       # Move the full required quantity of the reagent into the input buffer.
       raise_if_error(self._value.input.take(reagent_id, required), cls=BioLabError)  # Blocks for `0.01 * required` h
