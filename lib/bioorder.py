@@ -141,7 +141,7 @@ def claim_order(
 
 def _tx_populate_table_if_not_exists(bio_exchange: BioExchange, journal: Journal) -> Callable[[JsonValue], JsonValue]:
   def fn(value: JsonValue) -> JsonValue:
-    if value is None:
+    if value is not None:
       return value
     print(f"{BIO_ORDERS_KEY!r} table not found in Data Archive; populating now...")
     table = {
