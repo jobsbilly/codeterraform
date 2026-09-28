@@ -1,7 +1,6 @@
-from __builtins__ import *
+from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
-from typing import Any
-
+from error import assign_or_raise, raise_if_error
 from workorders import BioWorkOrder
 import wrapper
 
@@ -28,10 +27,8 @@ class BioCollectorWrapper(wrapper.WrapperBase):
       if not self._biome_fully_explored:
         return None
       result = self._comms.wait(REQUESTED_FRAGMENTS_CHANNEL)
-    if result.status != "ok":
-      raise RuntimeError(result.message)
     # TODO: have the BioExchange include the location in the request instead of scanning.
-    work_order = BioWorkOrder.from_json(result.packet.value)
+    work_order = BioWorkOrder.from_json(assign_or_raise(result).value)
     for location in self.scan():
       if location.fragment_id == work_order.fragment:
         work_order.coords = list(location.coords)
@@ -49,10 +46,9 @@ class BioCollectorWrapper(wrapper.WrapperBase):
   def block_until_cargo_emptied(self) -> None:
     while self.cargo is not None:
       # Wait for a bio lab's signal that it took a fragment, then check if it was from this collector.
-      if (result := self._comms.wait_broadcast(COLLECTED_FRAGMENTS_CHANNEL)).status != "ok":
-        raise RuntimeError(result.message)
-      if self.cargo is not None and result.broadcast.value == self.id:
-        raise RuntimeError(f"{self.id!r} still has cargo after {result.broadcast.sender!r} broadcast it took it.")
+      broadcast: BroadcastInfo = assign_or_raise(self._comms.wait_broadcast(COLLECTED_FRAGMENTS_CHANNEL))
+      if self.cargo is not None and broadcast.value == self.id:
+        raise RuntimeError(f"{self.id!r} still has cargo after {broadcast.sender!r} broadcast it took it.")
 
   def _prepare_for_main_loop(self) -> None:
     self.block_until_cargo_emptied()
@@ -62,10 +58,8 @@ class BioCollectorWrapper(wrapper.WrapperBase):
     work_order = self.next_requested_work_order() or self.next_exploration_work_order()
     if work_order is None:
       return  # Nothing to do; next iteration will block waiting for work.
-    if (result := self._value.collect(work_order.coords)).status != "ok":
-      raise RuntimeError(result.message)
-    if (result := self._comms.send(COLLECTED_FRAGMENTS_CHANNEL, work_order.to_json())).status != "ok":
-      raise RuntimeError(result.message)
+    raise_if_error(self._value.collect(work_order.coords))
+    raise_if_error(self._comms.send(COLLECTED_FRAGMENTS_CHANNEL, work_order.to_json()))
     self.block_until_cargo_emptied()
 
   def run(self) -> None:
