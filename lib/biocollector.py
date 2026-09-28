@@ -51,6 +51,7 @@ class BioCollectorWrapper(wrapper.WrapperBase):
     work_order = self.next_requested_work_order() or self.next_exploration_work_order()
     if work_order is None:
       return  # Nothing to do; next iteration will block waiting for work.
+    work_order.collector = self.id
     raise_if_error(self.collect(work_order.coords))
     raise_if_error(self._comms.send(COLLECTED_FRAGMENTS_CHANNEL, work_order.to_json()))
     self.block_until_cargo_emptied()
