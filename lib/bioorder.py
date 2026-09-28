@@ -55,7 +55,10 @@ class UnfinishedBioOrder:
     return sum(fragment.needed for fragment in self.fragment_by_id.values() if fragment.coords)
 
   def next_needed_fragment(self) -> tuple[str | None, list[int | float] | None]:
-    return next((f.id, f.coords for f in self.fragment_by_id.values() if f.coords and f.needed), (None, None))
+    for fragment in self.fragment_by_id.values():
+      if fragment.coords and fragment.needed:
+        return fragment.id, fragment.coords
+    return None, None
 
   def _save_fragment_by_id(self, owner_id: str, notebook: notebook_.NotebookWrapper) -> None:
     fragment_by_id_json = self.to_json()["fragment_by_id"]
