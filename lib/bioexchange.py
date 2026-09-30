@@ -45,7 +45,13 @@ class BioExchangeWrapper(wrapper.WrapperBase):
       # TODO: consider persisting the work order until delivery is complete.
       raise_if_error(self.set_order(work_order.order))
       raise_if_error(self.input.connect(work_order.lab))
-      raise_if_error(self.input.take(work_order.fragment, 1))
+
+      for _ in range(5):
+        if (result := self.input.take(work_order.fragment, 1)).status != "busy":
+          break
+        sleep(0.25)  # Time it takes auto feeders to transfer 1 item.
+      raise_if_error(result)
+
       raise_if_error(self.deliver())
 
   def assign_work_to_collectors(self) -> bool:
@@ -112,4 +118,3 @@ class BioExchangeWrapper(wrapper.WrapperBase):
     self._prepare_for_main_loop()
     while True:
       self._do_loopy_things()
-      break  # TODO: delete this line when script is complete.
