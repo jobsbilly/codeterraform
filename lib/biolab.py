@@ -117,6 +117,7 @@ class BioLabWrapper(wrapper.WrapperBase):
 
     # If this specimen is from exploration, just discard it and wait for the next one.
     if not work_order.order:
+      debug(f"{self.id!r} is discarding {self.specimen.fragment_id!r} from exploration work order: {work_order}")
       raise_if_error(self._value.discard(), cls=BioLabError)
       raise_if_error(work_order.release(self.id, self._notebook), cls=BioLabError)
       return
@@ -125,7 +126,13 @@ class BioLabWrapper(wrapper.WrapperBase):
     self.buy_and_load_reagents()
 
     # Extract the sample.
-    raise_if_error(self._value.extract(), cls=BioLabError)  # Blocks for ~0.1 + 0.05 × units h
+    reagent_count = sum(self.loaded_reagents.values())
+    busy_sleep_seconds = (0.1 + 0.05 * reagent_count) / 2
+    for _ in range(5):
+      if (result := self.extract()).status != "busy":  # Blocks for ~0.1 + 0.05 × units h
+        break
+      sleep(busy_sleep_seconds)
+    raise_if_error(result, cls=BioLabError)
 
     # Send a message to the outpost Bio Exchange channel that a sample is ready.
     work_order.lab = self.id
@@ -138,4 +145,3 @@ class BioLabWrapper(wrapper.WrapperBase):
     self._prepare_for_main_loop()
     while True:
       self._do_loopy_things()
-      break  # TODO: delete this line when script is complete.
