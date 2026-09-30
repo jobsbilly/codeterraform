@@ -50,8 +50,10 @@ class BioLabWrapper(wrapper.WrapperBase):
 
   def block_until_specimen_arrives(self) -> BioWorkOrder:
     # Wait for a collector's signal to take its fragment.
+    debug(f"{self.id!r} BLOCK: wait({COLLECTED_FRAGMENTS_CHANNEL!r})")
     work_order = BioWorkOrder.from_comms_message(
       assign_or_raise(self._comms.wait(COLLECTED_FRAGMENTS_CHANNEL), cls=BioLabError))
+    debug(f"{self.id!r} RESUME: wait({COLLECTED_FRAGMENTS_CHANNEL!r})")
 
     # Persist the work order to make sure it isn't lost if the script stops mid-loop.
     raise_if_error(work_order.claim(self.id, self._notebook), cls=BioLabError)

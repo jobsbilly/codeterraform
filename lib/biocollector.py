@@ -24,7 +24,9 @@ class BioCollectorWrapper(wrapper.WrapperBase):
     if result.status == "empty":
       if not self._biome_fully_explored:
         return None
+      debug(f"{self.id!r} BLOCK: wait({REQUESTED_FRAGMENTS_CHANNEL!r})")
       result = self._comms.wait(REQUESTED_FRAGMENTS_CHANNEL)
+      debug(f"{self.id!r} RESUME: wait({REQUESTED_FRAGMENTS_CHANNEL!r})")
     return BioWorkOrder.from_json(assign_or_raise(result).value)
 
   def next_exploration_work_order(self) -> BioWorkOrder | None:
@@ -32,12 +34,15 @@ class BioCollectorWrapper(wrapper.WrapperBase):
       if not location.cataloged:
         return BioWorkOrder(coords=list(location.coords))
     self._biome_fully_explored = True
+    print(f"BioCollectors have fully explored {self.outpost.biome!r} biome.")
     return None
 
   def block_until_cargo_emptied(self) -> None:
     while self.cargo is not None:
       # Wait for a bio lab's signal that it took a fragment, then check if it was from this collector.
+      debug(f"{self.id!r} BLOCK: wait_broadcast({COLLECTED_FRAGMENTS_CHANNEL!r})")
       broadcast: BroadcastInfo = assign_or_raise(self._comms.wait_broadcast(COLLECTED_FRAGMENTS_CHANNEL))
+      debug(f"{self.id!r} RESUME: wait_broadcast({COLLECTED_FRAGMENTS_CHANNEL!r})")
       if self.cargo is not None and broadcast.value == self.id:
         raise RuntimeError(f"{self.id!r} still has cargo after {broadcast.sender!r} broadcast it took it.")
 

@@ -35,7 +35,9 @@ class BioExchangeWrapper(wrapper.WrapperBase):
     while True:
       # Block if there's no other kind of work left; otherwise, just consume what's there and move on.
       if self._all_biome_work_assigned:
+        debug(f"{self.id!r} BLOCK: wait({PREPARED_SAMPLES_CHANNEL!r})")
         result = self._comms.wait(PREPARED_SAMPLES_CHANNEL)
+        debug(f"{self.id!r} RESUME: wait({PREPARED_SAMPLES_CHANNEL!r})")
       elif (result := self._comms.receive(PREPARED_SAMPLES_CHANNEL)).status == "empty":
         break  # No samples waiting.
 
