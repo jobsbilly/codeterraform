@@ -52,7 +52,7 @@ class BioExchangeWrapper(wrapper.WrapperBase):
         sleep(0.25)  # Time it takes auto feeders to transfer 1 item.
       raise_if_error(result)
 
-      raise_if_error(self.deliver())
+      raise_if_error(self.deliver(), ignore=["complete"])
 
   def assign_work_to_collectors(self) -> bool:
     # Get the latest fragment discoveries.

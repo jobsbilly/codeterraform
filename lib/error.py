@@ -1,14 +1,14 @@
 """Project-specific Exception subclasses."""
 
-from typing import Any
+from typing import Any, Iterable
 
 class CodeTerraformError(Exception):
   """Base exception for the project."""
   pass
 
 
-def raise_if_error(status: Any, cls: type[Exception] = CodeTerraformError) -> None:
-  if status.status != "ok":
+def raise_if_error(status: Any, cls: type[Exception] = CodeTerraformError, ignore: Iterable[str] = ()) -> None:
+  if status.status != "ok" and status.status not in ignore:
     raise cls(status.message)
 
 def assign_or_raise(statusor: Any, value_name: str | None = None, cls: type[Exception] = CodeTerraformError) -> Any:
