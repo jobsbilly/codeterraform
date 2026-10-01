@@ -12,40 +12,655 @@ from builtins import (
     slice as _slice,
     str as _str,
     tuple as _tuple,
+    type as _type,
 )
-from typing import Any, Callable, Generic, Iterable, Iterator, Literal, TypeVar, overload
+from typing import Any, Callable, Generator, Generic, Iterable, Iterator, Literal, Protocol, Sized, TypeAlias, TypeVar, overload
 
 _T = TypeVar("_T")
 _U = TypeVar("_U")
 _V = TypeVar("_V")
 _R = TypeVar("_R")
 _Z = TypeVar("_Z")
+_J = TypeVar("_J")
 _StatusT = TypeVar("_StatusT", bound=_str)
 _IteratorT = TypeVar("_IteratorT", bound=Iterator[Any])
+
+# Generated id aliases: annotate a parameter with one to get the ids suggested and checked at every call site
+ItemId = Literal[
+    "alien_fossil",
+    "alkaline_buffer",
+    "ash_spores",
+    "basic_plant",
+    "battery",
+    "battery_cell",
+    "battery_holder_large",
+    "battery_holder_medium",
+    "battery_holder_small",
+    "battery_large",
+    "battery_pack",
+    "bio_caster",
+    "bio_collector",
+    "bio_conditioner",
+    "bio_exchange",
+    "bio_lab",
+    "bio_luminizer",
+    "biomass_mixer",
+    "biomass_mixer_upgrade_pack_mk2",
+    "black_fungus",
+    "brine_plankton",
+    "bulk_liquid_reservoir",
+    "bw_foreclaw",
+    "bw_hindlimb",
+    "bw_ribcage",
+    "bw_skull",
+    "bw_tail_spike",
+    "cargo_pod_large",
+    "cargo_pod_medium",
+    "cargo_pod_small",
+    "cargo_rack_large",
+    "cargo_rack_medium",
+    "cargo_rack_small",
+    "cave_fungus",
+    "cave_moss",
+    "ce_cephalic_photophore",
+    "ce_great_appendage",
+    "ce_mouth_disc",
+    "ce_stalked_eye",
+    "ce_swimmeret_lobe",
+    "charging_station",
+    "charging_station_upgrade_pack_mk2",
+    "charging_station_upgrade_pack_mk3",
+    "chelating_agent",
+    "cinder_lichen",
+    "circuit_panel",
+    "cobalt",
+    "cobalt_ingot",
+    "cold_spores",
+    "constructor_module",
+    "control_unit",
+    "coolant_loop",
+    "coral_fungus",
+    "crop_automator_kit",
+    "cryo_solvent",
+    "crystal_shard",
+    "crystal_spores",
+    "deep_algae",
+    "dispenser_kit",
+    "dna_sequencer",
+    "drill_module",
+    "drill_module_heavy",
+    "drill_module_industrial",
+    "drone_large",
+    "drone_medium",
+    "drone_service_station_kit",
+    "drone_small",
+    "drone_station_kit",
+    "drone_station_kit_large",
+    "drone_station_kit_medium",
+    "electric_thruster",
+    "enrichment_compound",
+    "enzyme_solution",
+    "essence_liquifier",
+    "exotic_compound",
+    "exotic_gas_cap_kit",
+    "exotic_spring_tap_kit",
+    "fabricator",
+    "feed_bone_walker",
+    "feed_crustal_echo",
+    "feed_ferric_sea_lily",
+    "feed_glacial_wyrm",
+    "feed_glasswing_mantis",
+    "feed_hive_sentinel",
+    "feed_hollow_choir",
+    "feed_magmatic_annelid",
+    "feed_maker",
+    "feed_maker_pack_mk2",
+    "feed_mantle_strider",
+    "feed_mycelial_husk",
+    "feed_salt_tortoise",
+    "feed_spire_drake",
+    "feed_tidal_cephalopod",
+    "feed_vault_crab",
+    "feed_veil_mantle",
+    "feed_vent_drifter",
+    "fertilizer",
+    "fertilizer_mk2",
+    "fertilizer_mk3",
+    "forage",
+    "frost_fungus",
+    "frost_lichen",
+    "fs_arm_segment",
+    "fs_calyx_plate",
+    "fs_holdfast_rootlet",
+    "fs_oral_tegmen",
+    "fs_stalk_columnal",
+    "fuel_assembler",
+    "fuel_rod",
+    "garbage_disposal_kit",
+    "gas_pipe_bridge",
+    "gas_pipe_segment",
+    "gas_tank",
+    "glass",
+    "gm_abdominal_sheath",
+    "gm_antennal_whip",
+    "gm_compound_eye",
+    "gm_folded_wing",
+    "gm_raptorial_claw",
+    "grow_lamp_kit",
+    "grow_lamp_upgrade_pack_mk2",
+    "grow_lamp_upgrade_pack_mk3",
+    "grow_lamp_upgrade_pack_mk4",
+    "growth_accelerant",
+    "gw_cardiac_node",
+    "gw_caudal_fin",
+    "gw_cranial_plate",
+    "gw_jaw_fang",
+    "gw_spinal_vertebra",
+    "habitat",
+    "habitat_upgrade_pack_mk2",
+    "hc_aperture_lip",
+    "hc_beak",
+    "hc_septum_plate",
+    "hc_shell_whorl",
+    "hc_tentacle_crown",
+    "heat_crust",
+    "heat_lichen",
+    "heat_upgrade_pack_mk2",
+    "heat_upgrade_pack_mk3",
+    "heat_upgrade_pack_mk4",
+    "heavy_portable_battery",
+    "heavy_portable_bin",
+    "heli_thruster",
+    "hot_spores",
+    "hs_abdomen_segment",
+    "hs_compound_eye",
+    "hs_mandible",
+    "hs_thorax_plate",
+    "hs_wing_membrane",
+    "ice_algae",
+    "ice_crust",
+    "iron_ingot",
+    "iron_ore",
+    "large_warehouse",
+    "lava_algae",
+    "lead_cask",
+    "lead_ingot",
+    "lead_ore",
+    "lead_plate",
+    "lightning_rod",
+    "liquid_pipe_bridge",
+    "liquid_pipe_segment",
+    "liquid_tank",
+    "lubricant",
+    "ma_chitinous_seta",
+    "ma_cranial_papilla",
+    "ma_cuticle_molt",
+    "ma_ganglion_node",
+    "ma_luminous_ring",
+    "machine_frame",
+    "magma_crust",
+    "mh_chitin_node",
+    "mh_fruiting_body",
+    "mh_mycelium_root",
+    "mh_spore_pod",
+    "mh_stigmatic_disc",
+    "mineral_fragment",
+    "mining_drill_heavy_kit",
+    "mining_drill_industrial_kit",
+    "mining_drill_kit",
+    "ms_abdomen_sclerite",
+    "ms_chelicera",
+    "ms_eye_cluster",
+    "ms_leg_tarsus",
+    "ms_pedipalp",
+    "nav_module",
+    "nav_module_sport",
+    "neutron_capacitor",
+    "neutronium",
+    "neutronium_bar",
+    "nuclear_battery",
+    "oc_chitin_beak",
+    "oc_cranium",
+    "oc_ink_sac",
+    "oc_lens_eye",
+    "oc_tentacle_arm",
+    "oil_generator",
+    "oil_pump",
+    "oil_tank_large",
+    "oil_tank_medium",
+    "oil_tank_small",
+    "organic_matter",
+    "outpost_kit",
+    "oxygen_generator",
+    "oxygen_upgrade_pack_mk2",
+    "oxygen_upgrade_pack_mk3",
+    "oxygen_upgrade_pack_mk4",
+    "pioneer",
+    "plant_terraformer_kit",
+    "plant_terraformer_upgrade_pack_mk2",
+    "plastic",
+    "portable_battery",
+    "portable_bin",
+    "portable_bio_extractor",
+    "portable_bio_scanner",
+    "power_line_bridge",
+    "power_line_segment",
+    "pressure_generator",
+    "pressure_upgrade_pack_mk2",
+    "pressure_upgrade_pack_mk3",
+    "pressure_upgrade_pack_mk4",
+    "pressure_valve",
+    "protein_marker",
+    "rare_earth",
+    "rare_earth_core",
+    "rare_fungi",
+    "raw_uranium",
+    "reactor",
+    "refiner",
+    "reinforced_biopolymer",
+    "rover",
+    "rubber",
+    "salt",
+    "salt_crust",
+    "sd_cranial_crest",
+    "sd_obsidian_scale",
+    "sd_tail_barb",
+    "sd_talon",
+    "sd_wing_membrane",
+    "sea_algae",
+    "seed_brinethorn",
+    "seed_crowncap",
+    "seed_dewmoss",
+    "seed_glowvine",
+    "seed_grandbloom",
+    "seed_lonethorn",
+    "seed_maker_kit",
+    "seed_packfern",
+    "seed_pondmoss",
+    "seed_saltbloom",
+    "seed_saltmate",
+    "seed_shadeleaf",
+    "seed_spitebud",
+    "seed_sunpetal",
+    "seed_sunspur",
+    "seed_twinvine",
+    "shield_plating",
+    "shore_lichen",
+    "silicon",
+    "smelter",
+    "snow_moss",
+    "soil_sample",
+    "solar_generator",
+    "sonar_module",
+    "sonar_module_deep",
+    "sonar_module_wide",
+    "sprinkler_kit",
+    "sprinkler_upgrade_pack_mk2",
+    "sprinkler_upgrade_pack_mk3",
+    "sprinkler_upgrade_pack_mk4",
+    "st_beak",
+    "st_carapace_neural",
+    "st_limb_claw",
+    "st_plastron_shard",
+    "st_scute_plate",
+    "steam_condenser",
+    "steam_moss",
+    "steam_turbine",
+    "stone_lichen",
+    "stone_mat",
+    "storage_bin",
+    "storm_glass",
+    "sulfur_moss",
+    "supply_dock",
+    "tank_lining",
+    "tar",
+    "temp_heater",
+    "thermal_cap_kit",
+    "tide_moss",
+    "titanium",
+    "titanium_ingot",
+    "turbine_rotor",
+    "vc_antenna_cluster",
+    "vc_dorsal_carapace",
+    "vc_eye_stalk",
+    "vc_mandible_claw",
+    "vc_walking_leg",
+    "vd_bell",
+    "vd_nematocyst",
+    "vd_neural_mesh",
+    "vd_photophore",
+    "vd_tendril",
+    "vent_algae",
+    "vent_fungus",
+    "vm_cephalic_horn",
+    "vm_gill_filament",
+    "vm_tail_barb",
+    "vm_ventral_photophore",
+    "vm_wing_sheet",
+    "warehouse",
+    "water_pump",
+    "weather_station",
+    "yield_amplifier",
+]
+RecipeId = Literal[
+    "craft_battery_cell",
+    "craft_battery_pack",
+    "craft_cargo_pod_large",
+    "craft_cargo_pod_medium",
+    "craft_cargo_pod_small",
+    "craft_circuit_panel",
+    "craft_control_unit",
+    "craft_coolant_loop",
+    "craft_dispenser_kit",
+    "craft_drone_large",
+    "craft_drone_medium",
+    "craft_drone_service_station_kit",
+    "craft_drone_small",
+    "craft_drone_station_kit",
+    "craft_drone_station_kit_large",
+    "craft_drone_station_kit_medium",
+    "craft_electric_thruster",
+    "craft_enrichment_compound",
+    "craft_exotic_gas_cap_kit",
+    "craft_exotic_spring_tap_kit",
+    "craft_feed_bone_walker",
+    "craft_feed_crustal_echo",
+    "craft_feed_ferric_sea_lily",
+    "craft_feed_glacial_wyrm",
+    "craft_feed_glasswing_mantis",
+    "craft_feed_hive_sentinel",
+    "craft_feed_hollow_choir",
+    "craft_feed_magmatic_annelid",
+    "craft_feed_maker_pack_mk2",
+    "craft_feed_mantle_strider",
+    "craft_feed_mycelial_husk",
+    "craft_feed_salt_tortoise",
+    "craft_feed_spire_drake",
+    "craft_feed_tidal_cephalopod",
+    "craft_feed_vault_crab",
+    "craft_feed_veil_mantle",
+    "craft_feed_vent_drifter",
+    "craft_fertilizer",
+    "craft_fertilizer_mk2",
+    "craft_fertilizer_mk3",
+    "craft_fuel_rod",
+    "craft_garbage_disposal_kit",
+    "craft_gas_pipe_bridge",
+    "craft_gas_pipe_segment",
+    "craft_grow_lamp_kit",
+    "craft_grow_lamp_pack_mk2",
+    "craft_grow_lamp_pack_mk3",
+    "craft_growth_accelerant",
+    "craft_habitat_pack_mk2",
+    "craft_heat_upgrade_pack_mk4",
+    "craft_heli_thruster",
+    "craft_lead_cask",
+    "craft_lead_plate",
+    "craft_lightning_rod_kit",
+    "craft_liquid_pipe_bridge",
+    "craft_liquid_pipe_segment",
+    "craft_lubricant",
+    "craft_machine_frame",
+    "craft_mining_drill_heavy_kit",
+    "craft_mining_drill_industrial_kit",
+    "craft_mining_drill_kit",
+    "craft_neutron_capacitor",
+    "craft_nuclear_battery",
+    "craft_oil_pump",
+    "craft_oil_tank_large",
+    "craft_oil_tank_medium",
+    "craft_oil_tank_small",
+    "craft_oxygen_upgrade_pack_mk4",
+    "craft_plant_terraformer_kit",
+    "craft_plant_terraformer_pack_mk2",
+    "craft_plastic",
+    "craft_power_line_bridge",
+    "craft_power_line_segment",
+    "craft_pressure_upgrade_pack_mk4",
+    "craft_pressure_valve",
+    "craft_reinforced_biopolymer",
+    "craft_rubber",
+    "craft_seed_maker_kit",
+    "craft_shield_plating",
+    "craft_sprinkler_kit",
+    "craft_sprinkler_pack_mk2",
+    "craft_sprinkler_pack_mk3",
+    "craft_tank_lining",
+    "craft_tar",
+    "craft_thermal_cap_kit",
+    "craft_turbine_rotor",
+    "craft_water_pump",
+    "craft_yield_amplifier",
+    "refine_chlorine",
+    "refine_cryofluid",
+    "refine_quicksilver",
+    "refine_sulfur_gas",
+    "smelt_cobalt_ingot",
+    "smelt_glass",
+    "smelt_iron_ingot",
+    "smelt_lead_ingot",
+    "smelt_neutronium_bar",
+    "smelt_rare_earth_core",
+    "smelt_titanium_ingot",
+]
+FluidId = Literal[
+    "ammonia",
+    "brine",
+    "chlorine",
+    "coastal_essence",
+    "cryofluid",
+    "deep_essence",
+    "frozen_essence",
+    "geothermal_essence",
+    "oil",
+    "quicksilver",
+    "raw_chlorine",
+    "raw_cryofluid",
+    "raw_quicksilver",
+    "raw_sulfur_gas",
+    "steam",
+    "sulfur_gas",
+    "swamp_gas",
+    "volcanic_essence",
+    "water",
+]
+MachineTypeId = Literal[
+    "battery",
+    "battery_large",
+    "bio_caster",
+    "bio_collector",
+    "bio_conditioner",
+    "bio_exchange",
+    "bio_lab",
+    "bio_luminizer",
+    "biomass_mixer",
+    "bulk_liquid_reservoir",
+    "charging_station",
+    "clock",
+    "crop_automator",
+    "dispenser",
+    "dna_sequencer",
+    "drone_large",
+    "drone_medium",
+    "drone_service_station",
+    "drone_small",
+    "drone_station",
+    "drone_station_large",
+    "drone_station_medium",
+    "essence_liquifier",
+    "exotic_gas_cap",
+    "exotic_spring_tap",
+    "fabricator",
+    "feed_maker",
+    "fuel_assembler",
+    "garbage_disposal",
+    "gas_tank",
+    "gps",
+    "grow_lamp",
+    "habitat",
+    "harvester",
+    "inventory",
+    "large_warehouse",
+    "lead_cask",
+    "lightning_rod",
+    "liquid_tank",
+    "mining_drill",
+    "mining_drill_heavy",
+    "mining_drill_industrial",
+    "nuclear_battery",
+    "oil_generator",
+    "oil_pump",
+    "oxygen_generator",
+    "oxygen_sensor",
+    "pioneer",
+    "plant_terraformer",
+    "pressure_generator",
+    "pressure_sensor",
+    "reactor",
+    "refiner",
+    "rover",
+    "scanner",
+    "seed_maker",
+    "smelter",
+    "solar_generator",
+    "sprinkler",
+    "steam_condenser",
+    "steam_turbine",
+    "storage_bin",
+    "supply_dock",
+    "temp_heater",
+    "thermal_cap",
+    "thermometer",
+    "warehouse",
+    "water_pump",
+    "weather_station",
+]
+
+# Named argument types: what a parameter accepts when one type is not enough.
+class _HasId(Protocol):
+    @_property
+    def id(self) -> _str: ...
+
+class _HasTransmissionFields(Protocol):
+    @_property
+    def event_id(self) -> _str: ...
+    @_property
+    def channel(self) -> _str: ...
+    @_property
+    def data(self) -> _str: ...
+    @_property
+    def number(self) -> _int: ...
+    @_property
+    def total(self) -> _int: ...
+
+JsonValue: TypeAlias = "_str | _int | _float | _bool | None | _list[JsonValue] | _dict[_str, JsonValue]"
+ItemProperties: TypeAlias = "_dict[_str, JsonValue]"
+IdRecord: TypeAlias = "_dict[_str, Any] | _HasId"
+TransmissionRecord: TypeAlias = "SignalTransmission | _dict[_str, Any] | _HasTransmissionFields"
+SiteRef: TypeAlias = "_str | Site | IdRecord"
+RecipeRef: TypeAlias = "_str | Recipe | IdRecord"
+
+class ScriptVariantRef:
+    """run.variants()"""
+    id: _str
+    name: _str
+    description: _str
+
+class RunControlStatus:
+    """run.status()"""
+    script_id: _str
+    state: Literal["idle", "running", "paused", "error", "completed"]
+    variant_id: _str
+    variant_name: _str
+    modified: _bool
+    source_pending: _bool
+    editor_busy: _bool
 
 class Component:
     """get_component / self"""
     id: _str
     type_id: _str
 
+class Field:
+    """`dataclasses.fields()`"""
+    name: _str
+    default: Any
+    default_factory: Callable[..., Any]
+    init: _bool
+    repr: _bool
+    compare: _bool
+    kw_only: _bool
+
+class CacheInfo:
+    """`functools.lru_cache(fn).cache_info()` · `functools.cache(fn).cache_info()`"""
+    hits: _int
+    misses: _int
+    maxsize: _int
+    currsize: _int
+
 class Match:
     """`re.search()` · `re.match()` · `re.fullmatch()`"""
     pattern: _str
     string: _str
-    def group(self, index: _float = ...) -> _str | None:
-        """Return the matched text for group `index`. Group `0` is the whole match. Optional groups that did not match return `None`; an out-of-range group raises."""
+    def group(self, group: _int | _str = ..., /, *groups: _int | _str) -> _str | None:
+        """Return the matched text for a group, by number or by `(?P<name>...)` name. Group `0` is the whole match, and several groups return a tuple: `m.group(1, \"unit\")`. Optional groups that did not match return `None`; an unknown group raises. `m[1]` is the same as `m.group(1)`."""
         ...
-    def groups(self, default: Any = ...) -> _tuple[Any, ...]:
+    def groups(self, default: object = ...) -> _tuple[_str | None, ...]:
         """Return a tuple of captured groups, excluding group `0`. Groups that did not match use `default`, which is `None` if omitted."""
         ...
-    def start(self, index: _float = ...) -> _int:
+    def start(self, index: _int | _str = ...) -> _int:
         """Start character index for the group. Unmatched optional groups return `-1`."""
         ...
-    def end(self, index: _float = ...) -> _int:
+    def end(self, index: _int | _str = ...) -> _int:
         """End character index for the group. Unmatched optional groups return `-1`."""
         ...
-    def span(self, index: _float = ...) -> _tuple[_float, ...]:
+    def span(self, index: _int | _str = ...) -> _tuple[_int, ...]:
         """Return `(start, end)` for the group. Unmatched optional groups return `(-1, -1)`."""
+        ...
+    def __getitem__(self, group: _int | _str, /) -> _str | None:
+        """`m[1]` or `m[\"name\"]`: the same text as `m.group(1)`, or `None` for a group that took no part in the match."""
+        ...
+    def groupdict(self, default: object = ...) -> _dict[_str, _str | None]:
+        """Return a dict of every named group's text, by name. Named groups that did not match use `default`, which is `None` if omitted."""
+        ...
+    def expand(self, template: _str, /) -> _str:
+        """Fill in a replacement template the way `re.sub()` does, from this match: `m.expand(r\"\\2-\\1\")`."""
+        ...
+    lastindex: _int | None
+    lastgroup: _str | None
+    pos: _int
+    endpos: _int
+    re: Pattern
+
+class Pattern:
+    """`re.compile()`"""
+    pattern: _str
+    flags: _int
+    groups: _int
+    groupindex: _dict[_str, _float]
+    def search(self, string: _str, pos: _int = ..., endpos: _int | None = ...) -> Match | None:
+        """Like `re.search()` with this pattern, looking only between `pos` and `endpos`: a `Match`, or `None` if nothing there matches."""
+        ...
+    def match(self, string: _str, pos: _int = ..., endpos: _int | None = ...) -> Match | None:
+        """Like `re.match()` with this pattern, anchored at `pos`: a `Match`, or `None` if the text at `pos` does not match."""
+        ...
+    def fullmatch(self, string: _str, pos: _int = ..., endpos: _int | None = ...) -> Match | None:
+        """Like `re.fullmatch()` with this pattern, over the text from `pos` to `endpos`: a `Match`, or `None` if any part is left unmatched."""
+        ...
+    def findall(self, string: _str, pos: _int = ..., endpos: _int | None = ...) -> _list[Any]:
+        """Like `re.findall()` with this pattern, between `pos` and `endpos`."""
+        ...
+    def finditer(self, string: _str, pos: _int = ..., endpos: _int | None = ...) -> Iterator[Match]:
+        """Like `re.finditer()` with this pattern, between `pos` and `endpos`."""
+        ...
+    def sub(self, repl: _str | Callable[..., Any], string: _str, count: _int = ...) -> _str:
+        """Like `re.sub()` with this pattern."""
+        ...
+    def subn(self, repl: _str | Callable[..., Any], string: _str, count: _int = ...) -> _tuple[_str, _int]:
+        """Like `re.subn()` with this pattern."""
+        ...
+    def split(self, string: _str, maxsplit: _int = ...) -> _list[Any]:
+        """Like `re.split()` with this pattern."""
         ...
 
 class NavModule:
@@ -69,7 +684,7 @@ class NavModule:
         """Vehicle speed in m/h."""
         ...
     def get_distance_to(self, x: _float, y: _float) -> _float:
-        """Distance (meters) from the vehicle to the given point. Arrival loops need a tolerance, normally `> 2`, rather than exact zero. When the next action targets a building, route to its `BuildingRef.position`."""
+        """Distance (meters) from the vehicle to the given point. The vehicle has arrived once this is 2 or less; it rarely reaches exactly zero. A wait loop therefore keeps going `while self.nav.get_distance_to(x, y) > 2:`. When the next action targets a building, route to its `BuildingRef.position`."""
         ...
     def speed_multiplier(self) -> _float:
         """Top-speed multiplier: **1.0** basic, or **1 + mounted Sport Nav count** on Pioneer. Speed only; range still depends on battery, throttle, cargo load, and movement draw."""
@@ -78,20 +693,26 @@ class NavModule:
 class SonarModule:
     """self.sonar (vehicles)"""
     def scan(self) -> SonarScanResult[Literal["ok", "too_hard", "tier_too_low", "research_required", "wrong_scanner", "busy", "no_power"]]:
-        """Point-sweep for nearby sites. A completed sweep can find no compatible contacts. Mineral contacts obey sonar range and hardness; thermal, water, oil, and exotic contacts also require matching research. The sweep updates the Journal with newly classified sites. A stale captured module reference raises `ReferenceError`. Fixed result contract: `SonarScanResult`; branch on `.status` and read `.message`. Payload fields: `.sites` and `.blocked`."""
+        """Point-sweep for nearby sites. A completed sweep can find no compatible contacts. Mineral contacts obey sonar range and hardness; thermal, water, oil, and exotic contacts also require matching research. A sweep that succeeded can still leave a contact unidentified: it is reported separately, with its coordinates and a reason, and stays unscanned until the right instrument reaches it. The sweep updates the Journal with newly classified sites. A stale captured module reference raises `ReferenceError`. Fixed result contract: `SonarScanResult`; branch on `.status` and read `.message`. Payload fields: `.sites` and `.blocked`."""
         ...
-    def survey(self, site: Any) -> SurveyResult[Literal["ok", "busy", "not_discovered", "research_required", "tier_too_low", "out_of_range", "too_hard", "no_power"]]:
+    def survey(self, site: SiteRef) -> SurveyResult[Literal["ok", "busy", "not_discovered", "research_required", "tier_too_low", "out_of_range", "too_hard", "no_power"]]:
         """Reveal the details available for a productive site. An inert `GeologicalAnomaly` is already resolved, so surveying it is free. Re-surveying is also free unless a deeper sonar tier can reveal more. Malformed site values raise `ValueError`; a stale captured module reference raises `ReferenceError`. Fixed result contract: `SurveyResult`; branch on `.status` and read `.message`. Payload fields: `.site`."""
         ...
     def range(self) -> _float:
         """Sonar range in meters (**50** basic, **180** Wide, **280** Deep). A stale captured module reference raises `ReferenceError`."""
         ...
-    def hardness_limit(self) -> _float:
+    def hardness_limit(self) -> _int:
         """Max mineral hardness this sonar can identify (**1** basic, **3** Wide, **4** Deep). A stale captured module reference raises `ReferenceError`."""
         ...
     def tier(self) -> Literal["basic", "wide", "deep"]:
         """Survey-depth tier granted by the mounted sonar: `\"basic\"` / `\"wide\"` / `\"deep\"`. Determines thermal/exotic survey detail; `\"deep\"` is also required to discover oil wells once **Petroleum Survey** is unlocked. A stale captured module reference raises `ReferenceError`."""
         ...
+
+class ComputerDeployResult(Generic[_StatusT]):
+    """computer.deploy()"""
+    status: _StatusT
+    message: _str
+    machine_id: _str
 
 class SonarScanResult(Generic[_StatusT]):
     """SonarModule.scan()"""
@@ -102,8 +723,8 @@ class SonarScanResult(Generic[_StatusT]):
 
 class BlockedContact:
     """SonarScanResult.blocked"""
-    x: _float
-    y: _float
+    x: _int
+    y: _int
     reason: Literal["wrong_scanner", "too_hard", "tier_too_low", "research_required"]
     message: _str
 
@@ -161,7 +782,7 @@ class DrillModule:
     def mine(self) -> ActionResult[Literal["ok", "not_mounted", "not_at_site", "not_surveyed", "too_hard", "no_cargo_space", "no_power", "not_enough_power", "busy"]]:
         """Drill one unit while stationary. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def hardness_limit(self) -> _float:
+    def hardness_limit(self) -> _int:
         """Max mineral hardness this drill can extract (**1** basic, **3** Industrial, **4** Heavy). A stale captured module reference raises `ReferenceError`."""
         ...
     def speed_multiplier(self) -> _float:
@@ -202,7 +823,7 @@ class LifeFormSample:
 
 class LifeFormScanResult:
     """PortableBioScanner.scan().scan after status == \"ok\" / journal biosite queries"""
-    coord: _tuple[_float, _float]
+    coord: _list[_int]
     life_forms: _list[LifeFormSample]
     is_empty: _bool
 
@@ -223,7 +844,7 @@ class Cell:
     fertilizer_tier: _int
     accelerated: _bool
     accelerant_remaining: _float
-    forage: _float
+    forage: _int
 
 class PlantRequirement:
     """SeedRecipe.requirements"""
@@ -253,7 +874,7 @@ class Outpost:
     def name(self) -> _str:
         """Display name. Defaults to `\"Nocturna Base\"` for the home outpost or a generated `\"Outpost N\"` name for founded outposts; freely renameable from the Computer System tab. Mutable: prefer `id` when persistence matters."""
         ...
-    def coords(self) -> _tuple[_float, _float]:
+    def coords(self) -> _list[_int]:
         """World coordinates of the outpost anchor as `[x, y]`. Home outpost sits at `[0, 0]`; founded outposts carry the position chosen in Plan mode."""
         ...
     def buildings_used(self) -> _int:
@@ -291,12 +912,12 @@ class OutpostRef:
     """outpost_network.outposts() / outpost_network.home() / outpost_network.nearest()"""
     id: _str
     name: _str
-    x: _float
-    y: _float
+    x: _int
+    y: _int
     def position(self) -> Position:
         """Top-left anchor of the outpost footprint as a `Position` snapshot. This identifies the outpost, not a particular building's docking point."""
         ...
-    def coords(self) -> _tuple[_float, _float]:
+    def coords(self) -> _list[_int]:
         """Top-left anchor of the outpost footprint as `[x, y]`. Use `buildings()` and `BuildingRef.position` when routing to a particular service building."""
         ...
     is_home: _bool
@@ -319,7 +940,7 @@ class BuildingRef:
     outpost_id: _str
     outpost: OutpostRef | None
     powered: _bool
-    position: _tuple[_float, _float]
+    position: _list[_float]
 
 class HarvestingMachineRef:
     """outpost.harvesting_machines() / outpost_network.home().harvesting_machines()"""
@@ -426,7 +1047,7 @@ class Cargo:
     def compact(self) -> TransferResult[Literal["ok", "already_compact", "research_required", "busy", "source_changed", "target_full"]]:
         """On a Pioneer, consolidate equal item ids into the fewest installed Portable Bins that can hold them. Property-distinct variants remain intact, and the planner preserves the fullest compatible bins to minimize physical movement. Requires **Auto Feeders**, waits for time proportional to the units repositioned, and holds the Pioneer stationary as a material endpoint during that cycle. This does not change which bin `send()` drains first. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
-    def discard(self, rack_index: _float) -> DiscardResult[Literal["ok", "empty", "busy", "invalid_rack"]]:
+    def discard(self, rack_index: _int) -> DiscardResult[Literal["ok", "empty", "busy", "invalid_rack"]]:
         """Permanently jettison everything in the whole-number, zero-based `rack_index`. On a Rover, which has no racks, `self.cargo.discard(0)` addresses the integrated hold. An already-empty hold or rack finishes immediately; destroying cargo takes **1 hour** and pauses the script. This is the vehicle cargo destruction API. Fixed result contract: `DiscardResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.discarded`."""
         ...
 
@@ -497,6 +1118,7 @@ class VehicleRef:
     battery_capacity: _float
     is_docked: _bool
     docked_at: _str
+    current_station: _str
     is_being_rescued: _bool
     rescue_status: Literal["none", "outbound", "charging", "returning"]
 
@@ -557,7 +1179,7 @@ class DroneCargo:
         """Total physical capacity summed over every container: each mounted Cargo Pod (Small **100**, Medium **250**, Large **500**) plus the Bio Extractor's **25 t** chamber. Shield Plating halves each pod's capacity."""
         ...
     def contents(self) -> _dict[_str, _int]:
-        """Dict mapping `item_id` → unit count for every material currently in cargo. Iterate with `.keys()` / `.items()`."""
+        """A dict mapping `item_id` → unit count for every material currently in cargo. Iterate with `.keys()` / `.items()`."""
         ...
     def space_for(self, item_id: _str) -> _int:
         """Free room for this specific material. **Each Cargo Pod holds one material**, so a pod counts only if it is empty or already holds `item_id`; the Bio Extractor's 25 t chamber counts only for life forms. Returns **0** for a material with no empty or matching pod, even while other pods still have room for their own materials."""
@@ -565,18 +1187,18 @@ class DroneCargo:
     def full(self) -> _bool:
         """`True` when `count() >= capacity()`. A drone may still be unable to load a new item type when every pod is committed, even if `full()` is `False`; use `space_for(item_id)` for a specific item."""
         ...
-    def load(self, item_id: _str, count: _float, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "invalid_properties", "invalid_property_match", "research_required", "target_moving", "not_at_source", "source_empty", "target_full", "needs_plating", "cask_missing", "source_changed", "target_changed"]]:
+    def load(self, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "invalid_properties", "invalid_property_match", "research_required", "target_moving", "not_at_source", "source_empty", "slots_full", "target_full", "needs_plating", "cask_missing", "source_changed", "target_changed"]]:
         """Move up to whole-number `count` units into this drone's cargo, retaining exact properties. Loads from the docked Drone Depot stockpile or a field Mining Drill after the drone finishes its route there. Hot cargo loads from a local Lead Cask and requires Shield Plating. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
-    def unload(self, item_id: _str, count: _float, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "invalid_properties", "invalid_property_match", "research_required", "not_at_target", "source_empty", "slots_full", "target_full", "cask_missing", "source_changed", "target_changed"]]:
+    def unload(self, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "invalid_properties", "invalid_property_match", "research_required", "not_at_target", "source_empty", "slots_full", "target_full", "cask_missing", "source_changed", "target_changed"]]:
         """Move up to whole-number `count` units from this drone's cargo into its docked Drone Depot, retaining exact properties. Hot cargo unloads into a compatible Lead Cask. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
-    def discard(self, item_id: _str, count: _float, properties: Any = ..., property_match: _str | None = ...) -> DiscardResult[Literal["ok", "partial", "empty", "no_op", "invalid_properties", "invalid_property_match", "source_changed"]]:
+    def discard(self, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> DiscardResult[Literal["ok", "partial", "empty", "no_op", "invalid_properties", "invalid_property_match", "source_changed"]]:
         """Permanently destroy up to whole-number `count` units from this drone's cargo. This jettison needs no station and a drained pod unlatches for a new material. Fixed result contract: `DiscardResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.discarded`."""
         ...
 
 class MountSlot:
-    """self.modules() on rover / pioneer"""
+    """modules() on a rover, pioneer, or drone"""
     index: _int
     type: Literal["nav", "sonar_basic", "drill_basic", "universal", "thruster", "drone_module"]
     module_id: _str | None
@@ -587,7 +1209,7 @@ class ItemStack:
     """InputSlot.stacks(), VehicleInputSlot.stacks(), OutputSlot.stacks(), PickupOutputSlot.stacks(), Cargo.stacks(), Bin.stacks, storage_bin.stacks(), warehouse.stacks()"""
     id: _str
     count: _int
-    properties: _dict[_str, Any] | None
+    properties: ItemProperties | None
 
 class InputSlot:
     """self.input on stationary machines with an input buffer"""
@@ -601,12 +1223,12 @@ class InputSlot:
         """Display name of the currently connected source, or empty string."""
         ...
     def connected_id(self) -> _str:
-        """Stable id of the currently connected source, or empty string. `connect()` accepts an id or a display name, so compare against this when you need the identity to match what you passed: `connected_to()` answers with the renameable name."""
+        """Stable id of the currently connected source, or empty string. `connect()` accepts an id or display name, but this returns the resolved stable id. Compare it with the source's stable id; `connected_to()` returns its renameable display name."""
         ...
-    def take(self, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "no_connection", "inventory_not_local", "same_endpoint", "source_missing", "source_under_construction", "source_is_vehicle", "source_not_local", "not_at_source", "unsupported_source", "source_wrong_material", "source_empty", "source_reserved", "source_changed", "buffer_full", "slots_full", "target_wrong_material", "wrong_biome", "target_unconfigured", "hot_cargo_requires_cask", "order_item_not_required", "order_slots_full", "order_fulfilled", "target_full", "target_complete", "target_changed", "same_vehicle", "source_moving", "target_moving", "out_of_range"]]:
+    def take(self, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "no_connection", "inventory_not_local", "same_endpoint", "source_missing", "source_under_construction", "source_is_vehicle", "source_not_local", "not_at_source", "unsupported_source", "source_wrong_material", "source_empty", "source_reserved", "source_changed", "buffer_full", "slots_full", "target_wrong_material", "wrong_biome", "target_unconfigured", "hot_cargo_requires_cask", "order_item_not_required", "order_slots_full", "order_fulfilled", "target_full", "target_complete", "target_changed", "same_vehicle", "source_moving", "target_moving", "out_of_range"]]:
         """Take up to whole-number `count` units of `item_id` from the connected source. A property dict selects stacks containing that subset by default. Pass `\"exact\"` as the fourth argument for one full identity; `None, \"exact\"` selects only propertyless items. `\"any\"` ignores properties. Exact source properties are always retained. The transfer waits automatically for time proportional to units moved and requires Auto Feeders research. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
-    def eject(self, destination: _str, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "inventory_not_local", "same_endpoint", "source_under_construction", "source_wrong_material", "source_empty", "source_reserved", "source_changed", "target_missing", "target_under_construction", "target_is_vehicle", "target_not_local", "unsupported_target", "target_wrong_material", "wrong_biome", "target_unconfigured", "hot_cargo_requires_cask", "cask_accepts_hot_only", "order_item_not_required", "order_slots_full", "order_fulfilled", "slots_full", "target_full", "target_complete", "target_changed"]]:
+    def eject(self, destination: _str, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "inventory_not_local", "same_endpoint", "source_under_construction", "source_wrong_material", "source_empty", "source_reserved", "source_changed", "target_missing", "target_under_construction", "target_is_vehicle", "target_not_local", "unsupported_target", "target_wrong_material", "wrong_biome", "target_unconfigured", "hot_cargo_requires_cask", "cask_accepts_hot_only", "order_item_not_required", "order_slots_full", "order_fulfilled", "slots_full", "target_full", "target_complete", "target_changed"]]:
         """Recover up to whole-number `count` units of `item_id` from this buffer without changing its source connection. Use `\"inventory\"` at Nocturna Base, or a compatible same-outpost store, machine input, or parked ground vehicle. Optional properties use the standard any, subset, or exact selection rules; exact item properties are preserved. Destination capacity may limit the move. Active or reserved work rejects without moving anything; a successful ejection cancels fractional work attached to the staged input. The transfer waits automatically for time proportional to units moved and requires Auto Feeders research. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
     def flush(self) -> TransferResult[Literal["ok", "no_op"]]:
@@ -636,7 +1258,7 @@ class VehicleInputSlot:
     def connected_id(self) -> _str:
         """Stable id of the currently connected cargo source, or empty string. `connect()` accepts an id or display name, so compare against this when identity must survive renaming."""
         ...
-    def take(self, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "no_connection", "inventory_not_local", "same_endpoint", "source_missing", "source_under_construction", "source_is_vehicle", "source_not_local", "not_at_source", "unsupported_source", "source_wrong_material", "source_empty", "source_reserved", "source_changed", "buffer_full", "slots_full", "target_wrong_material", "wrong_biome", "target_unconfigured", "hot_cargo_requires_cask", "order_item_not_required", "order_slots_full", "order_fulfilled", "target_full", "target_complete", "target_changed", "same_vehicle", "source_moving", "target_moving", "out_of_range"]]:
+    def take(self, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "no_connection", "inventory_not_local", "same_endpoint", "source_missing", "source_under_construction", "source_is_vehicle", "source_not_local", "not_at_source", "unsupported_source", "source_wrong_material", "source_empty", "source_reserved", "source_changed", "buffer_full", "slots_full", "target_wrong_material", "wrong_biome", "target_unconfigured", "hot_cargo_requires_cask", "order_item_not_required", "order_slots_full", "order_fulfilled", "target_full", "target_complete", "target_changed", "same_vehicle", "source_moving", "target_moving", "out_of_range"]]:
         """Load up to whole-number `count` units of `item_id` into vehicle cargo from the connected source. A property dict selects stacks containing that subset by default. Pass `\"exact\"` as the fourth argument for one full identity; `None, \"exact\"` selects only propertyless items. `\"any\"` ignores properties. Exact source properties are retained. The transfer waits automatically for time proportional to units moved and requires Auto Feeders research. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
     def count(self) -> _int:
@@ -661,9 +1283,9 @@ class OutputSlot:
         """Display name of the currently connected target, or empty string."""
         ...
     def connected_id(self) -> _str:
-        """Stable id of the currently connected target, or empty string. `connect()` accepts an id or a display name, so compare against this when you need the identity to match what you passed: `connected_to()` answers with the renameable name."""
+        """Stable id of the currently connected target, or empty string. `connect()` accepts an id or display name, but this returns the resolved stable id. Compare it with the target's stable id; `connected_to()` returns its renameable display name."""
         ...
-    def send(self, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "no_connection", "inventory_not_local", "same_endpoint", "source_wrong_material", "source_empty", "source_changed", "target_missing", "target_under_construction", "target_is_vehicle", "target_not_local", "not_at_target", "unsupported_target", "target_wrong_material", "wrong_biome", "target_unconfigured", "mixed_materials", "hot_cargo_requires_cask", "cask_accepts_hot_only", "order_item_not_required", "order_slots_full", "order_fulfilled", "slots_full", "target_full", "target_complete", "target_changed", "same_vehicle", "source_moving", "target_moving", "out_of_range"]]:
+    def send(self, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "no_connection", "inventory_not_local", "same_endpoint", "source_wrong_material", "source_empty", "source_changed", "target_missing", "target_under_construction", "target_is_vehicle", "target_not_local", "not_at_target", "unsupported_target", "target_wrong_material", "wrong_biome", "target_unconfigured", "mixed_materials", "hot_cargo_requires_cask", "cask_accepts_hot_only", "order_item_not_required", "order_slots_full", "order_fulfilled", "slots_full", "target_full", "target_complete", "target_changed", "same_vehicle", "source_moving", "target_moving", "out_of_range"]]:
         """Send up to whole-number `count` units of `item_id` to the connected target. A property dict selects stacks containing that subset by default. Pass `\"exact\"` as the fourth argument for one full identity; `None, \"exact\"` selects only propertyless items. `\"any\"` ignores properties. Exact source properties are preserved. The transfer waits automatically for time proportional to units moved and requires Auto Feeders research. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
     def count(self) -> _int:
@@ -812,7 +1434,7 @@ class ShopItem:
     """shop.get_catalogue()"""
     id: _str
     name: _str
-    cost: _float
+    cost: _int
 
 class ItemInfo:
     """item_catalog.lookup(item_id)"""
@@ -831,9 +1453,9 @@ class Slot:
     name: _str
     value: _float
     count: _int
-    properties: _dict[_str, Any] | None
+    properties: ItemProperties | None
     genes: _list[_str]
-    glow: _tuple[_float, _float, _float] | None
+    glow: _list[_int] | None
     spliced: _bool
 
 class WarehouseSlot:
@@ -842,7 +1464,7 @@ class WarehouseSlot:
     item: _str
     count: _int
     capacity: _int
-    properties: _dict[_str, Any] | None
+    properties: ItemProperties | None
 
 class TransmitterInfo:
     """transmitter.get_info()"""
@@ -890,7 +1512,7 @@ class Site:
 class MiningSite(Site):
     """any Site-returning API where `kind() == \"mineral\"`"""
     item_id: Literal["iron_ore", "silicon", "titanium", "cobalt", "rare_earth", "neutronium", "lead_ore"] | None
-    hardness: _float | None
+    hardness: _int | None
     purity: Literal["standard", "rich", "pure"] | None
 
 class GeologicalAnomaly(Site):
@@ -909,7 +1531,7 @@ class FluidPort:
         """Display name of the target declared by this port, or empty string. It does not list compatible reverse declarations owned by peer ports."""
         ...
     def connected_id(self) -> _str:
-        """Stable id of the target declared by this port, or empty string. `connect()` accepts an id or a display name, so compare against this when you need the identity to match what you passed: `connected_to()` answers with the renameable name. For every effective peer, including declarations owned by the other side, use `connections()`."""
+        """Stable id of the target declared by this port, or empty string. `connect()` accepts an id or display name, but this returns the resolved stable id. Compare it with the target's stable id; `connected_to()` returns its renameable display name. For every effective peer, including declarations owned by the other side, use `connections()`."""
         ...
     def connections(self) -> _list[FluidConnection]:
         """Read-only snapshots of every effective peer relationship on this port, including declarations authored by peer ports. Each `FluidConnection` reports the peer, exact fluid when known, declaration ownership, and structural state. Pipe ids are deliberately not exposed or selected."""
@@ -976,7 +1598,7 @@ class Storm:
     def speed(self) -> _float:
         """Travel speed in m/h."""
         ...
-    def heading(self) -> _tuple[_float, _float]:
+    def heading(self) -> _list[_float]:
         """Unit travel direction as `[dx, dy]`."""
         ...
     def intensity(self) -> _float:
@@ -1013,13 +1635,13 @@ class WeatherEventForecast:
     def kind(self) -> Literal["dust", "thunder"]:
         """Broad event family: `\"dust\"` or `\"thunder\"`."""
         ...
-    def arrival_window(self) -> _tuple[_float, _float]:
+    def arrival_window(self) -> _list[_float]:
         """`[earliest, latest]` hours after this report's observation time when the cell should enter coverage."""
         ...
     def corridor(self) -> Zone:
         """Coarse predicted travel corridor as a `Zone`; it is storm information, never the hidden aftermath path."""
         ...
-    def intensity_range(self) -> _tuple[_float, _float]:
+    def intensity_range(self) -> _list[_float]:
         """Observed forecast range `[low, high]`, each **0-1**."""
         ...
 
@@ -1032,13 +1654,13 @@ class WeatherSignalBoardStatus:
 
 class WeatherSignalBoard:
     """weather_station.signal_board"""
-    def reveal(self, transmission: Any) -> ActionResult[Literal["ok", "no_power", "duplicate", "invalid_type"]]:
+    def reveal(self, transmission: SignalTransmission | TransmissionRecord) -> ActionResult[Literal["ok", "no_power", "duplicate", "invalid_type"]]:
         """Publish one transmission into its declared numbered slot. A different event replaces this station's current board. An already-published slot for the same event is left unchanged. The board checks shape and bounds, not meaning or checksum validity. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def reject(self, transmission: Any) -> ActionResult[Literal["ok", "no_power", "invalid_type"]]:
+    def reject(self, transmission: SignalTransmission | TransmissionRecord) -> ActionResult[Literal["ok", "no_power", "invalid_type"]]:
         """Add one to the supplied event's refusal count without opening a slot. A different event replaces this station's current board. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def resolve(self, event_id: _str, info: Any) -> ActionResult[Literal["ok", "no_power", "invalid_type"]]:
+    def resolve(self, event_id: _str, info: _dict[_str, object]) -> ActionResult[Literal["ok", "no_power", "invalid_type"]]:
         """Publish up to **6** labelled rows for an event. A different event replaces this station's current board. The board displays supplied values without validating them. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def clear(self) -> ActionResult[Literal["ok", "no_power"]]:
@@ -1076,19 +1698,19 @@ class WeatherStrike:
 
 class Zone:
     """WeatherReport.coverage() and WeatherEventForecast.corridor()"""
-    def intersect(self, other: Any) -> Zone:
+    def intersect(self, other: Zone) -> Zone:
         """Keep only the geometry shared by both zones."""
         ...
-    def union(self, other: Any) -> Zone:
+    def union(self, other: Zone) -> Zone:
         """Keep everything covered by either zone."""
         ...
-    def subtract(self, other: Any) -> Zone:
+    def subtract(self, other: Zone) -> Zone:
         """Remove the other zone's geometry from this zone."""
         ...
-    def diff(self, other: Any) -> Zone:
+    def diff(self, other: Zone) -> Zone:
         """Keep geometry present in only one of the two zones."""
         ...
-    def center(self) -> _tuple[_float, _float] | None:
+    def center(self) -> _list[_float] | None:
         """Centroid as `[x, y]` in m, or `None` for an empty zone. This describes visible storm geometry, not its hidden aftermath."""
         ...
     def area(self) -> _float:
@@ -1197,10 +1819,10 @@ class Pipe:
     def is_complete(self) -> _bool:
         """Boolean: `True` once the Constructor has finished laying the pipe and flow can run. Live read."""
         ...
-    def length(self) -> _float:
+    def length(self) -> _int:
         """Total length of the pipe in meters, summed over every H/V segment."""
         ...
-    def laying_head(self) -> _tuple[_float, _float] | None:
+    def laying_head(self) -> _list[_int] | None:
         """`[x, y]` coordinates of the current laying head while incomplete, or `None` once complete. Live read."""
         ...
     def flow_rate(self) -> _float:
@@ -1216,18 +1838,18 @@ class Order:
     name: _str
     requires: _dict[_str, _int]
     shipped: _dict[_str, _int]
-    reward_credits: _float
+    reward_credits: _int
     reward_kind: Literal["recipe", "tech"] | None
     reward_label: _str | None
     status: Literal["upcoming", "active", "completed"]
     kind: Literal["campaign", "weekly"]
-    expires_day: _float | None
+    expires_day: _int | None
     contractor_id: Literal["helios_orbital", "spire_research", "vestibule_logistics"] | None
     contractor_name: _str | None
 
 class BroadcastInfo:
     """comms.latest_info(channel); comms.wait_broadcast(channel).broadcast after status == \"ok\""""
-    value: Any
+    value: JsonValue
     sender: _str | None
     age_seconds: _float | None
 
@@ -1236,16 +1858,16 @@ class CommsMessage:
     id: _int
     sender: _str
     tick: _int
-    value: Any
+    value: JsonValue
 
 class ScriptCommand:
     """self.peek_command() / self.next_command().command after status == \"ok\""""
     id: _str
     name: _str
-    args: _dict[_str, Any]
+    args: _dict[_str, JsonValue]
     source: Literal["editor", "script", "signal", "system"]
     created_at: _float
-    tick: _float | None
+    tick: _int | None
 
 class Recipe:
     """list_recipes() / find_recipe() on Smelter, Fabricator, Feed Maker, Refiner, and Fuel Assembler"""
@@ -1279,8 +1901,8 @@ class Bounds:
 
 class PointOfInterest:
     """nocturna.points_of_interest()"""
-    x: _float
-    y: _float
+    x: _int
+    y: _int
     scanned: _bool
     kind: Literal["unknown", "mineral", "biomass", "thermal", "water", "oil", "exotic", "inert"]
 
@@ -1299,24 +1921,24 @@ class BioCasterRecipe:
     fragment_id: Literal["gw_jaw_fang", "vc_walking_leg", "oc_ink_sac", "bw_hindlimb", "vd_photophore", "mh_chitin_node", "hs_abdomen_segment", "ms_abdomen_sclerite", "hc_beak", "ma_chitinous_seta", "gm_abdominal_sheath", "fs_oral_tegmen", "sd_tail_barb", "ce_great_appendage", "st_beak", "vm_tail_barb"]
     tier: _int
     materials: _dict[_str, _int]
-    temperature_range: _tuple[_float, _float]
+    temperature_range: _list[_float]
 
 class Specimen:
     """bio_collector.cargo / bio_lab.specimen"""
-    coords: _tuple[_float, _float]
+    coords: _list[_float]
     distance: _float
     stage: Literal["collected", "analyzed"]
     fragment_id: Literal["gw_cranial_plate", "gw_caudal_fin", "gw_cardiac_node", "gw_jaw_fang", "gw_spinal_vertebra", "vc_dorsal_carapace", "vc_mandible_claw", "vc_antenna_cluster", "vc_walking_leg", "vc_eye_stalk", "oc_cranium", "oc_tentacle_arm", "oc_chitin_beak", "oc_ink_sac", "oc_lens_eye", "bw_skull", "bw_foreclaw", "bw_ribcage", "bw_hindlimb", "bw_tail_spike", "vd_bell", "vd_nematocyst", "vd_neural_mesh", "vd_photophore", "vd_tendril", "mh_fruiting_body", "mh_spore_pod", "mh_mycelium_root", "mh_chitin_node", "mh_stigmatic_disc", "hs_mandible", "hs_wing_membrane", "hs_thorax_plate", "hs_abdomen_segment", "hs_compound_eye", "ms_chelicera", "ms_leg_tarsus", "ms_pedipalp", "ms_abdomen_sclerite", "ms_eye_cluster", "hc_aperture_lip", "hc_shell_whorl", "hc_septum_plate", "hc_beak", "hc_tentacle_crown", "ma_cranial_papilla", "ma_cuticle_molt", "ma_ganglion_node", "ma_chitinous_seta", "ma_luminous_ring", "gm_compound_eye", "gm_folded_wing", "gm_raptorial_claw", "gm_abdominal_sheath", "gm_antennal_whip", "fs_calyx_plate", "fs_arm_segment", "fs_stalk_columnal", "fs_oral_tegmen", "fs_holdfast_rootlet", "sd_cranial_crest", "sd_wing_membrane", "sd_obsidian_scale", "sd_tail_barb", "sd_talon", "ce_stalked_eye", "ce_swimmeret_lobe", "ce_mouth_disc", "ce_great_appendage", "ce_cephalic_photophore", "st_scute_plate", "st_plastron_shard", "st_limb_claw", "st_beak", "st_carapace_neural", "vm_cephalic_horn", "vm_wing_sheet", "vm_gill_filament", "vm_tail_barb", "vm_ventral_photophore"] | None
     name: _str | None
     rarity: Literal["common", "uncommon", "rare", "legendary"] | None
-    recipe: _dict[_str, Any] | None
+    recipe: _dict[_str, _int] | None
     production_tier: _int | None
-    glow: _tuple[_float, _float, _float] | None
+    glow: _list[_int] | None
     genes: _list[_str]
 
 class FragmentLocation:
     """bio_collector.scan()"""
-    coords: _tuple[_float, _float]
+    coords: _list[_float]
     distance: _float
     cataloged: _bool
     fragment_id: Literal["gw_cranial_plate", "gw_caudal_fin", "gw_cardiac_node", "gw_jaw_fang", "gw_spinal_vertebra", "vc_dorsal_carapace", "vc_mandible_claw", "vc_antenna_cluster", "vc_walking_leg", "vc_eye_stalk", "oc_cranium", "oc_tentacle_arm", "oc_chitin_beak", "oc_ink_sac", "oc_lens_eye", "bw_skull", "bw_foreclaw", "bw_ribcage", "bw_hindlimb", "bw_tail_spike", "vd_bell", "vd_nematocyst", "vd_neural_mesh", "vd_photophore", "vd_tendril", "mh_fruiting_body", "mh_spore_pod", "mh_mycelium_root", "mh_chitin_node", "mh_stigmatic_disc", "hs_mandible", "hs_wing_membrane", "hs_thorax_plate", "hs_abdomen_segment", "hs_compound_eye", "ms_chelicera", "ms_leg_tarsus", "ms_pedipalp", "ms_abdomen_sclerite", "ms_eye_cluster", "hc_aperture_lip", "hc_shell_whorl", "hc_septum_plate", "hc_beak", "hc_tentacle_crown", "ma_cranial_papilla", "ma_cuticle_molt", "ma_ganglion_node", "ma_chitinous_seta", "ma_luminous_ring", "gm_compound_eye", "gm_folded_wing", "gm_raptorial_claw", "gm_abdominal_sheath", "gm_antennal_whip", "fs_calyx_plate", "fs_arm_segment", "fs_stalk_columnal", "fs_oral_tegmen", "fs_holdfast_rootlet", "sd_cranial_crest", "sd_wing_membrane", "sd_obsidian_scale", "sd_tail_barb", "sd_talon", "ce_stalked_eye", "ce_swimmeret_lobe", "ce_mouth_disc", "ce_great_appendage", "ce_cephalic_photophore", "st_scute_plate", "st_plastron_shard", "st_limb_claw", "st_beak", "st_carapace_neural", "vm_cephalic_horn", "vm_wing_sheet", "vm_gill_filament", "vm_tail_barb", "vm_ventral_photophore"] | None
@@ -1328,7 +1950,7 @@ class CatalogedFragment:
     fragment_id: Literal["gw_cranial_plate", "gw_caudal_fin", "gw_cardiac_node", "gw_jaw_fang", "gw_spinal_vertebra", "vc_dorsal_carapace", "vc_mandible_claw", "vc_antenna_cluster", "vc_walking_leg", "vc_eye_stalk", "oc_cranium", "oc_tentacle_arm", "oc_chitin_beak", "oc_ink_sac", "oc_lens_eye", "bw_skull", "bw_foreclaw", "bw_ribcage", "bw_hindlimb", "bw_tail_spike", "vd_bell", "vd_nematocyst", "vd_neural_mesh", "vd_photophore", "vd_tendril", "mh_fruiting_body", "mh_spore_pod", "mh_mycelium_root", "mh_chitin_node", "mh_stigmatic_disc", "hs_mandible", "hs_wing_membrane", "hs_thorax_plate", "hs_abdomen_segment", "hs_compound_eye", "ms_chelicera", "ms_leg_tarsus", "ms_pedipalp", "ms_abdomen_sclerite", "ms_eye_cluster", "hc_aperture_lip", "hc_shell_whorl", "hc_septum_plate", "hc_beak", "hc_tentacle_crown", "ma_cranial_papilla", "ma_cuticle_molt", "ma_ganglion_node", "ma_chitinous_seta", "ma_luminous_ring", "gm_compound_eye", "gm_folded_wing", "gm_raptorial_claw", "gm_abdominal_sheath", "gm_antennal_whip", "fs_calyx_plate", "fs_arm_segment", "fs_stalk_columnal", "fs_oral_tegmen", "fs_holdfast_rootlet", "sd_cranial_crest", "sd_wing_membrane", "sd_obsidian_scale", "sd_tail_barb", "sd_talon", "ce_stalked_eye", "ce_swimmeret_lobe", "ce_mouth_disc", "ce_great_appendage", "ce_cephalic_photophore", "st_scute_plate", "st_plastron_shard", "st_limb_claw", "st_beak", "st_carapace_neural", "vm_cephalic_horn", "vm_wing_sheet", "vm_gill_filament", "vm_tail_barb", "vm_ventral_photophore"]
     name: _str
     biome: Literal["frozen", "coastal", "geothermal", "volcanic", "deep"]
-    coords: _tuple[_float, _float]
+    coords: _list[_float]
     rarity: Literal["common", "uncommon", "rare", "legendary"]
 
 class CatalogedCreature:
@@ -1347,8 +1969,8 @@ class AnalyzeInfo:
     fragment_id: Literal["gw_cranial_plate", "gw_caudal_fin", "gw_cardiac_node", "gw_jaw_fang", "gw_spinal_vertebra", "vc_dorsal_carapace", "vc_mandible_claw", "vc_antenna_cluster", "vc_walking_leg", "vc_eye_stalk", "oc_cranium", "oc_tentacle_arm", "oc_chitin_beak", "oc_ink_sac", "oc_lens_eye", "bw_skull", "bw_foreclaw", "bw_ribcage", "bw_hindlimb", "bw_tail_spike", "vd_bell", "vd_nematocyst", "vd_neural_mesh", "vd_photophore", "vd_tendril", "mh_fruiting_body", "mh_spore_pod", "mh_mycelium_root", "mh_chitin_node", "mh_stigmatic_disc", "hs_mandible", "hs_wing_membrane", "hs_thorax_plate", "hs_abdomen_segment", "hs_compound_eye", "ms_chelicera", "ms_leg_tarsus", "ms_pedipalp", "ms_abdomen_sclerite", "ms_eye_cluster", "hc_aperture_lip", "hc_shell_whorl", "hc_septum_plate", "hc_beak", "hc_tentacle_crown", "ma_cranial_papilla", "ma_cuticle_molt", "ma_ganglion_node", "ma_chitinous_seta", "ma_luminous_ring", "gm_compound_eye", "gm_folded_wing", "gm_raptorial_claw", "gm_abdominal_sheath", "gm_antennal_whip", "fs_calyx_plate", "fs_arm_segment", "fs_stalk_columnal", "fs_oral_tegmen", "fs_holdfast_rootlet", "sd_cranial_crest", "sd_wing_membrane", "sd_obsidian_scale", "sd_tail_barb", "sd_talon", "ce_stalked_eye", "ce_swimmeret_lobe", "ce_mouth_disc", "ce_great_appendage", "ce_cephalic_photophore", "st_scute_plate", "st_plastron_shard", "st_limb_claw", "st_beak", "st_carapace_neural", "vm_cephalic_horn", "vm_wing_sheet", "vm_gill_filament", "vm_tail_barb", "vm_ventral_photophore"]
     name: _str
     rarity: Literal["common", "uncommon", "rare", "legendary"]
-    required_recipe: _dict[_str, Any]
-    coords: _tuple[_float, _float]
+    required_recipe: _dict[_str, _int]
+    coords: _list[_float]
     distance: _float
 
 class AnalyzeResult(Generic[_StatusT]):
@@ -1362,20 +1984,20 @@ class BioOrder:
     id: _str
     name: _str
     biome: Literal["frozen", "coastal", "geothermal", "volcanic", "deep"]
-    requires: _dict[_str, Any]
-    reward: _float
+    requires: _dict[_str, _int]
+    reward: _int
     status: Literal["available", "active", "complete"]
-    delivered: _dict[_str, Any]
+    delivered: _dict[_str, _int]
     in_transit: _dict[_str, _int]
     percent: _float
-    target_glow: _tuple[_float, _float, _float] | None
+    target_glow: _list[_int] | None
     required_genes: _dict[_str, _list[_str]] | None
 
 class ChamberSample:
     """bio_luminizer.chamber"""
     fragment_id: Literal["gw_caudal_fin", "vc_mandible_claw", "oc_tentacle_arm", "bw_foreclaw", "vd_nematocyst", "mh_spore_pod", "hs_wing_membrane", "ms_leg_tarsus", "hc_shell_whorl", "ma_cuticle_molt", "gm_folded_wing", "fs_arm_segment", "sd_wing_membrane", "ce_swimmeret_lobe", "st_plastron_shard", "vm_wing_sheet"]
     name: _str
-    glow: _tuple[_float, _float, _float]
+    glow: _list[_int]
 
 class ChamberFragment:
     """dna_sequencer.chamber"""
@@ -1393,14 +2015,14 @@ class Contract:
     """self.contract"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
 
 class RelayHackContract(Contract):
     """self.contract (relay_hack)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     lock: RelayLock
 
@@ -1416,7 +2038,7 @@ class ThreeEchoesContract(Contract):
     """self.contract (three_echoes)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     broadcast: ThreeEchoesBroadcast
 
@@ -1430,7 +2052,7 @@ class ColdBootContract(Contract):
     """self.contract (cold_boot)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     program: _list[_int]
 
@@ -1438,7 +2060,7 @@ class DriftingSignalContract(Contract):
     """self.contract (drifting_signal)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     device: SlabDevice
 
@@ -1450,7 +2072,7 @@ class XenogeneticsContract(Contract):
     """self.contract (xenogenetics)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     earth_ref: _list[_str]
     samples: _list[_str]
@@ -1459,7 +2081,7 @@ class CorruptedArchiveContract(Contract):
     """self.contract (corrupted_archive)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     archive: Archive
 
@@ -1475,7 +2097,7 @@ class SealedVaultContract(Contract):
     """self.contract (sealed_vault)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     vault: Vault
 
@@ -1494,7 +2116,7 @@ class DataTabletContract(Contract):
     """self.contract (data_tablet)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     tablet: DataTablet
 
@@ -1510,7 +2132,7 @@ class TerminalBreachContract(Contract):
     """self.contract (terminal_breach)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     terminal: AlienTerminal
 
@@ -1525,7 +2147,7 @@ class BuriedFiveContract(Contract):
     """self.contract (buried_five)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     transmission: _list[_str]
     analyzer: Analyzer
@@ -1533,7 +2155,7 @@ class BuriedFiveContract(Contract):
 
 class Analyzer:
     """.analyzer"""
-    def read(self, group: _list[Any]) -> _str:
+    def read(self, group: _list[_str]) -> _str:
         """Read a list of exactly five string tokens and return the single token they were expanded from. A non-list argument or non-string element raises `TypeError`; the wrong length or an unrecognized group raises `ValueError`."""
         ...
 
@@ -1541,7 +2163,7 @@ class TheLoomContract(Contract):
     """self.contract (the_loom)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     loom: Loom
     record: _str
@@ -1556,7 +2178,7 @@ class CrosstalkContract(Contract):
     """self.contract (crosstalk)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     input_x: _str
     input_y: _str
@@ -1566,7 +2188,7 @@ class BeatTheSystemContract(Contract):
     """self.contract (beat_the_system)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     arbiter: Arbiter
 
@@ -1601,9 +2223,9 @@ class CoreSampleContract(Contract):
     """self.contract (core_sample)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
-    cores: _list[Any]
+    cores: _list[_list[_int | None]]
     device: CoreDevice
 
 class CoreDevice:
@@ -1625,7 +2247,7 @@ class LatticeContract(Contract):
     """self.contract (lattice)"""
     id: Literal["relay_hack", "xenogenetics", "corrupted_archive", "sealed_vault", "data_tablet", "terminal_breach", "drifting_signal", "cold_boot", "three_echoes", "buried_five", "the_loom", "crosstalk", "beat_the_system", "core_sample", "lattice"]
     name: _str
-    reward: _float
+    reward: _int
     status: Literal["available", "completed"]
     grid: LatticeGrid
 
@@ -1669,102 +2291,139 @@ class Construction:
     required_item: _str | None
     required_count: _int
 
+class PanelMouse:
+    """`panel.mouse()` (panel scripts only)"""
+    x: _float
+    y: _float
+    over: _bool
+    pressed: _bool
+    released: _bool
+
+class PanelClick:
+    """`panel.clicks()` (panel scripts only)"""
+    x: _float
+    y: _float
+
+class PanelKey:
+    """`panel.keys()` (panel scripts only)"""
+    key: _str
+    ctrl: _bool
+    shift: _bool
+    alt: _bool
+    meta: _bool
+
+class PanelBounds:
+    """`panel.last_bounds()` (panel scripts only)"""
+    x: _float
+    y: _float
+    w: _float
+    h: _float
+
+class PanelSize:
+    """`panel.measure_text()` (panel scripts only)"""
+    w: _float
+    h: _float
+
 class Panel:
     """panel (panel scripts only). Create one on the **Control Room** page; see `custom_panels`"""
-    def card(self, x: _float, y: _float, w: _float, h: _float, title: _str = ...) -> ActionResult[Literal["ok"]]:
+    def card(self, x: _float, y: _float, w: _float, h: _float, title: _str = ...) -> None:
         """Bordered subsection with optional title bar. Use to group related content visually, mirrors the dashboard's card aesthetic.
 
         `preview
         card(8, 8, 264, 64, \"Section\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def divider(self, x1: _float, y1: _float, x2: _float, y2: _float) -> ActionResult[Literal["ok"]]:
+    def divider(self, x1: _float, y1: _float, x2: _float, y2: _float) -> None:
         """Horizontal or vertical separator line in the muted border color. Use to break a panel into visual zones.
 
         `preview
         divider(10, 40, 270, 40)
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def label(self, x: _float, y: _float, text: _str, style: _str = ...) -> ActionResult[Literal["ok"]]:
+    def label(self, x: _float, y: _float, text: _str, style: _str = ..., color: _str = ...) -> None:
         """Semantically styled text. `style` accepts `\"title\"` (bright, bold), `\"caption\"` (muted, uppercase), `\"muted\"` (secondary), `\"value\"` (numeric readout). Defaults to `\"title\"`. Use instead of `draw_text` when you want the dashboard's text hierarchy applied automatically.
 
         `preview
         label(10, 30, \"OXYGEN\", \"caption\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def status_dot(self, x: _float, y: _float, r: _float, status: _str) -> ActionResult[Literal["ok"]]:
-        """Colored disc resolved from a status string. Recognized values: `\"running\"` (green), `\"paused\"` (warning), `\"error\"` (error red), `\"idle\"` (muted). Renders with a subtle outer glow ring. Useful for per-row indicators in machine lists.
+    def status_dot(self, x: _float, y: _float, r: _float, status: _str) -> None:
+        """Colored disc resolved from a status string. Recognized values: `\"running\"` (green), `\"paused\"` (warning), `\"error\"` (error red), `\"idle\"` (muted). It also takes any color a `color` parameter takes, such as `\"success\"` or `\"#ff8800\"`. Renders with a subtle outer glow ring. Useful for per-row indicators in machine lists.
 
         `preview
         status_dot(0, 0, 5, \"running\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def toggle(self, x: _float, y: _float, on: _bool, label: _str = ...) -> ActionResult[Literal["ok"]]:
+    def toggle(self, x: _float, y: _float, on: _bool, label: _str = ..., size: _float = ...) -> None:
         """Green/grey power-toggle pill matching the dashboard's machine on/off control. This widget only displays the `on` value you pass in; use `panel.switch(...)` for a clickable control.
 
         `preview
         toggle(10, 12, true, \"powered\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def pill(self, x: _float, y: _float, text: _str, color: _str = ...) -> ActionResult[Literal["ok"]]:
+    def pill(self, x: _float, y: _float, text: _str, color: _str = ..., size: _float = ...) -> None:
         """Rounded badge with text, achievement-style. Color accepts theme tokens (`\"accent\"`, `\"success\"`, `\"warning\"`, `\"error\"`, `\"text-muted\"`) or hex. Use for status labels or category tags.
 
         `preview
         pill(10, 22, \"earned\", \"success\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def counter(self, x: _float, y: _float, value: Any, label: _str = ..., size: _float = ...) -> ActionResult[Literal["ok"]]:
+    def counter(self, x: _float, y: _float, value: object, label: _str = ..., size: _float = ..., color: _str = ...) -> None:
         """Big-number stat block, large value on top, small uppercase label below. Use for headline numbers (credits, day count, ingot inventory). `size` defaults to **24**.
 
         `preview
         counter(16, 38, 87, \"shipped\", 26)
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def progress_bar(self, x: _float, y: _float, w: _float, h: _float, fraction: _float, color: _str = ...) -> ActionResult[Literal["ok"]]:
+    def progress_bar(self, x: _float, y: _float, w: _float, h: _float, fraction: _float, color: _str = ...) -> None:
         """Horizontal fill bar with track + filled accent. `fraction` clamps to **0-1**. Color defaults to `\"accent\"`; use `\"success\"`, `\"warning\"`, `\"error\"` for traffic-light cues.
 
         `preview
         progress_bar(0.72, \"success\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def vertical_bar(self, x: _float, y: _float, w: _float, h: _float, fraction: _float, color: _str = ...) -> ActionResult[Literal["ok"]]:
+    def vertical_bar(self, x: _float, y: _float, w: _float, h: _float, fraction: _float, color: _str = ...) -> None:
         """Vertical fill bar, fills from the bottom up. Same `fraction` and color rules as `progress_bar`. Use when the panel layout favors verticality (multi-tank stacks, atmospheric stacks).
 
         `preview
         vertical_bar(110, 10, 30, 60, 0.6)
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def bar_chart(self, x: _float, y: _float, w: _float, h: _float, values: Any, max: _float = ..., labels: Any = ...) -> ActionResult[Literal["ok"]]:
-        """Multi-bar comparison chart, themed alternating colors, optional labels under each bar. `max` is optional, omit to auto-scale to the largest value.
+    def bar_chart(self, x: _float, y: _float, w: _float, h: _float, values: _list[_float], max: _float = ..., labels: _list[_str] = ..., color: _str = ...) -> None:
+        """Multi-bar comparison chart, themed alternating colors, optional labels under each bar. `max` is optional, omit to auto-scale to the largest value. Pass `color` to paint every bar one color instead.
 
         `preview
         bar_chart(0, 0, 0, 0, [42, 80, 26, 61, 95], 100)
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def gauge(self, x: _float, y: _float, radius: _float, fraction: _float, label: _str = ...) -> ActionResult[Literal["ok"]]:
-        """Three-quarter-circle dial with arc fill. `fraction` clamps to **0-1**, sweeping **270°** from bottom-left around to bottom-right. Optional center label sits in the middle (typically the value as text).
+    def gauge(self, x: _float, y: _float, radius: _float, fraction: _float, label: _str = ..., color: _str = ...) -> None:
+        """Three-quarter-circle dial with arc fill. `fraction` clamps to **0-1**, sweeping **270°** from bottom-left around to bottom-right. Optional center label sits in the middle (typically the value as text). The arc's color defaults to `\"accent\"`; use `\"success\"`, `\"warning\"`, `\"error\"` for traffic-light cues.
 
         `preview
         gauge(140, 50, 32, 0.62, \"62%\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def spark_line(self, x: _float, y: _float, w: _float, h: _float, values: Any) -> ActionResult[Literal["ok"]]:
-        """Compact trend line drawn from a numeric series. Player accumulates values into a list and pushes the most recent on each tick, the widget normalizes to the series' min/max range and fills a subtle area below the line. Empty / single-value series no-op.
+    def spark_line(self, x: _float, y: _float, w: _float, h: _float, values: _list[_float], color: _str = ..., axis: _bool = ...) -> None:
+        """Compact trend line drawn from a numeric series. Player accumulates values into a list and pushes the most recent on each tick, the widget normalizes to the series' min/max range and fills a subtle area below the line. The line and its shading default to `\"accent\"`; pass `color` to change both. Pass `axis` as `True` to label the top, middle and bottom of the scale at the left edge; the line moves over to make room. Empty / single-value series no-op.
 
         `preview
         spark_line(0, 0, 0, 0)
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
+
+        `preview
+        spark_line(0, 0, 0, 0, None, \"accent\", True)
+        `
         """
         ...
     def button(self, key: _str, x: _float, y: _float, w: _float = ..., h: _float = ..., label: _str = ...) -> _bool:
@@ -1775,7 +2434,7 @@ class Panel:
         `
         """
         ...
-    def switch(self, key: _str, x: _float, y: _float, default_on: _bool = ..., label: _str = ...) -> _bool:
+    def switch(self, key: _str, x: _float, y: _float, default_on: _bool = ..., label: _str = ..., size: _float = ...) -> _bool:
         """An interactive on/off switch, the player clicks it to flip. Pass a unique `key`; `default_on` sets the starting state the first time the card runs. Returns the current boolean every tick, and the flip persists in the card's state across reloads. Unlike the display `toggle` (which only shows a state you pass in), this one is clickable: `auto = panel.switch(\"auto_recover\", 165, 128, True)`.
 
         `preview
@@ -1783,7 +2442,7 @@ class Panel:
         `
         """
         ...
-    def slider(self, key: _str, x: _float, y: _float, w: _float, default: _float = ..., label: _str = ...) -> _float:
+    def slider(self, key: _str, x: _float, y: _float, w: _float, default: _float = ..., label: _str = ..., size: _float = ...) -> _float:
         """A horizontal slider the player clicks to set a value. Pass a unique `key`; `default` (**0-1**) sets the starting value. Returns the current value as a **0-1** number every tick, persisted in the card's state. Use it for thresholds the player tunes live, a buy-trigger level, a throttle target.
 
         `preview
@@ -1791,12 +2450,132 @@ class Panel:
         `
         """
         ...
-    def draw_text(self, x: _float, y: _float, text: _str, size: _float = ..., color: _str = ..., wrap: _float = ...) -> ActionResult[Literal["ok"]]:
+    def checkbox(self, key: _str, x: _float, y: _float, default_on: _bool = ..., label: _str = ..., size: _float = ...) -> _bool:
+        """A check box the player clicks. Same stored state as `panel.switch(...)`, so `set_switch` drives either one; the difference is the shape. Pass a unique `key`; `default_on` sets the starting state the first time the card runs.
+
+        `preview
+        checkbox(10, 12, true, \"night mode\")
+        `
+        """
+        ...
+    def radio_group(self, key: _str, x: _float, y: _float, options: _list[_str], default: _str | _int = ..., row_height: _float = ...) -> _str | None:
+        """One choice out of several, drawn one option per row. The whole group shares a single `key`, which is why five options cost the card one stored value instead of five: building radio buttons out of five separate switches is what leaves five keys behind. Returns the selected option's text every tick, and `None` while `options` is empty. `default` accepts the option text or its row number.
+
+        `preview
+        radio_group(10, 6, [\"ore\", \"ingots\", \"both\"], 1)
+        `
+        """
+        ...
+    def combo(self, key: _str, x: _float, y: _float, w: _float, options: _list[_str], default: _str | _int = ..., label: _str = ..., size: _float = ...) -> _str | None:
+        """A dropdown. Clicking it opens the game's own menu over the card, so the choices stay readable at any card size and never get clipped by the panel edge. Returns the selected option's text every tick, and `None` while `options` is empty. `default` accepts the option text or its row number.
+
+        `preview
+        combo(10, 12, 150, \"iron_ingot\", \"recipe\")
+        `
+        """
+        ...
+    def text_field(self, key: _str, x: _float, y: _float, w: _float, default: _str = ..., placeholder: _str = ..., label: _str = ..., size: _float = ...) -> _str:
+        """A one-line text box. Clicking it opens a real text editor over the field, so selection, copy, paste and your keyboard's own input method all work; the card shows the committed value. Returns the current text every tick. Up to 1024 characters, saved with the card.
+
+        `preview
+        text_field(10, 12, 180, \"outpost_north\", \"name...\")
+        `
+        """
+        ...
+    def list(self, key: _str, x: _float, y: _float, w: _float, h: _float, items: _list[_str], row_height: _float = ...) -> _str | None:
+        """A scrolling list of rows the player can pick from. Rows past the box height scroll with the wheel; the selected row is stored with the card and returned every tick, or `None` while `items` is empty. Use it where a card has more entries than space, which is most fleet and inventory boards.
+
+        `preview
+        list(10, 6, 160, 68, [\"rover_1\", \"pioneer_1\", \"drone_1\", \"drone_2\"], 0)
+        `
+        """
+        ...
+    def icon_button(self, key: _str, x: _float, y: _float, size: _float, item_id: _str) -> _bool:
+        """A square button whose label is an item icon. Returns `True` the single tick it is pressed, exactly like `panel.button(...)`. Use it for a toolbar strip where a word would not fit. `panel.icon_ids()` lists every id it can draw.
+
+        `preview
+        icon_button(10, 8, 44, \"iron_ingot\")
+        `
+        """
+        ...
+    def set_switch(self, key: _str, on: _bool) -> None:
+        """Force a switch or check box to a state from code, instead of waiting for the player to click it. Use it to build a radio group out of switches, to reset a cockpit to a known layout, or to reflect a state the card read from the world.
+
+        `
+        if not power.is_online():
+          panel.set_switch(\"auto_dispatch\", False)
+        `
+        """
+        ...
+    def set_slider(self, key: _str, value: _float) -> None:
+        """Force a slider to a value (0-1) from code."""
+        ...
+    def set_selected(self, key: _str, option: _str | _int) -> None:
+        """Force a radio group, combo box, or list to a choice from code. Accepts the option's text or its row number."""
+        ...
+    def set_text(self, key: _str, text: _str) -> None:
+        """Force a text field's contents from code."""
+        ...
+    def get_switch(self, key: _str) -> _bool | None:
+        """The stored state of a switch or check box, read without drawing it. Use it for a control on a page the card is not showing right now. `None` while the key has no stored state."""
+        ...
+    def get_slider(self, key: _str) -> _float | None:
+        """The stored value (0-1) of a slider, read without drawing it. `None` while the key has no stored value."""
+        ...
+    def get_selected(self, key: _str) -> _int | None:
+        """The stored row number of a radio group, combo box, or list, read without drawing it. Look it up in the same options list you draw the control with. `None` while the key has no stored choice."""
+        ...
+    def get_text(self, key: _str) -> _str | None:
+        """The stored text of a text field, read without drawing it. `None` while the key has no stored text."""
+        ...
+    def forget(self, key: _str) -> None:
+        """Drop one stored widget value. The next paint of that widget starts from its declared default again, which is how a card resets one control without disturbing the others."""
+        ...
+    def clear_inputs(self) -> None:
+        """Drop every stored widget value on this card. Widget keys are never swept automatically, because a card that only paints one page at a time would lose the other page's state; this is the deliberate reset. A card is limited to 512 stored keys, and a key built from changing data (a tick count, a name that varies) is what reaches that limit."""
+        ...
+    def mouse(self) -> PanelMouse:
+        """Where the cursor is on this card, in the same coordinates you draw in. `over` is `False` while the cursor is elsewhere. The sample is taken once per tick, so a highlight drawn from it follows the cursor about a frame behind. `pressed` and `released` say the left button went down on this card, or back up, since your previous call. Each is handed out once, so read the mouse once per frame. Together they let a card drag things.
+
+        `
+        m = panel.mouse()
+        if m.over and m.x < panel.width() / 2:
+          panel.fill_rect(0, 0, panel.width() / 2, panel.height(), \"bg-surface\")
+        `
+        """
+        ...
+    def clicks(self) -> _list[PanelClick]:
+        """Every click since the last time you asked that did not land on a widget, oldest first. This is what lets a card hit-test its own drawing: a map, a chart, a seating plan. Each click is handed out once. Up to 32 are kept between reads.
+
+        `
+        for c in panel.clicks():
+          if c.x > 250:
+            print(\"right half\", c.x, c.y)
+        `
+        """
+        ...
+    def capture_keys(self) -> None:
+        """Ask for the keyboard. After this, clicking the card gives it focus and its keystrokes go to `panel.keys()` instead of the game's own shortcuts; Escape or clicking elsewhere hands the keyboard back. Call it once above your loop. A card that never calls it can never take a key."""
+        ...
+    def keys(self) -> _list[PanelKey]:
+        """Every key pressed since the last time you asked, oldest first, for a card that called `panel.capture_keys()` and holds focus. Each press is handed out once. Up to 32 are kept between reads.
+
+        `
+        panel.capture_keys()
+        while True:
+          panel.clear()
+          for k in panel.keys():
+            if k.key == \"ArrowUp\":
+              cursor = cursor - 1
+        `
+        """
+        ...
+    def draw_text(self, x: _float, y: _float, text: _str, size: _float = ..., color: _str = ..., wrap: _float = ...) -> None:
         """Text rendered in monospace at the given size. Optional `wrap` (pixel width) enables greedy word-wrapping into a multi-line block, useful for log feeds and order briefings. Color accepts theme tokens or hex.
 
         `preview
         draw_text(10, 24, \"Hello, panel.\", 14, \"text-bright\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
     def icon_ids(self) -> _list[_str]:
@@ -1808,70 +2587,145 @@ class Panel:
         `
         """
         ...
-    def draw_icon(self, x: _float, y: _float, item_id: _str, size: _float = ...) -> ActionResult[Literal["ok"]]:
+    def draw_icon(self, x: _float, y: _float, item_id: _str, size: _float = ...) -> None:
         """Render any icon from the game's item catalog at the requested size (default **32** pixels). Item id is the same string you'd pass to `inventory` / `storage_bin` APIs (`\"iron_ore\"`, `\"iron_ingot\"`, `\"water\"`, etc.), plus things you never hold such as fluids and creatures. `panel.icon_ids()` returns the full list, and every item's own page lives under **Database** in this panel. Unknown ids no-op silently.
 
         `preview
         draw_icon()
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def draw_rect(self, x: _float, y: _float, w: _float, h: _float, color: _str = ...) -> ActionResult[Literal["ok"]]:
+    def draw_rect(self, x: _float, y: _float, w: _float, h: _float, color: _str = ..., width: _float = ...) -> None:
         """Outlined rectangle in the given color (defaults to `\"border\"`). Use for custom subsection borders or visual frames.
 
         `preview
         draw_rect(10, 10, 260, 60, \"accent\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def fill_rect(self, x: _float, y: _float, w: _float, h: _float, color: _str = ...) -> ActionResult[Literal["ok"]]:
+    def fill_rect(self, x: _float, y: _float, w: _float, h: _float, color: _str = ...) -> None:
         """Filled rectangle in the given color (defaults to `\"accent\"`). Use for backgrounds, progress fills, color blocks.
 
         `preview
         fill_rect(10, 10, 260, 60, \"success\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def draw_circle(self, x: _float, y: _float, r: _float, color: _str = ...) -> ActionResult[Literal["ok"]]:
+    def draw_circle(self, x: _float, y: _float, r: _float, color: _str = ..., width: _float = ...) -> None:
         """Outlined circle in the given color.
 
         `preview
         draw_circle(140, 40, 24, \"accent\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def fill_circle(self, x: _float, y: _float, r: _float, color: _str = ...) -> ActionResult[Literal["ok"]]:
+    def fill_circle(self, x: _float, y: _float, r: _float, color: _str = ...) -> None:
         """Filled disc in the given color.
 
         `preview
         fill_circle(140, 40, 24, \"warning\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def draw_line(self, x1: _float, y1: _float, x2: _float, y2: _float, color: _str = ...) -> ActionResult[Literal["ok"]]:
+    def draw_line(self, x1: _float, y1: _float, x2: _float, y2: _float, color: _str = ..., width: _float = ...) -> None:
         """Single straight line.
 
         `preview
         draw_line(10, 40, 270, 40, \"accent\")
-        ` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`.
+        `
         """
         ...
-    def clear(self) -> ActionResult[Literal["ok"]]:
-        """Wipe the panel canvas. Call at the top of every `while True:` loop iteration so old paint doesn't ghost behind new paint. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+    def draw_polygon(self, points: _list[_float], color: _str = ..., width: _float = ...) -> None:
+        """Outlined closed shape through a flat list of coordinates: `[x1, y1, x2, y2, ...]`. Needs at least two points. Up to 4096 points per call.
+
+        `preview
+        draw_polygon([40, 10, 120, 30, 100, 70, 30, 60], \"accent\")
+        `
+        """
         ...
-    def width(self) -> _float:
+    def fill_polygon(self, points: _list[_float], color: _str = ...) -> None:
+        """Filled closed shape through a flat list of coordinates. Same input as `draw_polygon`.
+
+        `preview
+        fill_polygon([40, 10, 120, 30, 100, 70, 30, 60], \"success\")
+        `
+        """
+        ...
+    def polyline(self, points: _list[_float], color: _str = ..., width: _float = ...) -> None:
+        """Open line through a flat list of coordinates, with an optional width. Use it for a path, a route, or a chart trace your own code computed.
+
+        `preview
+        polyline([10, 60, 60, 20, 110, 50, 160, 15, 210, 40], \"accent\", 2)
+        `
+        """
+        ...
+    def texture(self, key: _str, rows: _list[_str], palette: _dict[_str, _str | None]) -> None:
+        """Create a small picture for `draw_texture` to draw. `rows` is the picture, one string per row, and each character is looked up in `palette`, which maps it to a hex colour or to `None` for a transparent pixel. Every row is the same length, up to **128** by **128** pixels. Using the same key again replaces that texture. A card holds up to **32** textures and **131,072** pixels of them in total. Textures belong to the running script, so create them at the top, before your loop.
+
+        `
+        panel.texture(\"floor\", [
+          \"abab\",
+          \"baba\",
+        ], {\"a\": \"#1b2230\", \"b\": \"#26314a\"})
+        `
+        """
+        ...
+    def draw_texture(self, key: _str, x: _float, y: _float, w: _float = ..., h: _float = ...) -> None:
+        """Draw a texture made with `panel.texture()`. Without `w` and `h` it draws at its own size. With them it stretches and keeps its pixels sharp, so a small tile can fill the whole card.
+
+        `
+        panel.draw_texture(\"floor\", 0, 0, panel.width(), panel.height())
+        `
+        """
+        ...
+    def clip_rect(self, x: _float, y: _float, w: _float, h: _float) -> None:
+        """Confine every later drawing call to a rectangle, until `clear_clip()`. Use it to keep a scrolling or oversized drawing inside its box. A widget drawn under a clip takes clicks only where it shows, so one clipped out of sight takes none. Clips nest up to 16 deep; any left open are closed for you when the frame finishes.
+
+        `
+        panel.clip_rect(10, 10, 200, 80)
+        panel.draw_text(12, 30, long_line, 12)
+        panel.clear_clip()
+        `
+        """
+        ...
+    def clear_clip(self, all: _bool = ...) -> None:
+        """Close the innermost `clip_rect`, or every open one when passed `True`."""
+        ...
+    def clear(self) -> None:
+        """Wipe the panel canvas, and with it every widget's clickable area. Call at the top of every `while True:` loop iteration so old paint doesn't ghost behind new paint. Inside a `clip_rect` it wipes only the clipped area, and only the widgets it erased stop taking clicks."""
+        ...
+    def last_bounds(self) -> PanelBounds | None:
+        """The box the last widget you drew takes up, as `.x`, `.y`, `.w` and `.h`, with `.x` and `.y` at its top-left corner whichever point that widget is placed by. Use it to put the next widget after one whose size comes from its text, such as a `pill` or `draw_text`, without guessing its width. `None` until the card draws its first widget.
+
+        `
+        panel.pill(10, 10, \"online\", \"success\")
+        b = panel.last_bounds()
+        panel.pill(b.x + b.w + 6, 10, \"docked\")
+        `
+        """
+        ...
+    def measure_text(self, text: _str, size: _float = ..., wrap: _float = ...) -> PanelSize:
+        """The size `draw_text` would give this text, as `.w` and `.h`, without drawing it. Pass the same `size` and `wrap` you will draw with. Use it to right-align or center text before you paint it.
+
+        `
+        s = panel.measure_text(\"42 kWh\", 14)
+        panel.draw_text(panel.width() - s.w - 10, 20, \"42 kWh\", 14)
+        `
+        """
+        ...
+    def width(self) -> _int:
         """Current logical canvas width in pixels: **500** for a one-column card or **1000** for a two-column card. Use for ratio-based positioning."""
         ...
-    def height(self) -> _float:
+    def height(self) -> _int:
         """Current logical canvas height in pixels: **200** for a one-row card or **400** for a two-row card. Use for ratio-based positioning."""
         ...
 
 class generator:
     """calling a function containing `yield` · generator expressions"""
-    def send(self, value: Any) -> Any:
+    def send(self, value: object) -> Any:
         """Resume the generator and make `value` the result of its paused `yield`. Returns the next yielded value. Sending a non-`None` value before the first yield raises `TypeError`; completion raises `StopIteration`."""
         ...
-    def throw(self, exception: Any) -> Any:
+    def throw(self, exception: BaseException | _type) -> Any:
         """Raise an exception at the generator's paused `yield`. Returns the next value if the generator catches it and yields again; otherwise the exception propagates."""
         ...
     def close(self) -> None:
@@ -1893,7 +2747,7 @@ class Commander(Component):
     def get_name(self) -> _str:
         """Your commander name as a string. Set during initial character creation (or default). Use for personalized dashboard messages."""
         ...
-    def get_credits(self) -> _float:
+    def get_credits(self) -> _int:
         """Current credit balance. Changes when `shop.buy()` / `shop.sell()` run, Bio Exchanges pay out, contract transmissions succeed, and Orders complete. Use as a gate before expensive `shop.buy()` calls."""
         ...
 
@@ -1934,7 +2788,7 @@ class FleetComponent(Component):
     """Fleet: Read-only index of every owned mobile unit: ground vehicles and drones. Use it for dashboards, charging scripts, rescue thresholds, and dispatch decisions without hardcoding names. Fleet refs are snapshots; control still goes through the unit's own script or the relevant station API."""
     name: _str
     def vehicles(self) -> _list[VehicleRef]:
-        """All owned ground vehicles as `VehicleRef` snapshots. Each ref includes `.id`, `.name`, `.kind`, `.x`, `.y`, `.battery_level`, `.is_docked`, `.is_being_rescued`, and `.rescue_status`."""
+        """All owned ground vehicles as `VehicleRef` snapshots. Each ref includes `.id`, `.name`, `.kind`, `.x`, `.y`, `.battery_level`, `.is_docked`, `.current_station`, `.is_being_rescued`, and `.rescue_status`."""
         ...
     def drones(self) -> _list[DroneRef]:
         """All owned drones as `DroneRef` snapshots. Each ref includes `.id`, `.name`, `.kind`, `.engine`, `.current_station`, `.battery_level` or `.oil_level`, `.is_docked`, `.is_being_rescued`, and `.rescue_status`."""
@@ -1979,8 +2833,17 @@ class PowerControl(Component):
         ...
 
 class RunControl(Component):
-    """Run Control: Shared start/stop controller for machine scripts, the remote equivalent of a machine card's Run / Stop buttons. Use it to build a supervisor: one script that watches the base and shuts down another machine when it detects a fault, without parking that machine in a permanent `sleep` loop. This is the **run/stop axis**, separate from `power_control` (the breaker): `stop` ends a script and latches it off, while a power toggle only pauses and auto-resumes."""
+    """Run Control: Inspect machine scripts, discover and apply saved variants, and control execution remotely. Shared start/stop controller for machine scripts, the remote equivalent of a machine card's Run / Stop buttons. Use it to build a supervisor: one script that watches the base and shuts down another machine when it detects a fault, without parking that machine in a permanent `sleep` loop. This is the **run/stop axis**, separate from `power_control` (the breaker): `stop` ends a script and latches it off, while a power toggle only pauses and auto-resumes."""
     name: _str
+    def variants(self, machine_id: _str, slot: _int = ...) -> _list[ScriptVariantRef]:
+        """Lists the saved variants available to one machine script, including its private Main and compatible shared variants. The optional slot is a zero-based script slot and defaults to 0. Results are snapshots; applying an id loads the latest saved code under that id."""
+        ...
+    def status(self, machine_id: _str, slot: _int = ...) -> RunControlStatus:
+        """Inspect a machine script's execution state and assigned variant. The optional slot is a zero-based script slot and defaults to 0. Results are snapshots; call again for current information."""
+        ...
+    def apply_variant(self, machine_id: _str, variant_id: _str, slot: _int = ...) -> ActionResult[Literal["ok", "not_found", "no_script", "under_construction", "script_running", "script_paused", "editor_busy", "variant_not_found", "incompatible_variant", "source_too_large"]]:
+        """Apply a saved variant to one machine script without starting it. The target must be fully built and its script must be stopped, completed, or errored. Running and paused scripts must be stopped first. Pending editor changes and unresolved conflicts block replacement. Main is preserved when switching away from it. Shared variants copy their current code into the target; later edits elsewhere do not automatically update it. The optional slot defaults to 0. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        ...
     def is_running(self, machine_id: _str) -> _bool:
         """Returns `True` when the named machine has a script actively scheduled, including while it sits mid-`sleep` or mid-action. A paused, stopped, completed, or errored script reads `False`, as does an unknown machine id. Call it before `start`/`stop` to avoid redundant commands."""
         ...
@@ -2035,7 +2898,7 @@ class OxygenSensor(Component):
 class PressureSensor(Component):
     """Pressure Sensor: An atmospheric pressure probe that landed broken. Its readings come out scrambled until a script stabilizes the repair signal, after which it reads pressure directly."""
     name: _str
-    def get_value(self) -> _float:
+    def get_value(self) -> _int:
         """Current unstable repair reading as an integer. If the value is odd, add **1**; if it is even, use it unchanged. After repair, this method returns real atmospheric pressure in kPa."""
         ...
     def stabilize(self, value: _float) -> ActionResult[Literal["started", "already_repaired", "no_source", "already_testing"]]:
@@ -2078,7 +2941,7 @@ class WildlifeSensor(Component):
 class Clock(Component):
     """Clock: The ship's clock. It tracks the time of day, the day count, and the sun's position, everything a script needs for day-night timing and solar tracking."""
     name: _str
-    def get_time(self) -> _tuple[_int, _int, _int]:
+    def get_time(self) -> _list[_int]:
         """Current time as a **3-element list** `[hours, minutes, seconds]` in 24-hour format. Index with `t[0]`, `t[1]`, `t[2]`. Use for time-of-day branches or to wait for specific hours."""
         ...
     def get_day(self) -> _int:
@@ -2112,7 +2975,7 @@ class Gps(Component):
     def site_name(self) -> _str:
         """Returns the current outpost's display name. `\"Nocturna Base\"` for the home outpost (default, players can rename); `\"Outpost 1\"`, `\"Outpost 2\"`, ... for player-founded outposts."""
         ...
-    def coords(self) -> _tuple[_int, _int]:
+    def coords(self) -> _list[_int]:
         """Returns the current outpost's world coordinates as a **2-element list** `[x, y]`. The home outpost sits at `[0, 0]`; founded outposts carry the position the player chose in Plan mode."""
         ...
     def buildings_used(self) -> _int:
@@ -2133,7 +2996,7 @@ class OutpostComponent(Component):
     def name(self) -> _str:
         """Display name. The home outpost starts as `\"Nocturna Base\"`; player-founded outposts start as `\"Outpost N\"`. Freely renameable from the Computer System tab. Mutable, prefer `id` for stable references."""
         ...
-    def coords(self) -> _tuple[_int, _int]:
+    def coords(self) -> _list[_int]:
         """World coordinates as `[x, y]`. Home outpost sits at `[0, 0]`."""
         ...
     def buildings_used(self) -> _int:
@@ -2238,7 +3101,7 @@ class Harvester(Component):
     def get_heat(self) -> _float:
         """Exact current heat level (**0-100**), including fractional cooling between whole heat costs. Every `move()` adds heat, and an empty-sector `collect()` attempt also adds heat; passive cooling runs continuously as game time passes, including during movement and collection. Read before moving, if you're close to **100** and your planned route crosses empty cells (+7 heat each), stop and cool. Losing the route to `\"overheated\"` mid-sweep wastes hours."""
         ...
-    def get_max_heat(self) -> _float:
+    def get_max_heat(self) -> _int:
         """Maximum heat capacity, always **100**. Reaching this stalls all movement and collection until heat drops below the cap. Exposed as a method so scripts can reason about thresholds without hardcoding the number."""
         ...
     def is_overheated(self) -> _bool:
@@ -2254,7 +3117,7 @@ class Harvester(Component):
         """Transfer one species seed from home Inventory, from anywhere on the grid, into the Harvester's single held slot. Use the same seed id with `plant(seed)` after driving to an empty field cell. Loading fails while another item is held. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def plant(self, seed: _str) -> ActionResult[Literal["ok", "locked", "invalid_seed", "no_seed", "not_empty", "base_sector", "overheated", "moving", "busy"]]:
-        """Sow the physical seed currently in the Harvester's held slot into this empty cell. The argument must identify that held seed. The base sector is depot ground and refuses sowing. Sowing takes **0.5 hours**, and the seed and new crop appear only after the action finishes. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        """Sow the physical seed currently in the Harvester's held slot into this empty cell. The argument must identify that held seed. The base sector is depot ground and refuses sowing. Sowing takes **0.5 hours**; the held seed is consumed and the new crop appears only after the action finishes. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def deploy(self, kit: _str) -> ActionResult[Literal["ok", "locked", "no_kit", "not_empty", "invalid_kit", "overheated", "moving", "busy"]]:
         """Place a supported field-machine kit in the current empty cell, consuming one kit from Inventory. Installation takes **0.25 hours** and pauses the script. Call `deployables()` for the available kit ids. Seed Makers and other outpost buildings deploy through Inventory. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
@@ -2290,7 +3153,7 @@ class Harvester(Component):
         """Remove the plant in the current cell and place one matching seed in Inventory. Uprooting takes **0.5 hours** and pauses the script. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def undeploy(self) -> ActionResult[Literal["ok", "nothing", "not_empty", "script_present", "inventory_full", "overheated", "moving", "busy"]]:
-        """Remove the fixed field machine in the current cell and return its kit to Inventory. This is the only removal path for Grow Lamps, Sprinklers, Dispensers, and Crop Automators. Its stored items must be empty, the hardware refund must fit, and its attached script must not be running. Authored scripts remain available in Computer > Scripts without a host. Unfinished machine work and machine-only result history are discarded; queued Crop Automator jobs have not consumed their inputs. Removal takes **0.25 hours** and pauses the Harvester script. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        """Remove the fixed field machine in the current cell and return its kit to Inventory. This is the only removal path for Grow Lamps, Sprinklers, Dispensers, and Crop Automators. Its stored items must be empty, the hardware refund must fit, and its attached script must not be running. Authored scripts are stopped and kept in Computer > Scripts > Unassigned. Unfinished machine work and machine-only result history are discarded; queued Crop Automator jobs have not consumed their inputs. Removal takes **0.25 hours** and pauses the Harvester script. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def harvest(self) -> ActionResult[Literal["ok", "partial", "locked", "no_plant", "not_mature", "no_forage", "inventory_full", "overheated", "moving", "busy"]]:
         """Harvest the ready crop in the current cell. The action takes **0.5 hours** and transfers nothing until it finishes. On completion it moves as much of `cell.forage` as Inventory can hold: a crop larger than the free room leaves its remainder banked and the plant standing, so drain Inventory and harvest again to collect the rest. Only a fully collected crop is removed and frees the cell for another physical seed. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
@@ -2332,16 +3195,16 @@ class Inventory(Component):
     def count(self, item_id: _str) -> _int:
         """How many units of `item_id` are currently stored across all slots. Returns **0** if no slot holds that item. Storage Bins, Warehouses, and Lead Casks expose the same `count(item_id)` query, so one helper can search every store."""
         ...
-    def has_space(self, item_id: _str | None = ..., properties: Any = ...) -> _bool:
+    def has_space(self, item_id: _str | None = ..., properties: ItemProperties | None = ...) -> _bool:
         """Check whether Inventory has room. With no argument, `has_space()` is `True` when any slot is free. Passing an item id and properties checks that exact variant: a partial stack counts only when both match, while an empty slot accepts it. Pass `slot.properties` when checking an item with properties."""
         ...
-    def space_for(self, item_id: _str, properties: Any = ...) -> _int:
+    def space_for(self, item_id: _str, properties: ItemProperties | None = ...) -> _int:
         """How many units of one exact item identity fit **right now**: remaining room in partial stacks with the same id and properties, plus empty slots times the current stack size. **Bigger Stacks** raises that size from **10** to **20** for stackable items. Use `inventory.space_for(slot.id, slot.properties)` for a property-bearing item. Omitting properties checks the ordinary propertyless variant."""
         ...
-    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
+    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
         """Requires **Auto Feeders** research. Move up to whole-number `count` units of `item_id` from this storage endpoint to another Storage Bin, Warehouse, Large Warehouse, Lead Cask, or Inventory. Pass a storage building's display name or instance id, or `\"inventory\"`. Inventory participates only at **Nocturna Base**. The call waits for the physical store's feeder cycle to finish, and every participating storage building remains busy during that cycle. Exact item properties are preserved; optional `properties` and `property_match` select a variant. The calling script may run anywhere, but cargo never crosses outpost boundaries through this method. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
-    def drop(self, slot: _float) -> ItemResult[Literal["ok", "empty", "invalid_slot"]]:
+    def drop(self, slot: _int) -> ItemResult[Literal["ok", "empty", "invalid_slot"]]:
         """Remove **1** unit from a specific slot by its zero-based index. Valid indexes run from `0` through `get_size() - 1`, including slots added by Cargo Expansion. Dropped items are deleted, not returned to the world; use `shop.sell(item_id)` if you want credits. Fixed result contract: `ItemResult`; branch on `.status` and read `.message`. Payload fields: `.item_id`."""
         ...
     def drop_all(self, item_id: _str) -> CountResult[Literal["ok", "no_op"]]:
@@ -2369,7 +3232,7 @@ class Transmitter(Component):
     def get_info(self) -> TransmitterInfo:
         """Current connection status. Returns an object with `.connected` (boolean) and `.target` (connected planet id, or `\"none\"`). Use as a guard before `transmit()`: `if transmitter.get_info().connected: transmitter.transmit(...)`."""
         ...
-    def transmit(self, key: _str, value: Any) -> ActionResult[Literal["correct", "incorrect", "already_completed_correct", "already_completed_incorrect", "accepted", "rejected", "not_connected", "wrong_planet", "wrong_contract", "locked", "unknown_contract", "key_is_planet", "unknown_key"]]:
+    def transmit(self, key: _str, value: JsonValue) -> ActionResult[Literal["correct", "incorrect", "already_completed_correct", "already_completed_incorrect", "accepted", "rejected", "not_connected", "wrong_planet", "wrong_contract", "locked", "unknown_contract", "key_is_planet", "unknown_key"]]:
         """Send a named value to the connected planet with `transmitter.transmit(key, value)`. Opening sensor telemetry is unavailable until the power and sensor onboarding steps are complete and the uplink step is active. For sensor readings, use the name requested by Earth, such as `\"current_temperature\"`. For contract answers, use `self.contract.id`. The data arrives in the same tick. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
 
@@ -2392,19 +3255,25 @@ class Rover(Component):
     def rescue_status(self) -> Literal["none", "outbound", "charging", "returning"]:
         """Current rescue mission phase for this Rover: `\"none\"`, `\"outbound\"`, `\"charging\"`, or `\"returning\"`. `\"returning\"` means the rescue drone is going home and the Rover is free again."""
         ...
+    def dock(self, station: _str) -> ActionResult[Literal["ok", "station_not_found", "under_construction", "not_at_station"]]:
+        """Pick which Vehicle Charging Station this parked Rover docks at: `self.dock(\"charging_station_2\")`. Every station inside an outpost covers the whole outpost, so this chooses between them. Without a choice, the Rover docks at the eligible station with the shortest distance to its station position or its outpost's center; equal-distance ties are broken alphabetically by station id. The choice lasts until the Rover drives away or the station is removed. Moving to another station ends any charging job at the old one, and the new station charges the Rover once its own script calls `charge()`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        ...
+    def current_station(self) -> _str:
+        """Stable id of the Vehicle Charging Station this Rover is docked at, whether it picked it with `dock()` or docked there by default. Empty string while the Rover is moving or parked away from every station."""
+        ...
     def modules(self) -> _list[MountSlot]:
         """Inspect what's mounted. Returns a list of `MountSlot`, one per chassis slot. Each has `.index` (pass to `mount` / `unmount`), `.type` (which modules fit), `.module_id` (mounted id or `None`), `.internal_items` (empty on the Rover's function slots). Call this before `self.mount(...)` to find an empty slot and verify the slot type accepts the module you want. See `MountSlot`."""
         ...
-    def mount(self, slot_index: _float, item_id: _str) -> ActionResult[Literal["ok", "not_at_service_point", "locked", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "capability_already_mounted"]]:
-        """Request a hardware service order from Inventory into whole-number `slot_index`: `self.mount(0, \"nav_module\")`. Biological field modules are drone-only. The Rover must be inside a founded outpost service area. This dedicated-hardware exception does not make Inventory a freight endpoint there. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+    def mount(self, slot_index: _int, item_id: _str) -> ActionResult[Literal["ok", "not_at_service_point", "locked", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "capability_already_mounted"]]:
+        """Request a hardware service order from Inventory into whole-number `slot_index`: `self.mount(0, \"nav_module\")`. Biological field modules are drone-only. The Rover must be parked inside the service area of the home base or an operational founded outpost. This dedicated-hardware service does not make Inventory a freight endpoint at remote outposts. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def unmount(self, slot_index: _float) -> ActionResult[Literal["ok", "not_at_service_point", "slot_empty", "invalid_slot", "holder_not_empty", "inventory_full"]]:
-        """Request a hardware service order that returns the module at whole-number `slot_index` to Inventory: `self.unmount(0)`. The Rover must be inside a founded outpost service area, and container modules must be empty. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+    def unmount(self, slot_index: _int) -> ActionResult[Literal["ok", "not_at_service_point", "slot_empty", "invalid_slot", "holder_not_empty", "inventory_full"]]:
+        """Request a hardware service order that returns the module at whole-number `slot_index` to Inventory: `self.unmount(0)`. The Rover must be parked inside the service area of the home base or an operational founded outpost, and container modules must be empty. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def install(self, slot_index: _float, internal_index: _float, item_id: _str) -> ActionResult[Literal["ok", "not_at_service_point", "locked", "invalid_slot", "invalid_internal_slot", "slot_empty", "not_container", "item_not_accepted", "internal_slot_occupied", "item_not_in_inventory"]]:
+    def install(self, slot_index: _int, internal_index: _int, item_id: _str) -> ActionResult[Literal["ok", "not_at_service_point", "locked", "invalid_slot", "invalid_internal_slot", "slot_empty", "not_container", "item_not_accepted", "internal_slot_occupied", "item_not_in_inventory"]]:
         """Install a portable item (Portable Battery / Portable Storage Bin) into a container module's internal slot. **Not used on the Rover**, its fixed slots only accept Nav, Sonar, and Drill function modules, never containers. See Pioneer for the modular version. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def uninstall(self, slot_index: _float, internal_index: _float) -> ActionResult[Literal["ok", "not_at_service_point", "invalid_slot", "invalid_internal_slot", "slot_empty", "not_container", "internal_slot_empty", "inventory_full", "container_not_empty"]]:
+    def uninstall(self, slot_index: _int, internal_index: _int) -> ActionResult[Literal["ok", "not_at_service_point", "invalid_slot", "invalid_internal_slot", "slot_empty", "not_container", "internal_slot_empty", "inventory_full", "container_not_empty"]]:
         """Uninstall a portable item from a container module's internal slot. **Not used on the Rover**, same reason as `install`. See Pioneer for the modular version. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def peek_command(self) -> ScriptCommand | None:
@@ -2425,7 +3294,7 @@ class ChargingStation(Component):
     name: _str
     outpost: OutpostRef
     def get_docked(self) -> _list[_str]:
-        """List of vehicle instance ids parked inside the station's local service pad plus its **~2 m** margin, or inside the owning Outpost's common service area. Returns ids, not vehicles; dereference each via `get_component(id)` to read battery state, cargo, or anything else. Empty list means no vehicles docked. Call each iteration; the list can change between ticks as vehicles drive in or out."""
+        """List of vehicle instance ids parked inside the station's local service pad plus its **~2 m** margin, or inside the owning Outpost's common service area. Each parked vehicle is docked at one station only: the one it picked with its own `dock()`, otherwise the eligible station with the shortest distance to its station position or its outpost's center, with equal-distance ties broken alphabetically by station id. Returns ids, not vehicles; dereference each via `get_component(id)` to read battery state, cargo, or anything else. Empty list means no vehicles docked. Call each iteration; the list can change between ticks as vehicles drive in or out."""
         ...
     def charge(self, vehicle_id: _str, target_level: _float = ...) -> ActionResult[Literal["charging", "queued", "target_reached", "not_docked", "station_offline", "invalid"]]:
         """Queue a docked rover or Pioneer to charge until its battery reaches `target_level` (greater than **0** and at most **1**, defaults to **1.0**). The station decides whether it starts immediately or waits behind another vehicle: Mk I charges one vehicle at a time, Mk II two, Mk III four. The fewer vehicles active, the faster each charges (idle bays pool). Example: `self.charge(\"pioneer_1\", 0.8)` means 'charge this vehicle until it reaches 80%'. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
@@ -2442,7 +3311,7 @@ class ChargingStation(Component):
     def get_queue(self) -> _list[_str]:
         """List of vehicle ids in charge-queue order. The first `get_bay_count()` entries are the ones that can be active right now, assuming they are still docked and below their target."""
         ...
-    def status(self, vehicle_id: _str) -> _dict[_str, Any]:
+    def status(self, vehicle_id: _str) -> _dict[_str, JsonValue]:
         """Detailed status for one vehicle: a dict with `state` (`\"charging\"`, `\"queued\"`, `\"docked\"`, `\"target_reached\"`, `\"not_docked\"`, `\"station_offline\"`, or `\"missing\"`), `target_level`, `battery_wh`, `capacity_wh`, `rate_w` (the pooled watts this vehicle is actually receiving, rises as fewer vehicles share the bays), `bay_index`, and `queue_index`. Use this for dashboards or queue managers."""
         ...
     def tier(self) -> _int:
@@ -2510,13 +3379,13 @@ class StorageBin(Component):
     def fill_percent(self) -> _float:
         """Fraction full in the range **0-1**. Common threshold for rebalance scripts: `if bin.fill_percent() < 0.2: # route more here`."""
         ...
-    def transfer_from_inventory(self, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "inventory_not_local", "source_empty", "source_changed", "target_wrong_material", "hot_cargo_requires_cask", "target_full", "target_changed"]]:
+    def transfer_from_inventory(self, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "inventory_not_local", "source_empty", "source_changed", "target_wrong_material", "hot_cargo_requires_cask", "target_full", "target_changed"]]:
         """Requires **Auto Feeders** research and a Storage Bin at the home outpost. Move up to whole-number `count` units of `item_id` from Inventory into the bin, preserving exact properties. The call waits for the feeder cycle to finish, and the bin cannot start another transfer during that cycle. A property dict selects a subset by default. Pass `\"exact\"` as `property_match` for a full identity, including `None` for propertyless items. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
-    def transfer_to_inventory(self, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "source_empty", "source_changed", "inventory_not_local", "target_full", "target_changed"]]:
+    def transfer_to_inventory(self, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "source_empty", "source_changed", "inventory_not_local", "target_full", "target_changed"]]:
         """Requires **Auto Feeders** research and a Storage Bin at the home outpost. Move up to whole-number `count` units back to Inventory, preserving exact properties. The call waits for the feeder cycle to finish, and the bin cannot start another transfer during that cycle. A property dict selects a subset by default. Pass `\"exact\"` as `property_match` for a full identity, including `None` for propertyless items. If the bin drains completely, its item-id latch clears. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
-    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
+    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
         """Requires **Auto Feeders** research. Move up to whole-number `count` units of `item_id` from this storage endpoint to another Storage Bin, Warehouse, Large Warehouse, Lead Cask, or Inventory. Pass a storage building's display name or instance id, or `\"inventory\"`. Inventory participates only at **Nocturna Base**. The call waits for the physical store's feeder cycle to finish, and every participating storage building remains busy during that cycle. Exact item properties are preserved; optional `properties` and `property_match` select a variant. The calling script may run anywhere, but cargo never crosses outpost boundaries through this method. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
 
@@ -2530,7 +3399,7 @@ class Smelter(Component):
     def find_recipe(self, recipe_id: _str) -> Recipe | None:
         """Find one unlocked recipe by id without looping through `list_recipes()`. Returns its `Recipe` object, or `None` when the id is unknown, locked, or belongs to another machine."""
         ...
-    def set_recipe(self, recipe_or_id: Any) -> ActionResult[Literal["ok", "unknown_recipe", "offline", "recipe_locked", "busy", "material_mismatch"]]:
+    def set_recipe(self, recipe_or_id: RecipeRef) -> ActionResult[Literal["ok", "unknown_recipe", "offline", "recipe_locked", "busy", "material_mismatch"]]:
         """Select which recipe the smelter should run. Call `self.set_recipe(\"smelt_iron_ingot\")` or pass a Recipe from `list_recipes()`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def clear_recipe(self) -> ActionResult[Literal["ok", "busy", "material_present"]]:
@@ -2543,12 +3412,12 @@ class Smelter(Component):
         """Input requirements for the current recipe as a dict `{item_id: count_per_craft}`. Returns an empty dict if no recipe is set."""
         ...
     def is_running(self) -> _bool:
-        """`True` while the smelter is actively processing a unit. Use before `set_recipe()` to avoid the `\"busy\"` rejection: `if not self.is_running(): self.set_recipe(new_id)`. Stays `True` across ticks until the unit completes."""
+        """Whether the smelter is actively processing. Can be `False` while an unfinished unit is paused, for example when its output is full. Paused progress is retained; use `get_progress()` to check for unfinished work before changing recipes."""
         ...
     def get_progress(self) -> _float:
         """Progress toward the next completed unit (**0-1**). Resets to **0** when a unit completes and a new one starts. Useful for progress bars and scripts that want to detect completions by watching the value drop."""
         ...
-    def get_input_count(self) -> _float:
+    def get_input_count(self) -> _int:
         """Units currently in the input buffer, waiting to be smelted. Check before `self.input.take(...)` to avoid overfilling, or to decide whether to pull more."""
         ...
     def get_output_count(self) -> _int:
@@ -2579,7 +3448,7 @@ class Fabricator(Component):
     def find_recipe(self, recipe_id: _str) -> Recipe | None:
         """Find one unlocked recipe by id without looping through `list_recipes()`. Returns its `Recipe` object, or `None` when the id is unknown, locked, or belongs to another machine."""
         ...
-    def set_recipe(self, recipe_or_id: Any) -> ActionResult[Literal["ok", "unknown_recipe", "offline", "recipe_locked", "busy", "material_mismatch"]]:
+    def set_recipe(self, recipe_or_id: RecipeRef) -> ActionResult[Literal["ok", "unknown_recipe", "offline", "recipe_locked", "busy", "material_mismatch"]]:
         """Select which recipe to assemble: `self.set_recipe(\"craft_gas_pipe_segment\")`, or pass a Recipe from `list_recipes()`. Setting a recipe doesn't clear the stockpile, so leftovers from a previous recipe stay until consumed or `self.input.flush()` discards them. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def clear_recipe(self) -> ActionResult[Literal["ok", "busy", "material_present"]]:
@@ -2588,10 +3457,10 @@ class Fabricator(Component):
     def get_recipe(self) -> Literal["", "craft_gas_pipe_segment", "craft_liquid_pipe_segment", "craft_power_line_segment", "craft_gas_pipe_bridge", "craft_liquid_pipe_bridge", "craft_power_line_bridge", "craft_pressure_valve", "craft_machine_frame", "craft_circuit_panel", "craft_control_unit", "craft_battery_cell", "craft_thermal_cap_kit", "craft_turbine_rotor", "craft_tank_lining", "craft_water_pump", "craft_oil_pump", "craft_lubricant", "craft_plastic", "craft_rubber", "craft_tar", "craft_reinforced_biopolymer", "craft_enrichment_compound", "craft_drone_station_kit", "craft_drone_station_kit_medium", "craft_drone_station_kit_large", "craft_drone_service_station_kit", "craft_mining_drill_kit", "craft_mining_drill_industrial_kit", "craft_mining_drill_heavy_kit", "craft_drone_small", "craft_drone_medium", "craft_drone_large", "craft_electric_thruster", "craft_heli_thruster", "craft_cargo_pod_small", "craft_cargo_pod_medium", "craft_cargo_pod_large", "craft_battery_pack", "craft_oil_tank_small", "craft_oil_tank_medium", "craft_oil_tank_large", "craft_coolant_loop", "craft_neutron_capacitor", "craft_seed_maker_kit", "craft_plant_terraformer_kit", "craft_grow_lamp_kit", "craft_sprinkler_kit", "craft_dispenser_kit", "craft_garbage_disposal_kit", "craft_exotic_gas_cap_kit", "craft_exotic_spring_tap_kit", "craft_fertilizer", "craft_fertilizer_mk2", "craft_fertilizer_mk3", "craft_growth_accelerant", "craft_yield_amplifier", "craft_plant_terraformer_pack_mk2", "craft_grow_lamp_pack_mk2", "craft_grow_lamp_pack_mk3", "craft_sprinkler_pack_mk2", "craft_sprinkler_pack_mk3", "craft_feed_maker_pack_mk2", "craft_habitat_pack_mk2", "craft_lead_plate", "craft_oxygen_upgrade_pack_mk4", "craft_heat_upgrade_pack_mk4", "craft_pressure_upgrade_pack_mk4", "craft_lead_cask", "craft_shield_plating", "craft_lightning_rod_kit"]:
         """Current recipe id as a string, or the empty string if no recipe is set. Use to gate other logic or confirm after `set_recipe()`."""
         ...
-    def get_recipe_inputs(self) -> _dict[_str, _float]:
+    def get_recipe_inputs(self) -> _dict[_str, _int]:
         """Input requirements for the current recipe as a dict `{item_id: count_per_craft}`. Empty dict if no recipe is set. Use with `.keys()` / `.values()` / `.items()` to drive a loop: `for mat, need in self.get_recipe_inputs().items(): self.input.connect(bin_for(mat)); self.input.take(mat, need)`."""
         ...
-    def get_stockpile(self) -> _dict[_str, _float]:
+    def get_stockpile(self) -> _dict[_str, _int]:
         """Current stockpile contents as a dict `{item_id: count_currently_stored}`. Iterate with `.items()` to see every material; index directly with `self.get_stockpile()[\"iron_ingot\"]` to read one. Essential for deciding what else needs pulling in."""
         ...
     def get_stockpile_used(self) -> _int:
@@ -2648,20 +3517,26 @@ class Pioneer(Component):
     def rescue_status(self) -> Literal["none", "outbound", "charging", "returning"]:
         """Current rescue mission phase for this Pioneer: `\"none\"`, `\"outbound\"`, `\"charging\"`, or `\"returning\"`. `\"returning\"` means the rescue drone is going home and the Pioneer is free again."""
         ...
+    def dock(self, station: _str) -> ActionResult[Literal["ok", "station_not_found", "under_construction", "not_at_station"]]:
+        """Pick which Vehicle Charging Station this parked Pioneer docks at: `self.dock(\"charging_station_2\")`. Every station inside an outpost covers the whole outpost, so this chooses between them. Without a choice, the Pioneer docks at the eligible station with the shortest distance to its station position or its outpost's center; equal-distance ties are broken alphabetically by station id. The choice lasts until the Pioneer drives away or the station is removed. Moving to another station ends any charging job at the old one, and the new station charges the Pioneer once its own script calls `charge()`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        ...
+    def current_station(self) -> _str:
+        """Stable id of the Vehicle Charging Station this Pioneer is docked at, whether it picked it with `dock()` or docked there by default. Empty string while the Pioneer is moving or parked away from every station."""
+        ...
     def modules(self) -> _list[MountSlot]:
         """Inspect every slot on the chassis. Returns a list of `MountSlot`, eight entries for the Pioneer. Each has `.index` (pass to `mount` / `unmount`), `.type` (always `\"universal\"` on Pioneer), `.module_id` (what's mounted, or `None` for empty), `.internal_count` (non-zero for Battery Holders / Cargo Racks), `.internal_items` (list of installed portable item ids). Call before `self.mount(...)` or `self.install(...)` to find an empty target. See `MountSlot`."""
         ...
-    def mount(self, slot_index: _float, item_id: _str) -> ActionResult[Literal["ok", "not_at_service_point", "locked", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "capability_already_mounted"]]:
-        """Request a hardware service order from Inventory into whole-number `slot_index`: `self.mount(0, \"nav_module\")`. Biological field modules are drone-only. The Pioneer must be inside a founded outpost service area. This dedicated-hardware exception does not make Inventory a freight endpoint there. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+    def mount(self, slot_index: _int, item_id: _str) -> ActionResult[Literal["ok", "not_at_service_point", "locked", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "capability_already_mounted"]]:
+        """Request a hardware service order from Inventory into whole-number `slot_index`: `self.mount(0, \"nav_module\")`. Biological field modules are drone-only. The Pioneer must be parked inside the service area of the home base or an operational founded outpost. This dedicated-hardware service does not make Inventory a freight endpoint at remote outposts. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def unmount(self, slot_index: _float) -> ActionResult[Literal["ok", "not_at_service_point", "slot_empty", "invalid_slot", "holder_not_empty", "inventory_full"]]:
-        """Request a hardware service order that returns the module at whole-number `slot_index` to Inventory: `self.unmount(0)`. The Pioneer must be inside a founded outpost service area. Empty every internal bay before removing a holder or rack. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+    def unmount(self, slot_index: _int) -> ActionResult[Literal["ok", "not_at_service_point", "slot_empty", "invalid_slot", "holder_not_empty", "inventory_full"]]:
+        """Request a hardware service order that returns the module at whole-number `slot_index` to Inventory: `self.unmount(0)`. The Pioneer must be parked inside the service area of the home base or an operational founded outpost. Empty every internal bay before removing a holder or rack. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def install(self, slot_index: _float, internal_index: _float, item_id: _str) -> ActionResult[Literal["ok", "not_at_service_point", "locked", "invalid_slot", "invalid_internal_slot", "slot_empty", "not_container", "item_not_accepted", "internal_slot_occupied", "item_not_in_inventory"]]:
-        """Request a service order that installs a Portable Battery or empty Portable Storage Bin from Inventory into a container's whole-number internal slot. `self.install(0, 1, \"portable_battery\")` uses bay **1** of the Battery Holder at chassis slot **0**. `self.install(4, 0, \"portable_bin\")` uses bay **0** of the Cargo Rack at chassis slot **4**. The Pioneer must be inside a founded outpost service area. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+    def install(self, slot_index: _int, internal_index: _int, item_id: _str) -> ActionResult[Literal["ok", "not_at_service_point", "locked", "invalid_slot", "invalid_internal_slot", "slot_empty", "not_container", "item_not_accepted", "internal_slot_occupied", "item_not_in_inventory"]]:
+        """Request a service order that installs a Portable Battery or empty Portable Storage Bin from Inventory into a container's whole-number internal slot. `self.install(0, 1, \"portable_battery\")` uses bay **1** of the Battery Holder at chassis slot **0**. `self.install(4, 0, \"portable_bin\")` uses bay **0** of the Cargo Rack at chassis slot **4**. The Pioneer must be parked inside the service area of the home base or an operational founded outpost. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def uninstall(self, slot_index: _float, internal_index: _float) -> ActionResult[Literal["ok", "not_at_service_point", "invalid_slot", "invalid_internal_slot", "slot_empty", "not_container", "internal_slot_empty", "inventory_full", "container_not_empty"]]:
-        """Request a service order that returns the portable item in a container's whole-number internal slot to Inventory: `self.uninstall(0, 1)`. The Pioneer must be inside a founded outpost service area, and Portable Storage Bins must be empty. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+    def uninstall(self, slot_index: _int, internal_index: _int) -> ActionResult[Literal["ok", "not_at_service_point", "invalid_slot", "invalid_internal_slot", "slot_empty", "not_container", "internal_slot_empty", "inventory_full", "container_not_empty"]]:
+        """Request a service order that returns the portable item in a container's whole-number internal slot to Inventory: `self.uninstall(0, 1)`. The Pioneer must be parked inside the service area of the home base or an operational founded outpost, and Portable Storage Bins must be empty. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def peek_command(self) -> ScriptCommand | None:
         """Read the next queued command without consuming it. Use this when you want to inspect a command before deciding whether to handle it."""
@@ -2698,25 +3573,25 @@ class NavModuleComponent(Component):
         """Speed in meters per hour as recorded on the last drive tick. **0** while idle or braked; up to the Nav's top speed at throttle **1.0**. Use to confirm the vehicle is actually moving (if `0` when you expected drive, there's a power or target issue). A fresh `set_throttle(...)` won't show up here until the next drive tick."""
         ...
     def get_distance_to(self, x: _float, y: _float) -> _float:
-        """Euclidean distance in meters from the vehicle's current position to the given point. Use it inside an intentional wait loop to detect proximity, with an arrival tolerance such as `> 2`, never exact zero. Reaching that tolerance does not stop the vehicle; call `brake()` before a stationary at-site action. For an at-building action, route to that building's `BuildingRef.position`. `set_target()` does not block while the vehicle drives, and the drive is canceled if the script stops, completes, or errors. This is pure straight-line distance and does not account for obstacles."""
+        """Euclidean distance in meters from the vehicle's current position to the given point. Use it inside an intentional wait loop to detect proximity. The vehicle has arrived once the distance is 2 or less (never wait for exact zero), so the loop keeps going while it is `> 2`. Arriving does not stop the vehicle; call `brake()` before a stationary at-site action. For an at-building action, route to that building's `BuildingRef.position`. `set_target()` does not block while the vehicle drives, and the drive is canceled if the script stops, completes, or errors. This is pure straight-line distance and does not account for obstacles."""
         ...
     def speed_multiplier(self) -> _float:
         """Current top-speed multiplier: **1.0** with Basic Nav/no Sport Nav, or **1 + mounted Sport Nav count** on Pioneer. Use it to plan trip times and scout builds. This is speed only; range still depends on battery, throttle, cargo load, and movement draw."""
         ...
 
 class SonarModuleComponent(Component):
-    """Sonar Module: Finds and surveys world sites through `self.sonar`. A scan checks the area around the vehicle; driving alone does not scan. Use `get_component(\"nocturna\").points_of_interest()` to find unscanned \"?\" markers, travel near one, then call `scan()` and `survey(site)`. Basic Sonar reaches **50 m** and minerals up to hardness **1**; Wide reaches **180 m** and hardness **3**; Deep reaches **280 m** and hardness **4**. Research unlocks thermal vents, wells, and exotic deposits. Results are saved in the Journal. Local Harvester sectors, biological sites, and radiation fields use different scanners."""
+    """Sonar Module: Finds and surveys world sites through `self.sonar`. A scan checks the area around the vehicle; driving alone does not scan. Use `get_component(\"nocturna\").points_of_interest()` to find unscanned \"?\" markers, travel near one, then call `scan()` and `survey(site)`. Each sonar reveals its hardness limit and everything below it: Basic **50 m**, hardness **1**; Wide **180 m**, hardness **3** (adds Titanium and Cobalt); Deep **280 m**, hardness **4**. Research unlocks thermal vents, wells, and exotic deposits. Results are saved in the Journal. Local Harvester sectors, biological sites, and radiation fields use different scanners."""
     name: _str
     def scan(self) -> SonarScanResult[Literal["ok", "too_hard", "tier_too_low", "research_required", "wrong_scanner", "busy", "no_power"]]:
         """Sweep for compatible `Site`s within range of the vehicle's current position. Contact types include `MiningSite`, `ThermalVent`, `WaterWell`, `OilWell`, `ExoticDeposit`, and `GeologicalAnomaly`. A completed sweep updates the Journal with newly classified contacts. Fixed result contract: `SonarScanResult`; branch on `.status` and read `.message`. Payload fields: `.sites` and `.blocked`."""
         ...
-    def survey(self, site: Any) -> SurveyResult[Literal["ok", "busy", "not_discovered", "research_required", "tier_too_low", "out_of_range", "too_hard", "no_power"]]:
+    def survey(self, site: SiteRef) -> SurveyResult[Literal["ok", "busy", "not_discovered", "research_required", "tier_too_low", "out_of_range", "too_hard", "no_power"]]:
         """Reveal the details available for a productive `Site`. Pass either its string id or a `Site` from `scan()`. A repeat survey is free and instant unless a better sonar tier can reveal more. Inert `GeologicalAnomaly` contacts are already resolved by scanning. Fixed result contract: `SurveyResult`; branch on `.status` and read `.message`. Payload fields: `.site`."""
         ...
     def range(self) -> _float:
         """Current sonar range in meters."""
         ...
-    def hardness_limit(self) -> _float:
+    def hardness_limit(self) -> _int:
         """Maximum mineral hardness this sonar can identify."""
         ...
     def tier(self) -> Literal["basic", "wide", "deep"]:
@@ -2724,12 +3599,12 @@ class SonarModuleComponent(Component):
         ...
 
 class DrillModuleComponent(Component):
-    """Drill Module: Extracts minerals through `self.drill`. The basic drill handles hardness **1** at **1.0×** speed using **10 W**; Industrial handles hardness **3** at **0.75×** using **20 W**; Heavy handles hardness **4** at **0.6×** using **30 W**. Without a mounted Drill Module, the vehicle cannot mine."""
+    """Drill Module: Extracts minerals through `self.drill`. Each drill cuts its hardness limit and everything below it: the basic drill reaches hardness **1** (Iron, Silicon) at **1.0×** speed using **10 W**; Industrial reaches **3**, adding Titanium, Cobalt, Lead and Rare Earth, at **0.75×** using **20 W**; Heavy reaches **4**, adding Neutronium, at **0.6×** using **30 W**. There is no hardness-2 drill: Titanium and Cobalt are cut by the Industrial. Without a mounted Drill Module, the vehicle cannot mine."""
     name: _str
     def mine(self) -> ActionResult[Literal["ok", "not_mounted", "not_at_site", "not_surveyed", "too_hard", "no_cargo_space", "no_power", "not_enough_power", "busy"]]:
-        """Extract **1** unit of the current site's mineral into vehicle cargo. Mining takes `mineral_base_minutes × drill.speed_multiplier() / site_purity` game-time, and the script pauses until it finishes. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        """Extract **1** unit of the current site's mineral into vehicle cargo. Mining takes `mineral_base_minutes × drill.speed_multiplier() / site_purity` game-time, and the script pauses until it finishes. Base minutes: Iron and Silicon **15**, Lead **18**, Titanium and Cobalt **20**, Rare Earth **25**, Neutronium **30**; `site_purity` is **1** standard, **2** rich, **3** pure. The drill draws its power for the whole dig, so one unit costs its watts × the mining time: the basic drill (**10 W**) mining for **15** minutes uses **2.5 Wh**. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def hardness_limit(self) -> _float:
+    def hardness_limit(self) -> _int:
         """Maximum mineral hardness this drill can extract."""
         ...
     def speed_multiplier(self) -> _float:
@@ -2787,7 +3662,7 @@ class OxygenGenerator(Component):
         """Current conversion efficiency (**0-100%**). Hits **100%** when intake matches **CO2/10**, CO2 is available, waste is at or below **60**, and no dump penalty is active. Waste above **60** reduces efficiency; waste at **100** stalls production. The **50-60** range is the clean window for `dump_waste()`, dumping outside it applies an efficiency penalty you can read with `dump_penalty()`."""
         ...
     def output(self) -> _float:
-        """Current O2 production rate in **ppt/h** at the current settings. Reflects `efficiency() × tier multiplier`, capped by available CO2. Reads `0` if the machine is unpowered, no script is running, CO2 is exhausted, or waste has stalled production. Recomputed live on every read, a fresh `set_intake(...)` is reflected immediately. Use this for live dashboards or to detect degradation mid-loop."""
+        """Current O2 production rate in **ppt/h** at the current settings. Reflects `efficiency()` × the tier multiplier, capped by available CO2. Reads `0` if the machine is unpowered, no script is running, CO2 is exhausted, or waste has stalled production. Recomputed live on every read, a fresh `set_intake(...)` is reflected immediately. Use this for live dashboards or to detect degradation mid-loop."""
         ...
     def tier(self) -> _int:
         """Permanently installed Mk tier as an integer (**1-4**). Upgrade packs raise this value; temporary Mk III fluid starvation does not. Compare with `effective_tier()` when diagnosing a supplied or degraded generator."""
@@ -2827,7 +3702,7 @@ class TempHeater(Component):
         """Current heating efficiency (**0-100%**). Hits **100%** only when `set_power()` exactly matches the current `thermal_state()`'s optimal, and falls off *steeply* around it (not linearly): about **31%** one step away, then a **10%** floor for any setting two or more steps off. Reads **0%** only when power is `0`. Scan positive power values and take the setting that reads **100%** as each state's optimal."""
         ...
     def output(self) -> _float:
-        """Current heat-unit production rate per hour at the current settings. Heat accumulates to raise surface temperature over many days; the sensor rate display projects per-day totals. Reflects `efficiency() × tier multiplier`. Reads `0` if unpowered or no script running. Recomputed live on every read, a fresh `set_power(...)` is reflected immediately."""
+        """Current heat-unit production rate per hour at the current settings. Heat accumulates to raise surface temperature over many days; the sensor rate display projects per-day totals. Reflects `efficiency()` × the tier multiplier. Reads `0` if unpowered or no script running. Recomputed live on every read, a fresh `set_power(...)` is reflected immediately."""
         ...
     def tier(self) -> _int:
         """Permanently installed Mk tier as an integer (**1-4**). Upgrade packs raise this value; temporary Mk III steam starvation does not. Compare with `effective_tier()` when diagnosing a supplied or degraded heater."""
@@ -2873,7 +3748,7 @@ class PressureGenerator(Component):
         """Current compression efficiency (**0-100%**). Climbs with hits, drops with misses, floored at **0**. A well-tuned script holds this at or near **100%** by hitting every cycle's window. Use it to detect a script that's out of sync with the shifting window."""
         ...
     def output(self) -> _float:
-        """Current **kPa/h** production rate at the current `efficiency()`. Proportional to `efficiency() × tier multiplier`. The resonance gauge advances slowly, so pressure progress is best judged from `efficiency()` and the per-day projection on the sensor display rather than from a single `output()` read."""
+        """Current **kPa/h** production rate at the current `efficiency()`. Proportional to `efficiency()` × the tier multiplier. The resonance gauge advances slowly, so pressure progress is best judged from `efficiency()` and the per-day projection on the sensor display rather than from a single `output()` read."""
         ...
     def tier(self) -> _int:
         """Permanently installed Mk tier as an integer (**1-4**). Upgrade packs raise this value; temporary Mk III fluid starvation does not. Compare with `effective_tier()` when diagnosing a supplied or degraded generator."""
@@ -2925,7 +3800,7 @@ class Nocturna(Component):
         """The finite Terraform Index in TP, in the **0-1,000,000** range. Temperature, oxygen, and pressure together own 700,000 TP; biomass, plants, and wildlife each own a non-substitutable 100,000 TP. Raw metrics may keep growing after their final phase, but a completed pillar contributes no additional Index. The value gates cross-system research."""
         ...
     def points_of_interest(self) -> _list[PointOfInterest]:
-        """Lists every permanent \"?\" contact on the Planet Map so scripts can route to real sites. Each `PointOfInterest` has whole-number coordinates, a `scanned` flag, and a `kind`. The kind stays `\"unknown\"` until a scanner reaches the contact; scanning then reveals mineral, biomass, thermal, water, oil, exotic, or inert. Filter for `not point.scanned`, travel to its coordinates, and scan with Rover or Pioneer sonar or a drone Bio Scanner. See `PointOfInterest`."""
+        """Lists every permanent \"?\" contact on the Planet Map so scripts can route to real sites. Each `PointOfInterest` has whole-number coordinates, a `scanned` flag, and a `kind` that stays `\"unknown\"` until a scanner reaches the contact. Filter for `not point.scanned`, travel to its coordinates, and scan with Rover or Pioneer sonar or a drone Bio Scanner. A contact the instrument you brought cannot identify stays unscanned even after a sweep that succeeded, and the sweep lists it in `scan.blocked` with the same coordinates and a reason: record those or your loop reselects the same contact. See `PointOfInterest`."""
         ...
 
 class Orders(Component):
@@ -2950,7 +3825,7 @@ class Orders(Component):
 class Comms(Component):
     """Signal Bus: Coordinates scripts through shared JSON-safe values. Access the Signal Bus with `get_component(\"comms\")` after its research unlocks. Use `send()` and `receive()` for work that should be handled once; use `broadcast()` and `latest()` for the newest shared value."""
     name: _str
-    def send(self, channel: _str, value: Any) -> SendResult[Literal["ok", "invalid_channel", "channel_limit", "queue_full", "id_exhausted", "invalid_value"]]:
+    def send(self, channel: _str, value: JsonValue) -> SendResult[Literal["ok", "invalid_channel", "channel_limit", "queue_full", "id_exhausted", "invalid_value"]]:
         """Add a JSON-safe value to a named channel queue. Keep the send receipt to identify or cancel that exact request later, even when several requests contain identical values. Channel ids may contain letters, numbers, `_`, `.`, `:`, and `-`. Use queues for work items that should be handled once. Fixed result contract: `SendResult`; branch on `.status` and read `.message`. Payload fields: `.message_id`."""
         ...
     def receive(self, channel: _str, message_id: _int | None = ...) -> ReceiveResult[Literal["ok", "empty", "not_found", "invalid_channel"]]:
@@ -2959,7 +3834,7 @@ class Comms(Component):
     def wait(self, channel: _str) -> ReceiveResult[Literal["ok", "invalid_channel"]]:
         """Wait for and take the oldest queued message. If the queue is empty, only this script pauses until work is available; the game and other scripts keep running. Messages already queued are taken immediately. Broadcasts do not satisfy the wait. Pausing preserves the wait, and stopping the script abandons it without consuming a message. Fixed result contract: `ReceiveResult`; branch on `.status` and read `.message`. Payload fields: `.packet`."""
         ...
-    def wait_any(self, channels: _list[Any]) -> WaitAnyResult[Literal["ok", "invalid_channel"]]:
+    def wait_any(self, channels: _list[_str]) -> WaitAnyResult[Literal["ok", "invalid_channel"]]:
         """Wait for and take one queued message from any listed channel. Channels listed first have priority whenever work is selected; each channel keeps its oldest-first order. If every queue is empty, only this script waits. Broadcasts do not satisfy the wait. The channel list is copied when called, and repeated names are considered once at their first position. Pausing preserves the wait; stopping abandons it without taking work. Fixed result contract: `WaitAnyResult`; branch on `.status` and read `.message`. Payload fields: `.channel` and `.packet`."""
         ...
     def wait_broadcast(self, channel: _str) -> WaitBroadcastResult[Literal["ok", "invalid_channel"]]:
@@ -2971,19 +3846,19 @@ class Comms(Component):
     def cancel(self, channel: _str, message_id: _int) -> ActionResult[Literal["ok", "not_found", "invalid_channel"]]:
         """Cancel one waiting message using its send receipt's `.message_id` or its `.id` from `pending(channel)`. Use it to remove an obsolete request or add a Cancel button to a Control Room job board. Other messages keep their ids, values, and receive order, including messages sent after the snapshot. The latest broadcast is preserved. Cancellation only removes queued work; it cannot stop a worker that has already received the message. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def update(self, channel: _str, message_id: _int, value: Any) -> ActionResult[Literal["ok", "not_found", "invalid_channel", "invalid_value"]]:
+    def update(self, channel: _str, message_id: _int, value: JsonValue) -> ActionResult[Literal["ok", "not_found", "invalid_channel", "invalid_value"]]:
         """Replace the complete value of one waiting message. Use its send receipt or an id from `pending()` to edit a delivery, priority, or destination from a script or Control Room card. The id, queue position, original sender, and send time stay unchanged. Replacement happens in one operation and works even when the queue is full. Messages already received cannot be edited. Read `pending()` again to refresh an earlier snapshot. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def broadcast(self, channel: _str, value: Any) -> ActionResult[Literal["ok", "invalid_channel", "channel_limit", "invalid_value"]]:
+    def broadcast(self, channel: _str, value: JsonValue) -> ActionResult[Literal["ok", "invalid_channel", "channel_limit", "invalid_value"]]:
         """Store a channel's latest JSON-safe value without consuming queue slots. Dictionaries must use string keys. Use broadcasts for shared telemetry like fleet mode, target sector, or current priority. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def latest(self, channel: _str) -> Any:
+    def latest(self, channel: _str) -> JsonValue | None:
         """Return the most recent value broadcast on a channel, or `None` if the channel has no latest value. Reading latest does not consume it."""
         ...
     def latest_info(self, channel: _str) -> BroadcastInfo | None:
         """Inspect the latest broadcast, who published it, and how long ago it was updated. Use the snapshot to detect outdated worker reports or show freshness in a Control Room card. Reading does not consume messages or change the channel. Read again to refresh the value and age."""
         ...
-    def queue_size(self, channel: _str) -> _float:
+    def queue_size(self, channel: _str) -> _int:
         """Number of queued messages waiting on the channel."""
         ...
     def channels(self) -> _list[_str]:
@@ -2996,19 +3871,19 @@ class Comms(Component):
 class Console(Component):
     """Console: Writes structured script output to the same Console used by `print()`. Access it with `get_component(\"console\")`; no research is required. Messages can have a severity, named channel, color, and timestamp."""
     name: _str
-    def print(self, message: Any, level: _str = ..., channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
+    def print(self, message: object, level: _str = ..., channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
         """Print a line with full control. `level` is `info` / `warn` / `error` / `debug` (which feed the WARNINGS / ERRORS filters), or any other non-empty string for a custom level shown as a colored badge. An empty level behaves like `info`. `channel` routes the line to a named tab (empty = the main stream). `color` is a theme token (`\"warning\"`, `\"success\"`, `\"accent\"`), which recolors with the theme, or any CSS color: hex (`\"#aabbcc\"`), `\"rgb(255,100,0)\"`, `\"hsl(30,100%,50%)\"`, or a name like `\"orange\"`. A true `timestamp` value prepends the game time-of-day. Example: `get_component(\"console\").print(\"Overheat\", \"alert\", \"alarms\", \"warning\", True)`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def info(self, message: Any, channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
+    def info(self, message: object, channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
         """Print an info line (the default level). Its optional channel, color, and timestamp parameters behave like those on `print`. Equivalent to `print(message)`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def warn(self, message: Any, channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
+    def warn(self, message: object, channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
         """Print a warning line, appears in the console's WARNINGS filter. Its optional channel, color, and timestamp parameters control routing and presentation. For an interruptive popup instead, use the global `notify(text, \"warn\")`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def error(self, message: Any, channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
+    def error(self, message: object, channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
         """Print an error line, appears in the console's ERRORS filter. Its optional channel, color, and timestamp parameters control routing and presentation. This is your own message at error severity, not an uncaught exception. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def debug(self, message: Any, channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
+    def debug(self, message: object, channel: _str = ..., color: _str = ..., timestamp: _bool = ...) -> ActionResult[Literal["ok"]]:
         """Print a low-priority debug line, hidden from the ALL view unless the player enables debug output. Its optional channel, color, and timestamp parameters control routing and presentation. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def now(self) -> _str:
@@ -3040,13 +3915,13 @@ class Markers(Component):
 class Notebook(Component):
     """Data Archive: Stores JSON-safe data that survives script restarts and save/load. Access the Data Archive with `get_component(\"notebook\")` after its research unlocks. Use Libraries to share code and the Signal Bus to share temporary live state."""
     name: _str
-    def set(self, key: _str, value: Any) -> ActionResult[Literal["ok", "invalid_key", "entry_limit", "invalid_value"]]:
-        """Store a JSON-safe value under a named key. Dictionaries inside the value must use string keys. The archive holds up to 512 entries; each value supports 8 nested levels, 16,384 total nodes counting values and containers, and 4,096 characters per string or dictionary key. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+    def set(self, key: _str, value: JsonValue) -> ActionResult[Literal["ok", "invalid_key", "entry_limit", "invalid_value"]]:
+        """Store a JSON-safe value under a named key. Dictionaries inside the value must use string keys. The archive holds up to 2,048 entries; each value supports 8 nested levels, 16,384 total nodes counting values and containers, and 4,096 characters per string or dictionary key. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def transaction(self, key: _str, default: Any, updater: Any) -> ActionResult[Literal["ok", "invalid_key", "entry_limit", "invalid_value", "busy"]]:
+    def transaction(self, key: _str, default: _J, updater: Callable[[_J], Any]) -> ActionResult[Literal["ok", "invalid_key", "entry_limit", "invalid_value", "busy"]]:
         """Atomically transform one stored value within the same archive value limits. The updater may be any pure callable; it receives the latest value or supplied default and cannot sleep, yield, or mutate the world. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def get(self, key: _str, default: Any = ...) -> Any:
+    def get(self, key: _str, default: JsonValue | None = ...) -> JsonValue:
         """Read a stored value by key. If the key is missing, returns the optional default argument; if no default is provided, returns `None`. Reading does not consume or modify the entry."""
         ...
     def has(self, key: _str) -> _bool:
@@ -3129,7 +4004,7 @@ class ThermalCap(Component):
         """Game-minutes until the vent flips between active and dormant, so you can open up before a surge or ease off before a dry spell. Returns `None` unless the vent was **Deep**-surveyed, so a predictive loop is the payoff for deep sonar."""
         ...
     def pressure(self) -> _float:
-        """Chamber fill in the `0.0 to 1.0` range. It climbs while the cap captures steam from the vent and drops as you release through `steam_out`. Hit `1.0` and the cap **overpressurizes**: the whole chamber blows off to atmosphere and rebuilds from empty. The job is keeping this off the ceiling, so poll it every tick and open the throttle as it rises."""
+        """Chamber fill from `0.0` to `1.0`. It climbs while the cap captures steam from the vent and drops as you release through `steam_out`. Hit `1.0` and the cap **overpressurizes**: the whole chamber blows off to atmosphere and rebuilds from empty. The job is keeping this off the ceiling, so poll it every tick and open the throttle as it rises."""
         ...
     def capture_rate(self) -> _float:
         """Steam captured from the vent on the last tick, in t/h. **0** during the dormant phase, up to the vent's current output while active. Already factors in the vent's phase, so read it instead of computing from the vent rate. Updates once per flow tick."""
@@ -3144,7 +4019,7 @@ class ThermalCap(Component):
         """The current release-valve setting, `0.0` (sealed) to `1.0` (wide open). Read it back after `set_throttle(...)`."""
         ...
     def set_throttle(self, t: _float) -> ActionResult[Literal["ok"]]:
-        """Open the cap's release valve in the `0.0 to 1.0` range (clamped). `0` seals the chamber so it fills; `1.0` releases steam across all reachable connected destinations as fast as chamber supply, destination headroom, and throughput allow. Your primary knob against overpressure, so call it every tick against `pressure()`. This script-owned setpoint resets to `0` when the script stops, ends, or errors. If no destination can accept enough and `pressure()` still climbs, use `set_relief(...)` to shed the surplus. `[self only]` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        """Open the cap's release valve from `0.0` to `1.0` (clamped). `0` seals the chamber so it fills; `1.0` releases steam across all reachable connected destinations as fast as chamber supply, destination headroom, and throughput allow. Your primary knob against overpressure, so call it every tick against `pressure()`. This script-owned setpoint resets to `0` when the script stops, ends, or errors. If no destination can accept enough and `pressure()` still climbs, use `set_relief(...)` to shed the surplus. `[self only]` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def relief(self) -> _float:
         """The current relief-valve setting, `0.0` (shut) to `1.0` (wide open). Read it back after `set_relief(...)`."""
@@ -3517,10 +4392,10 @@ class Warehouse(Component):
     def stacks(self) -> _list[ItemStack]:
         """Lists the item variants stored across all physical slots as `ItemStack` values. Items with the same id but different properties occupy separate slots. Call it again when you need current contents."""
         ...
-    def space_for(self, item_id: _str, properties: Any = ...) -> _int:
+    def space_for(self, item_id: _str, properties: ItemProperties | None = ...) -> _int:
         """How many more units of one exact item variant fit **right now**, using room in matching-identity slots plus every empty slot. Omit `properties` for ordinary propertyless items, or pass the full `.properties` dict returned by `stacks()`. This never counts room belonging to a different property variant."""
         ...
-    def has_space(self, item_id: _str, amount: _int, properties: Any = ...) -> _bool:
+    def has_space(self, item_id: _str, amount: _int, properties: ItemProperties | None = ...) -> _bool:
         """`True` if at least whole-number `amount` more units of that exact item variant fit. Omit `properties` for propertyless items or pass the full property dict. Use before a transfer to avoid partial moves."""
         ...
     def slots(self) -> _list[WarehouseSlot]:
@@ -3529,7 +4404,7 @@ class Warehouse(Component):
     def compact(self) -> TransferResult[Literal["ok", "already_compact", "research_required", "busy", "source_under_construction", "source_changed", "slots_full", "target_full"]]:
         """Requires **Auto Feeders** research. Consolidate every exact item variant into the fewest Warehouse slots that can hold it. The smallest redundant stacks move into larger compatible stacks, minimizing physical handling; equal item ids with different properties always remain separate. The call waits for time proportional to the units repositioned and locks this Warehouse as a material endpoint for the cycle. Port transfers and manual Biology actions using this Warehouse wait until that cycle finishes. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
-    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
+    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
         """Requires **Auto Feeders** research. Move up to whole-number `count` units of `item_id` from this storage endpoint to another Storage Bin, Warehouse, Large Warehouse, Lead Cask, or Inventory. Pass a storage building's display name or instance id, or `\"inventory\"`. Inventory participates only at **Nocturna Base**. The call waits for the physical store's feeder cycle to finish, and every participating storage building remains busy during that cycle. Exact item properties are preserved; optional `properties` and `property_match` select a variant. The calling script may run anywhere, but cargo never crosses outpost boundaries through this method. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
 
@@ -3558,10 +4433,10 @@ class LargeWarehouse(Component):
     def stacks(self) -> _list[ItemStack]:
         """Lists the item variants stored across all physical slots as `ItemStack` values. Items with the same id but different properties occupy separate slots. Call it again when you need current contents."""
         ...
-    def space_for(self, item_id: _str, properties: Any = ...) -> _int:
+    def space_for(self, item_id: _str, properties: ItemProperties | None = ...) -> _int:
         """How many more units of one exact item variant fit **right now**, using room in matching-identity slots plus every empty slot. Omit `properties` for ordinary propertyless items, or pass the full `.properties` dict returned by `stacks()`. This never counts room belonging to a different property variant."""
         ...
-    def has_space(self, item_id: _str, amount: _int, properties: Any = ...) -> _bool:
+    def has_space(self, item_id: _str, amount: _int, properties: ItemProperties | None = ...) -> _bool:
         """`True` if at least whole-number `amount` more units of that exact item variant fit. Omit `properties` for propertyless items or pass the full property dict. Use before a transfer to avoid partial moves."""
         ...
     def slots(self) -> _list[WarehouseSlot]:
@@ -3570,7 +4445,7 @@ class LargeWarehouse(Component):
     def compact(self) -> TransferResult[Literal["ok", "already_compact", "research_required", "busy", "source_under_construction", "source_changed", "slots_full", "target_full"]]:
         """Requires **Auto Feeders** research. Consolidate every exact item variant into the fewest Warehouse slots that can hold it. The smallest redundant stacks move into larger compatible stacks, minimizing physical handling; equal item ids with different properties always remain separate. The call waits for time proportional to the units repositioned and locks this Warehouse as a material endpoint for the cycle. Port transfers and manual Biology actions using this Warehouse wait until that cycle finishes. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
-    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
+    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
         """Requires **Auto Feeders** research. Move up to whole-number `count` units of `item_id` from this storage endpoint to another Storage Bin, Warehouse, Large Warehouse, Lead Cask, or Inventory. Pass a storage building's display name or instance id, or `\"inventory\"`. Inventory participates only at **Nocturna Base**. The call waits for the physical store's feeder cycle to finish, and every participating storage building remains busy during that cycle. Exact item properties are preserved; optional `properties` and `property_match` select a variant. The calling script may run anywhere, but cargo never crosses outpost boundaries through this method. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
 
@@ -3627,10 +4502,13 @@ class DroneSmall(Component):
     def set_throttle(self, rate: _float) -> ActionResult[Literal["ok"]]:
         """Set throttle (**0-1**). At full throttle, electric drones fly **300 m/h** using **5 Wh/h**; Heli drones fly **900 m/h** using **5 t/h Oil**. Lower throttle reduces burn quadratically. Stop, completion, or error resets throttle to **0**. Self-only. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def couple(self, slot_index: _float, module_id: _str) -> ActionResult[Literal["ok", "not_at_station", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "locked", "wrong_engine_for_module", "cargo_capacity_exceeded"]]:
+    def modules(self) -> _list[MountSlot]:
+        """Inspect what's coupled. Returns a list of `MountSlot`, one per slot on the chassis. Each has `.index` (pass to `couple` / `uncouple`), `.type` (`\"thruster\"` for slot 0, `\"drone_module\"` for the rest), `.module_id` (the coupled module, or `None` for an empty slot). Works on any drone, not only `self`. See `MountSlot`."""
+        ...
+    def couple(self, slot_index: _int, module_id: _str) -> ActionResult[Literal["ok", "not_at_station", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "locked", "wrong_engine_for_module", "cargo_capacity_exceeded"]]:
         """Request a hardware service order from Inventory into an explicit whole-number slot: `self.couple(0, \"electric_thruster\")` for the thruster slot, or `self.couple(1, \"battery_pack\")` for a module slot. The drone must be docked at an operational Drone Depot. This dedicated-hardware exception does not expose ordinary Inventory freight at that outpost. Self-only. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def uncouple(self, slot_index: _float) -> ActionResult[Literal["ok", "invalid_slot", "module_not_mounted", "not_at_station", "cargo_capacity_exceeded", "container_not_empty", "hot_cargo_requires_plating", "inventory_full"]]:
+    def uncouple(self, slot_index: _int) -> ActionResult[Literal["ok", "invalid_slot", "module_not_mounted", "not_at_station", "cargo_capacity_exceeded", "container_not_empty", "hot_cargo_requires_plating", "inventory_full"]]:
         """Request a hardware service order that returns the module in an explicit whole-number slot to Inventory: `self.uncouple(1)`. The drone must be docked at an operational Drone Depot. Cargo Pods must be empty before removal, and Shield Plating cannot be removed while Raw Uranium or Fuel Rod cargo remains aboard. Fuel-bearing modules preserve their contents. Self-only. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def status(self) -> Literal["idle", "traveling", "charging", "refueling", "waiting_service", "waiting_oil", "waiting_bay", "being_rescued", "holding_weather", "scrambled", "stalled_no_battery", "stalled_no_oil", "stalled_no_route"]:
@@ -3708,10 +4586,13 @@ class DroneMedium(Component):
     def set_throttle(self, rate: _float) -> ActionResult[Literal["ok"]]:
         """Set throttle (**0-1**). At full throttle, electric drones fly **300 m/h** using **5 Wh/h**; Heli drones fly **900 m/h** using **5 t/h Oil**. Lower throttle reduces burn quadratically. Stop, completion, or error resets throttle to **0**. Self-only. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def couple(self, slot_index: _float, module_id: _str) -> ActionResult[Literal["ok", "not_at_station", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "locked", "wrong_engine_for_module", "cargo_capacity_exceeded"]]:
+    def modules(self) -> _list[MountSlot]:
+        """Inspect what's coupled. Returns a list of `MountSlot`, one per slot on the chassis. Each has `.index` (pass to `couple` / `uncouple`), `.type` (`\"thruster\"` for slot 0, `\"drone_module\"` for the rest), `.module_id` (the coupled module, or `None` for an empty slot). Works on any drone, not only `self`. See `MountSlot`."""
+        ...
+    def couple(self, slot_index: _int, module_id: _str) -> ActionResult[Literal["ok", "not_at_station", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "locked", "wrong_engine_for_module", "cargo_capacity_exceeded"]]:
         """Request a hardware service order from Inventory into an explicit whole-number slot: `self.couple(0, \"electric_thruster\")` for the thruster slot, or `self.couple(1, \"battery_pack\")` for a module slot. The drone must be docked at an operational Drone Depot. This dedicated-hardware exception does not expose ordinary Inventory freight at that outpost. Self-only. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def uncouple(self, slot_index: _float) -> ActionResult[Literal["ok", "invalid_slot", "module_not_mounted", "not_at_station", "cargo_capacity_exceeded", "container_not_empty", "hot_cargo_requires_plating", "inventory_full"]]:
+    def uncouple(self, slot_index: _int) -> ActionResult[Literal["ok", "invalid_slot", "module_not_mounted", "not_at_station", "cargo_capacity_exceeded", "container_not_empty", "hot_cargo_requires_plating", "inventory_full"]]:
         """Request a hardware service order that returns the module in an explicit whole-number slot to Inventory: `self.uncouple(1)`. The drone must be docked at an operational Drone Depot. Cargo Pods must be empty before removal, and Shield Plating cannot be removed while Raw Uranium or Fuel Rod cargo remains aboard. Fuel-bearing modules preserve their contents. Self-only. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def status(self) -> Literal["idle", "traveling", "charging", "refueling", "waiting_service", "waiting_oil", "waiting_bay", "being_rescued", "holding_weather", "scrambled", "stalled_no_battery", "stalled_no_oil", "stalled_no_route"]:
@@ -3789,10 +4670,13 @@ class DroneLarge(Component):
     def set_throttle(self, rate: _float) -> ActionResult[Literal["ok"]]:
         """Set throttle (**0-1**). At full throttle, electric drones fly **300 m/h** using **5 Wh/h**; Heli drones fly **900 m/h** using **5 t/h Oil**. Lower throttle reduces burn quadratically. Stop, completion, or error resets throttle to **0**. Self-only. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def couple(self, slot_index: _float, module_id: _str) -> ActionResult[Literal["ok", "not_at_station", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "locked", "wrong_engine_for_module", "cargo_capacity_exceeded"]]:
+    def modules(self) -> _list[MountSlot]:
+        """Inspect what's coupled. Returns a list of `MountSlot`, one per slot on the chassis. Each has `.index` (pass to `couple` / `uncouple`), `.type` (`\"thruster\"` for slot 0, `\"drone_module\"` for the rest), `.module_id` (the coupled module, or `None` for an empty slot). Works on any drone, not only `self`. See `MountSlot`."""
+        ...
+    def couple(self, slot_index: _int, module_id: _str) -> ActionResult[Literal["ok", "not_at_station", "item_not_in_inventory", "unknown_module", "slot_not_compatible", "slot_occupied", "invalid_slot", "locked", "wrong_engine_for_module", "cargo_capacity_exceeded"]]:
         """Request a hardware service order from Inventory into an explicit whole-number slot: `self.couple(0, \"electric_thruster\")` for the thruster slot, or `self.couple(1, \"battery_pack\")` for a module slot. The drone must be docked at an operational Drone Depot. This dedicated-hardware exception does not expose ordinary Inventory freight at that outpost. Self-only. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def uncouple(self, slot_index: _float) -> ActionResult[Literal["ok", "invalid_slot", "module_not_mounted", "not_at_station", "cargo_capacity_exceeded", "container_not_empty", "hot_cargo_requires_plating", "inventory_full"]]:
+    def uncouple(self, slot_index: _int) -> ActionResult[Literal["ok", "invalid_slot", "module_not_mounted", "not_at_station", "cargo_capacity_exceeded", "container_not_empty", "hot_cargo_requires_plating", "inventory_full"]]:
         """Request a hardware service order that returns the module in an explicit whole-number slot to Inventory: `self.uncouple(1)`. The drone must be docked at an operational Drone Depot. Cargo Pods must be empty before removal, and Shield Plating cannot be removed while Raw Uranium or Fuel Rod cargo remains aboard. Fuel-bearing modules preserve their contents. Self-only. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def status(self) -> Literal["idle", "traveling", "charging", "refueling", "waiting_service", "waiting_oil", "waiting_bay", "being_rescued", "holding_weather", "scrambled", "stalled_no_battery", "stalled_no_oil", "stalled_no_route"]:
@@ -3827,7 +4711,7 @@ class DroneStation(Component):
         """List of drone ids currently docked at this Depot, in stable id order. Read each drone's state with `get_component(id)`."""
         ...
     def bay_count(self) -> _int:
-        """Total bays at this station: **1** (basic) / **2** (medium) / **4** (large)."""
+        """Total bays at this station: **1** (basic) / **2** (medium) / **4** (large). Upgrading the Depot in place with a larger kit raises it at once."""
         ...
     def bays_occupied(self) -> _int:
         """Bays currently occupied by docked drones. When equal to `bay_count`, arriving drones queue in airspace."""
@@ -3861,7 +4745,7 @@ class DroneStationMedium(Component):
         """List of drone ids currently docked at this Depot, in stable id order. Read each drone's state with `get_component(id)`."""
         ...
     def bay_count(self) -> _int:
-        """Total bays at this station: **1** (basic) / **2** (medium) / **4** (large)."""
+        """Total bays at this station: **1** (basic) / **2** (medium) / **4** (large). Upgrading the Depot in place with a larger kit raises it at once."""
         ...
     def bays_occupied(self) -> _int:
         """Bays currently occupied by docked drones. When equal to `bay_count`, arriving drones queue in airspace."""
@@ -3895,7 +4779,7 @@ class DroneStationLarge(Component):
         """List of drone ids currently docked at this Depot, in stable id order. Read each drone's state with `get_component(id)`."""
         ...
     def bay_count(self) -> _int:
-        """Total bays at this station: **1** (basic) / **2** (medium) / **4** (large)."""
+        """Total bays at this station: **1** (basic) / **2** (medium) / **4** (large). Upgrading the Depot in place with a larger kit raises it at once."""
         ...
     def bays_occupied(self) -> _int:
         """Bays currently occupied by docked drones. When equal to `bay_count`, arriving drones queue in airspace."""
@@ -3956,7 +4840,7 @@ class DroneServiceStation(Component):
     def get_queue(self) -> _list[_str]:
         """One FIFO list of drone ids across electric charging and heli refueling. Oil-blocked helis stay in order while ready later jobs may use otherwise-idle bays."""
         ...
-    def status(self, drone_id: _str) -> _dict[_str, Any]:
+    def status(self, drone_id: _str) -> _dict[_str, JsonValue]:
         """Detailed status for one drone's service job. Electric drones return a dict with `state`, `target_level`, `battery_wh`, `capacity_wh`, `rate_w`, `bay_index`, `queue_index`. Heli drones return `state`, `target_level`, `oil_tons`, `capacity_tons`, `rate_tons_per_hour`, `bay_index`, `queue_index`."""
         ...
     def get_bay_count(self) -> _int:
@@ -3983,7 +4867,7 @@ class DroneServiceStation(Component):
         ...
 
 class MiningDrill(Component):
-    """Mining Drill: Mk I static drill for hardness-1 deposits: 25 t/h at standard purity and 10 W while extracting."""
+    """Mining Drill: Mk I static drill for deposits up to hardness 1 (Iron, Silicon): 25 t/h at standard purity and 10 W while extracting."""
     name: _str
     def drill_rate(self) -> _float:
         """Mineral extraction rate in t/h right now: the full rate while drilling, and **0** whenever the drill is powered off, has no deposit under it, cannot cut the deposit's hardness, or its stockpile is full. Adjusted for site purity and drill tier."""
@@ -4003,7 +4887,7 @@ class MiningDrill(Component):
         ...
 
 class MiningDrillIndustrial(Component):
-    """Industrial Mining Drill: Mk II static drill for hardness-3 deposits: 75 t/h at standard purity and 35 W while extracting."""
+    """Industrial Mining Drill: Mk II static drill for deposits up to hardness 3, which adds Titanium, Cobalt, Lead and Rare Earth: 75 t/h at standard purity and 35 W while extracting."""
     name: _str
     def drill_rate(self) -> _float:
         """Mineral extraction rate in t/h right now: the full rate while drilling, and **0** whenever the drill is powered off, has no deposit under it, cannot cut the deposit's hardness, or its stockpile is full. Adjusted for site purity and drill tier."""
@@ -4023,7 +4907,7 @@ class MiningDrillIndustrial(Component):
         ...
 
 class MiningDrillHeavy(Component):
-    """Heavy Mining Drill: Mk III static drill for hardness-4 deposits: 200 t/h at standard purity and 100 W while extracting."""
+    """Heavy Mining Drill: Mk III static drill for deposits up to hardness 4, every mineral including Neutronium: 200 t/h at standard purity and 100 W while extracting."""
     name: _str
     def drill_rate(self) -> _float:
         """Mineral extraction rate in t/h right now: the full rate while drilling, and **0** whenever the drill is powered off, has no deposit under it, cannot cut the deposit's hardness, or its stockpile is full. Adjusted for site purity and drill tier."""
@@ -4049,7 +4933,7 @@ class Journal(Component):
         """Lists every site classified by sonar on `planet_id`. Call `journal.discovered_sites(\"nocturna\")` for Nocturna. Each entry is a `MiningSite`, `ThermalVent`, `WaterWell`, `OilWell`, `ExoticDeposit`, or `GeologicalAnomaly`, according to `kind()`. Unsurveyed productive sites leave their detailed fields as `None`; inert formations are resolved by scanning. Duplicate scans do not add duplicate entries. Returns an empty list before any sites are found. See `Site`."""
         ...
     def surveyed_sites(self, planet_id: _str) -> _list[Site]:
-        """Every fully-resolved site on `planet_id` as `list<Site>`, same shape as `discovered_sites()`, filtered to `surveyed == True`. This includes inert `GeologicalAnomaly` contacts because sonar resolves them without a second survey. Branch on `kind()` to access fields: `MiningSite` exposes `.item_id`, `.hardness`, `.purity`; `ThermalVent` exposes phase / rate / cycle timing (gated by sonar tier); `WaterWell` / `OilWell` expose `.yield_tier`, `.flow_rate`. See `Site`."""
+        """Every fully-resolved site on `planet_id` as `list[Site]`, same shape as `discovered_sites()`, filtered to `surveyed == True`. This includes inert `GeologicalAnomaly` contacts because sonar resolves them without a second survey. Branch on `kind()` to access fields: `MiningSite` exposes `.item_id`, `.hardness`, `.purity`; `ThermalVent` exposes phase / rate / cycle timing (gated by sonar tier); `WaterWell` / `OilWell` expose `.yield_tier`, `.flow_rate`. See `Site`."""
         ...
     def cataloged_fragments(self, planet_id: _str) -> _list[CatalogedFragment]:
         """Lists fragments analyzed at a Bio Lab on `planet_id`, newest first. Each `CatalogedFragment` includes its stable fragment id, display name, biome, coordinates, and rarity. Match `entry.fragment_id` against `BioOrder.requires`, and pass `entry.coords` to `bio_collector.collect(...)`. Unanalyzed fragments and creature identity remain hidden. After all five fragments are cataloged, the completed creature appears in `journal.cataloged_creatures(planet_id)`. Returns an empty list for a different planet."""
@@ -4057,22 +4941,22 @@ class Journal(Component):
     def cataloged_creatures(self, planet_id: _str) -> _list[CatalogedCreature]:
         """Lists creatures whose five fragments have all been analyzed on `planet_id`, most recently completed first. Each `CatalogedCreature` provides the stable creature id, its five fragment ids, required feed item and Feed Maker recipe, minimum startup feed, and exact rarity-scaled revival reagents. Use `.creature_id` with `habitat.set_revival_target(...)`. Use `.feed_recipe_id` to find the matching unlocked `Recipe` in `feed_maker.list_recipes()`; recipe ingredients remain owned by that Recipe. Returns an empty list for a different planet."""
         ...
-    def coord_info(self, x: _float, y: _float) -> LifeFormScanResult | None:
+    def coord_info(self, x: _int, y: _int) -> LifeFormScanResult | None:
         """Read the saved `LifeFormScanResult` for a discovered permanent biosite coordinate. Returns `None` for untouched biosites and scanned coordinates that are not sites. The query returns immediately."""
         ...
     def biomass_coords(self) -> _list[LifeFormScanResult]:
         """Lists every discovered permanent biosite as a `LifeFormScanResult`. This is the restart-safe route source for harvester drones: inspect `.coord`, each sample's `.remaining_tons`, and `is_ready(x, y)` before dispatching."""
         ...
-    def has_scanned(self, x: _float, y: _float) -> _bool:
+    def has_scanned(self, x: _int, y: _int) -> _bool:
         """`True` after the whole-number coordinate `(x, y)` has been scanned. Use it to skip biosites already visited by a route that resumes across script restarts."""
         ...
-    def is_empty(self, x: _float, y: _float) -> _bool:
+    def is_empty(self, x: _int, y: _int) -> _bool:
         """`True` only when this whole-number tile has been scanned and contained no life forms. Returns `False` for both occupied and untouched tiles, so pair it with `has_scanned()`."""
         ...
-    def is_ready(self, x: _float, y: _float) -> _bool:
+    def is_ready(self, x: _int, y: _int) -> _bool:
         """`True` when a discovered biosite can be extracted now. Returns `False` while another drone is extracting there, after depletion, or during its rarity-based cooldown. The query uses current site state and returns immediately."""
         ...
-    def next_ready_at(self, x: _float, y: _float) -> _float | None:
+    def next_ready_at(self, x: _int, y: _int) -> _float | None:
         """When the extraction cooldown ends, as an absolute hour. A depleted site's timestamp remains even after that hour passes, until extraction replenishes it. Returns `None` if the biosite is not recorded, still has material, or has never been extracted. Use `is_ready(x, y)` to check whether extraction can begin now."""
         ...
 
@@ -4098,13 +4982,29 @@ class ConstructionBlueprint(Component):
         """Cancel a queued, active, or paused construction blueprint by id. Unpaid jobs cancel immediately. A paid job keeps its material at the build site: park a Pioneer there to recover it into cargo. A failed recovery leaves the job and material intact. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def pending_constructions(self) -> _list[Construction]:
-        """Returns blueprints awaiting a worker as `list<Construction>`. Drawn pipe/power paths and marked deconstruction targets are split into independent jobs, usually in placement order. Pass each `c.id` to `self.constructor.execute(c.id)` to build or deconstruct it. Read `c.required_item` and `c.required_count` to load the exact cargo before executing; never infer material from `c.kind`. Filter by `c.kind` to specialize a Pioneer's role, then use `c.medium` to distinguish `\"gas\"`, `\"liquid\"`, and `\"power\"` utility jobs. Point structures have `c.medium == None`; see `Construction.kind` for the full kind list."""
+        """Returns blueprints awaiting a worker as `list[Construction]`. Drawn pipe/power paths and marked deconstruction targets are split into independent jobs, usually in placement order. Pass each `c.id` to `self.constructor.execute(c.id)` to build or deconstruct it. Read `c.required_item` and `c.required_count` to load the exact cargo before executing; never infer material from `c.kind`. Filter by `c.kind` to specialize a Pioneer's role, then use `c.medium` to distinguish `\"gas\"`, `\"liquid\"`, and `\"power\"` utility jobs. Point structures have `c.medium == None`; see `Construction.kind` for the full kind list."""
         ...
     def active_constructions(self) -> _list[Construction]:
         """Returns blueprints currently being built (a Pioneer is working). Useful for monitor scripts, read `c.progress` to see how far along."""
         ...
     def paused_constructions(self) -> _list[Construction]:
         """Returns blueprints started then abandoned (worker died, ran out of fuel, or script stopped). Any Pioneer can resume by navigating to `c.position` and calling `self.constructor.execute(c.id)`."""
+        ...
+
+class Computer(Component):
+    """Ship Computer: Manages the hardware roster: deploy a machine, vehicle, or drone from Inventory into an outpost, remove one back to Inventory, decommission an emptied outpost, and rename anything you own. These are the Inventory page's Deploy button and the Computer's System tab, reached from a script. Every call needs Ship Computer research; the buttons themselves keep working before it."""
+    name: _str
+    def deploy(self, item_id: _str, outpost: _str | Outpost | None = ...) -> ComputerDeployResult[Literal["ok", "no_kit", "locked", "not_deployable", "deploy_limit", "location_not_found", "wrong_biome_for_machine", "duplicate_outpost_machine", "missing_drone_station", "drone_station_full"]]:
+        """Deploy one unit of an inventory item into an outpost, defaulting to home. The machine lands with no script and does nothing until you attach one, exactly as a hand-placed machine does. A machine that the outpost's subnet cannot yet carry lands powered off. Fixed result contract: `ComputerDeployResult`; branch on `.status` and read `.message`. Payload fields: `.machine_id`."""
+        ...
+    def undeploy(self, machine: _str | Component) -> ActionResult[Literal["ok", "locked", "not_found", "not_undeployable", "self_target", "cargo_present", "docked_drone", "construction_dependency", "inventory_full"]]:
+        """Remove a deployed machine, vehicle, or drone and return its kit, mounted modules, contained items, and tier upgrade packs to Inventory. Stored cargo blocks removal, so empty it first. Authored scripts survive as detached records. Field equipment is recovered by its Harvester and map structures by a Pioneer, not here. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        ...
+    def decommission(self, outpost: _str | Outpost) -> ActionResult[Literal["ok", "locked", "not_found", "is_home", "not_empty", "construction_dependency", "inventory_full"]]:
+        """Remove a founded outpost and return its Outpost Kit to Inventory. The outpost must hold no machines; nothing is cascade-destroyed. Drones and vehicles don't belong to an outpost, so they never block it. Pipes, power lines, and bridges that touched it stay on the map for a Pioneer to reclaim. The home outpost is permanent. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        ...
+    def rename(self, target: _str | Component | Outpost, name: _str) -> ActionResult[Literal["ok", "locked", "not_found", "name_empty", "name_too_long", "name_taken"]]:
+        """Set the display name of a machine or outpost. Names are unique across every machine, outpost, and panel. Ids never change, so saved references keep working. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
 
 class BioExchange(Component):
@@ -4123,13 +5023,13 @@ class BioExchange(Component):
     def active_order(self) -> BioOrder | None:
         """A snapshot of the active `BioOrder` object, its `requires`, completed `delivered` progress, live `in_transit` commitments, `percent`, and `target_glow` (coastal infusion target) at the moment you call it, or `None` if no order is set. `in_transit` includes qualifying samples already staged in serving Exchange inputs plus active timed deliveries. Call `active_order()` again to read fresh progress."""
         ...
-    def matches_order(self, item_id: _str, properties: Any = ...) -> _bool:
+    def matches_order(self, item_id: _str, properties: ItemProperties | None = ...) -> _bool:
         """Check whether one exact item matches this Exchange's active Bio Order without moving it. Pass the `id` and `properties` from an `ItemStack`. `True` means that variant satisfies the order's glow, genes, Forged, Conditioned, or plain-sample requirement. Use it with Inventory, Storage Bin, or Warehouse `stacks()` before an exact `self.input.take(...)`. Returns `False` when there is no active order, the order is complete, or the item does not qualify."""
         ...
     def deliver(self) -> ActionResult[Literal["ok", "complete", "no_input", "output_full", "no_active", "busy"]]:
         """Send one matching sample from `self.input` toward the active Bio Order. `self.deliver()` moves a single sample per call and takes a short time, so a script calls it in a loop until the order is filled. A sample only counts if it satisfies the order's exact requirement, which for some biomes means a specific glow, gene set, or processed variant and not just the right fragment id; `self.matches_order(item_id, properties)` tests one stack before it is taken. Progress is **shared across every Bio Exchange** serving the same Bio Order, so another Exchange may land the final sample first and a surplus sample is refunded. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def lifetime_credits(self) -> _float:
+    def lifetime_credits(self) -> _int:
         """Total credits this Exchange has earned across every completed Bio Order."""
         ...
     input: InputSlot
@@ -4154,7 +5054,7 @@ class BioCollector(Component):
     def scan(self) -> _list[FragmentLocation]:
         """Lists fragment locations in this outpost's biome, nearest first. Each `FragmentLocation` includes `coords`, distance, and whether it has been cataloged. Cataloged locations also reveal their fragment id, name, and rarity; unknown locations leave those details as `None`. To identify an unknown location, collect it with `bio_collector.collect(location.coords)` and analyze it at a Bio Lab. Recipes and creature identity are not revealed here. Analyzed fragments also appear in `journal.cataloged_fragments(...)`."""
         ...
-    def collect(self, coords: _list[Any]) -> ActionResult[Literal["ok", "busy", "cargo_occupied", "invalid_coords", "no_fragment"]]:
+    def collect(self, coords: _list[_float]) -> ActionResult[Literal["ok", "busy", "cargo_occupied", "invalid_coords", "no_fragment"]]:
         """Retrieve the fragment at `coords` from `scan()` and place it in the collector's cargo slot. The trip takes **~0.1-0.3 h** in every biome, depending on distance; the script pauses until collection finishes. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def discard(self) -> ActionResult[Literal["ok", "empty", "busy"]]:
@@ -4178,13 +5078,13 @@ class BioLab(Component):
     """Bio Lab: Automates the Analyze and Extract steps of the biology loop, studying a specimen and pulling a usable sample from it. It stays idle until a script drives it."""
     name: _str
     outpost: OutpostRef
-    def take_from(self, collector: Any) -> ActionResult[Literal["ok", "busy", "input_occupied", "not_found", "source_empty", "source_busy", "wrong_outpost", "invalid_source", "output_full"]]:
+    def take_from(self, collector: Component | IdRecord) -> ActionResult[Literal["ok", "busy", "input_occupied", "not_found", "source_empty", "source_busy", "wrong_outpost", "invalid_source", "output_full"]]:
         """Pull the specimen out of a Bio Collector's cargo into this lab's specimen chamber. The source Collector must be at the same outpost as this Lab; pass an explicit collector reference: `self.take_from(get_component(\"bio_collector_1\"))`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def analyze(self) -> AnalyzeResult[Literal["ok", "busy", "output_full", "input_empty", "invalid_specimen"]]:
         """Identify the lab's current fragment and reveal its extraction recipe. Analysis takes **~0.1 h** in every biome; the script pauses until it finishes. A successful analysis adds the fragment to `journal.cataloged_fragments(planet_id)`. Creature identity stays hidden until all five fragments are cataloged, then the creature appears in `journal.cataloged_creatures(planet_id)`. Fixed result contract: `AnalyzeResult`; branch on `.status` and read `.message`. Payload fields: `.info`."""
         ...
-    def load(self, reagent_id: _str, qty: _float, properties: Any = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "busy", "invalid_reagent", "invalid_qty", "invalid_properties", "invalid_property_match", "insufficient_input", "output_full"]]:
+    def load(self, reagent_id: _str, qty: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "busy", "invalid_reagent", "invalid_qty", "invalid_properties", "invalid_property_match", "insufficient_input", "output_full"]]:
         """Stage a whole-number reagent quantity for the next `extract()` by consuming it from `self.input`. `self.load(\"alkaline_buffer\", 4)`. Reagents are sold by the `shop`; both UI purchases and `shop.buy(reagent_id)` place them in base Inventory. Optional `properties` and `property_match` select a specific item identity using the standard any, subset, or exact convention. Fractional or negative quantities raise an argument error. Calling `extract()` with a mismatched recipe destroys the loaded reagents. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def unload_reagents(self) -> ActionResult[Literal["ok", "empty", "busy", "output_full"]]:
@@ -4197,7 +5097,7 @@ class BioLab(Component):
         """Drop the current specimen and stage any loaded reagents in `self.output`. Use it after `analyze()` reveals a fragment you do not need. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     specimen: Specimen | None
-    loaded_reagents: _dict[_str, Any]
+    loaded_reagents: _dict[_str, _int]
     input: InputSlot
     output: OutputSlot
     def peek_command(self) -> ScriptCommand | None:
@@ -4217,21 +5117,21 @@ class BioLuminizer(Component):
     """Bio Luminizer: Tints a coastal fragment's glow to a target color using three built-in colored lamps. The lamps bleed into each other, so a script solves the brightness mix that lands on the exact target."""
     name: _str
     outpost: OutpostRef
-    def load(self, fragment_id: _str, properties: Any = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "chamber_occupied", "not_in_input", "invalid_fragment", "invalid_properties", "invalid_property_match", "busy", "output_full"]]:
+    def load(self, fragment_id: _str, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "chamber_occupied", "not_in_input", "invalid_fragment", "invalid_properties", "invalid_property_match", "busy", "output_full"]]:
         """Pull a raw glowing coastal sample of `fragment_id` from `self.input` into the chamber, `self.load(\"gw_caudal_fin\")`. Optional `properties` and `property_match` select a specific identity using the standard any, subset, or exact convention. Read its start color with `self.chamber.glow`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     chamber: ChamberSample | None
-    def lamp_signature(self, channel: _str) -> _tuple[_float, _float, _float] | None:
+    def lamp_signature(self, channel: _str) -> _list[_int] | None:
         """The RGB-per-unit `[r,g,b]` a lamp adds per brightness step, its impurity. `self.lamp_signature(\"red\")` is roughly `[6, 1, 1]`: mostly red, but it bleeds a little into green and blue. Read all three (`\"red\"`, `\"green\"`, `\"blue\"`) to build the 3×3 you invert. Fixed hardware, read once and reuse. `None` for an unknown channel."""
         ...
-    def glow(self) -> _tuple[_float, _float, _float] | None:
+    def glow(self) -> _list[_int] | None:
         """The chamber's **current** resulting glow `[r,g,b]` given the lamps set right now, it reflects `set_lamps(...)` immediately, so use it to verify your solve before committing: `if self.glow() == target: self.infuse()`. `None` when the chamber is empty."""
         ...
-    def set_lamps(self, r: _float, g: _float, b: _float) -> ActionResult[Literal["ok", "busy", "output_full"]]:
+    def set_lamps(self, r: _int, g: _int, b: _int) -> ActionResult[Literal["ok", "busy", "output_full"]]:
         """Set the three lamp brightnesses, `self.set_lamps(7, 13, 4)`. Each is a **whole number 0-40**; the exact answer is always an integer, so `round()` your computed values. Fractional or out-of-range values raise an argument error (not silently floored). Re-idles to 0 when the script stops. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def infuse(self) -> ActionResult[Literal["ok", "output_full", "empty", "busy"]]:
-        """Produce a **Luminous** sample at the current glow in `self.output`, preserving every existing property and adding the tuned glow. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        """Produce a **Luminous** sample in `self.output`, preserving its other properties and replacing its previous glow with the tuned glow. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def discard(self) -> ActionResult[Literal["ok", "empty", "busy", "output_full"]]:
         """Stage the unchanged chamber sample in `self.output`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
@@ -4255,7 +5155,7 @@ class DnaSequencer(Component):
     """DNA Sequencer: Splices genes into geothermal fragments so they carry what an order needs. You work at the gene level, load a fragment, read the genes it has and the genes it needs, splice the target set in, the machine composes the DNA for you. One splice per fragment."""
     name: _str
     outpost: OutpostRef
-    def load(self, fragment_id: _str, properties: Any = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "chamber_occupied", "not_in_input", "invalid_fragment", "invalid_properties", "invalid_property_match", "busy", "output_full"]]:
+    def load(self, fragment_id: _str, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "chamber_occupied", "not_in_input", "invalid_fragment", "invalid_properties", "invalid_property_match", "busy", "output_full"]]:
         """Pull a geothermal sample of `fragment_id` from `self.input` into the chamber, `self.load(\"gw_cardiac_node\")`. Optional `properties` and `property_match` select a specific identity using the standard any, subset, or exact convention. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     chamber: ChamberFragment | None
@@ -4265,7 +5165,7 @@ class DnaSequencer(Component):
     def gene_catalog(self) -> _list[_str]:
         """Every gene id the machine can splice, `self.gene_catalog()` returns the full list (e.g. `[\"heat_resistance\", \"acid_resistance\", \"cold_tolerance\", \"pressure_tolerance\", \"toxin_resistance\", \"radiation_shield\"]`), the valid values to pass to `splice()`."""
         ...
-    def splice(self, genes: _list[Any]) -> ActionResult[Literal["ok", "destroyed", "empty", "unknown_gene", "busy", "output_full"]]:
+    def splice(self, genes: _list[_str]) -> ActionResult[Literal["ok", "destroyed", "empty", "unknown_gene", "busy", "output_full"]]:
         """Replace the chambered fragment's gene set with exactly `genes`, then place it in `self.output` while preserving every unrelated property. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def discard(self) -> ActionResult[Literal["ok", "empty", "busy", "output_full"]]:
@@ -4308,10 +5208,10 @@ class BioCaster(Component):
     def recipe(self) -> Literal["ma_chitinous_seta", "st_beak", "ms_abdomen_sclerite", "mh_chitin_node", "gm_abdominal_sheath", "vm_tail_barb", "vc_walking_leg", "oc_ink_sac", "bw_hindlimb", "vd_photophore", "hs_abdomen_segment", "hc_beak", "fs_oral_tegmen", "ce_great_appendage", "gw_jaw_fang", "sd_tail_barb"] | None:
         """The recipe you've selected, `self.recipe()` returns the volcanic fragment id you're set to forge (also the raw fragment to `load`), or `None` if none is set."""
         ...
-    def required_range(self) -> _tuple[_float, _float] | None:
+    def required_range(self) -> _list[_float] | None:
         """The selected recipe's target band `[low, high]` in °C, `self.required_range()`. `cast()` must fire with `temperature()` inside it (inclusive). `None` if no recipe is set."""
         ...
-    def required_materials(self) -> _dict[_str, Any]:
+    def required_materials(self) -> _dict[_str, _int]:
         """Lists the fabricated materials required by the selected recipe as `{item_id: count}`. Load exactly those amounts before casting. Iterate with `.items()`. Returns an empty dict when no recipe is selected."""
         ...
     def required_fragment(self) -> Literal["ma_chitinous_seta", "st_beak", "ms_abdomen_sclerite", "mh_chitin_node", "gm_abdominal_sheath", "vm_tail_barb", "vc_walking_leg", "oc_ink_sac", "bw_hindlimb", "vd_photophore", "hs_abdomen_segment", "hc_beak", "fs_oral_tegmen", "ce_great_appendage", "gw_jaw_fang", "sd_tail_barb"] | None:
@@ -4332,7 +5232,7 @@ class BioCaster(Component):
     def fragment(self) -> Literal["ma_chitinous_seta", "st_beak", "ms_abdomen_sclerite", "mh_chitin_node", "gm_abdominal_sheath", "vm_tail_barb", "vc_walking_leg", "oc_ink_sac", "bw_hindlimb", "vd_photophore", "hs_abdomen_segment", "hc_beak", "fs_oral_tegmen", "ce_great_appendage", "gw_jaw_fang", "sd_tail_barb"] | None:
         """The raw fragment id loaded in the chamber, `self.fragment()`, or `None` if the chamber is empty."""
         ...
-    def materials(self) -> _dict[_str, Any]:
+    def materials(self) -> _dict[_str, _int]:
         """The materials currently loaded in the crucible, `self.materials()` returns `{item_id: count}`. Compare against `required_materials()` before `cast()`. Iterate with `.items()`."""
         ...
     def set_heat(self, pct: _float) -> ActionResult[Literal["ok", "empty", "busy", "output_full"]]:
@@ -4341,7 +5241,7 @@ class BioCaster(Component):
     def set_cool(self, pct: _float) -> ActionResult[Literal["ok", "empty", "busy", "output_full"]]:
         """Set the cool knob (water to temperature down), `self.set_cool(100)` for -2400 °C/h, then use a lower percentage for the final approach. Range **0-100**, clamped. Open-loop: keeps cooling and burning water until you set it back. Both knobs may run at once, but that burns both fluids for little movement. With both knobs at 0, the crucible still cools naturally at 20 °C/h. Re-idles to 0 when the chamber empties or the script stops. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
-    def load(self, fragment_id: _str, properties: Any = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "chamber_occupied", "not_in_input", "invalid_fragment", "invalid_properties", "invalid_property_match", "busy", "output_full"]]:
+    def load(self, fragment_id: _str, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "chamber_occupied", "not_in_input", "invalid_fragment", "invalid_properties", "invalid_property_match", "busy", "output_full"]]:
         """Pull a raw volcanic sample of `fragment_id` from `self.input` into the chamber, usually `self.load(self.recipe())`. Optional `properties` and `property_match` select a specific identity using the standard any, subset, or exact convention. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def eject(self) -> ActionResult[Literal["ok", "empty", "busy", "output_full"]]:
@@ -4371,11 +5271,11 @@ class BioConditioner(Component):
     """Bio Conditioner: Inspects a deep-biome fragment against a fixed rulebook, quizzing your script on its properties one at a time. Judge each one correctly to pass the fragment; a single wrong call burns the whole specimen."""
     name: _str
     outpost: OutpostRef
-    def report(self) -> _dict[_str, Any]:
+    def report(self) -> _dict[_str, JsonValue]:
         """The loaded fragment's full condition report, `self.report()` returns `{property: value}` for all 10 properties (`glow`, `brightness`, `smell`, `gunk`, `cracks`, `feel`, `twitch`, `bugs`, `weight`, `sound`). Read the whole thing: the combo rules need siblings (brightness reads glow, weight reads gunk, sound reads cracks). Word properties are strings, numbers are numbers. `{}` if nothing is loaded. Iterate with `.items()` or index `report[\"gunk\"]`."""
         ...
     def properties(self) -> _list[_str]:
-        """Lists the ten property ids in their fixed inspection order, from `\"glow\"` through `\"sound\"`. The order is the same for every Deep fragment, making it suitable for a general inspection loop."""
+        """Lists all ten property ids in a fixed catalog order, from `\"glow\"` through `\"sound\"`. The list is the same for every Deep fragment. Each inspection quizzes five properties in a random order; use `self.current()` to identify the property at each stage."""
         ...
     def fragment(self) -> Literal["gw_spinal_vertebra", "vc_eye_stalk", "oc_lens_eye", "bw_tail_spike", "vd_tendril", "mh_stigmatic_disc", "hs_compound_eye", "ms_eye_cluster", "hc_tentacle_crown", "ma_luminous_ring", "gm_antennal_whip", "fs_holdfast_rootlet", "sd_talon", "ce_cephalic_photophore", "st_carapace_neural", "vm_ventral_photophore"] | None:
         """The raw deep fragment id loaded in the chamber, `self.fragment()`, or `None` if empty."""
@@ -4392,7 +5292,7 @@ class BioConditioner(Component):
     def is_running(self) -> _bool:
         """`True` while a 5-stage run is live (a fragment is loaded with stages left), `self.is_running()`. Drive the gauntlet with `while cond.is_running(): prop = cond.current(); ...`. Goes `False` when the run finishes, burns, or nothing is loaded."""
         ...
-    def load(self, fragment_id: _str, properties: Any = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "chamber_occupied", "not_in_input", "invalid_fragment", "invalid_properties", "invalid_property_match", "busy", "output_full"]]:
+    def load(self, fragment_id: _str, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> ActionResult[Literal["ok", "chamber_occupied", "not_in_input", "invalid_fragment", "invalid_properties", "invalid_property_match", "busy", "output_full"]]:
         """Pull one raw deep sample from `self.input` into the chamber and start a fresh 5-stage run. Optional `properties` and `property_match` select a specific identity using the standard any, subset, or exact convention. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def eject(self) -> ActionResult[Literal["ok", "empty", "busy", "output_full"]]:
@@ -4504,7 +5404,7 @@ class SeedMaker(Component):
     """Seed Maker: An outpost processing building that combines three life-form samples into a viable seed. Most blends fail; the working recipes are unique to this planet and found by trial, and a discovered one can be re-run for more."""
     name: _str
     outpost: OutpostRef
-    def combine(self, blend: Any) -> SeedResult[Literal["seed_found", "sludge", "locked", "busy", "missing_life_forms", "output_full"]]:
+    def combine(self, blend: _list[_str]) -> SeedResult[Literal["seed_found", "sludge", "locked", "busy", "missing_life_forms", "output_full"]]:
         """Run the exact three different life-form ids loaded in this machine's reaction chamber. Every accepted trial consumes the chamber's **1 t of each**. The one-seed result bay must be empty before any trial can start. Fixed result contract: `SeedResult`; branch on `.status` and read `.message`. Payload fields: `.seed_id` and `.species`."""
         ...
     def life_forms(self) -> _list[_str]:
@@ -4580,7 +5480,7 @@ class PlantTerraformer(Component):
     def required_inputs(self) -> _list[_str]:
         """Current cumulative material ids. Starts with `forage`, then adds `water`, `salt`, the `fertilizer` category, and `growth_accelerant` across the five conversions."""
         ...
-    def batch_requirements(self) -> _dict[_str, _float]:
+    def batch_requirements(self) -> _dict[_str, _int]:
         """Exact amounts for the largest next batch allowed by this tier and phase. The dict uses `forage`, `water`, `salt`, `fertilizer_potency`, and `growth_accelerant` as needed. Salt and Growth Accelerant are whole-item counts, rounded up per batch. Fertilizer potency is a whole number. It does not shrink when onboard stock is short."""
         ...
     def fertilizer_potency(self, item_id: _str) -> _int:
@@ -4602,7 +5502,7 @@ class PlantTerraformer(Component):
         ...
 
 class GrowLamp(Component):
-    """Grow Lamp: Lights the four orthogonally adjacent field cells (directly above, below, left, and right) while powered and enabled."""
+    """Grow Lamp: Lights the four orthogonally adjacent field cells (directly above, below, left, and right) while powered and enabled. Scripts find it with `outpost.harvesting_machines()`."""
     name: _str
     def set_enabled(self, enabled: _bool) -> ActionResult[Literal["ok"]]:
         """Command the lamp on or off. Power loss pauses the script but preserves this setpoint; stopping the machine script resets it to `False`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
@@ -4639,7 +5539,7 @@ class GrowLamp(Component):
         ...
 
 class Sprinkler(Component):
-    """Sprinkler: Waters the four orthogonally adjacent field cells (directly above, below, left, and right) while powered, supplied, and enabled."""
+    """Sprinkler: Waters the four orthogonally adjacent field cells (directly above, below, left, and right) while powered, supplied, and enabled. Scripts find it with `outpost.harvesting_machines()`."""
     name: _str
     def set_enabled(self, enabled: _bool) -> ActionResult[Literal["ok"]]:
         """Command watering on or off. Power loss pauses the script but preserves this setpoint; stopping the machine script resets it to `False`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
@@ -4660,7 +5560,7 @@ class Sprinkler(Component):
         """Fraction of the onboard water buffer currently filled (**0-1**). It drops while watering and refills from the connected `water_in` source."""
         ...
     def tier(self) -> _int:
-        """Deployed tier (**1-4**). Mk I/II/III/IV provide **1×/2×/4×/8×** supported plant output, draw **5/25/100/500 W**, and consume **2/10/200/1,000 t/h Water** while active."""
+        """Deployed tier (**1-4**). Mk I/II/III/IV provide **1×/2×/4×/8×** supported plant output, draw **5/25/100/500 W**, and consume **2/4/8/16 t/h Water** while active."""
         ...
     def position(self) -> _str:
         """Grid sector occupied by this sprinkler, such as `\"E14\"`."""
@@ -4680,7 +5580,7 @@ class Sprinkler(Component):
         ...
 
 class Dispenser(Component):
-    """Dispenser: Salts the four orthogonally adjacent field cells (directly above, below, left, and right) while powered, supplied, and enabled."""
+    """Dispenser: Salts the four orthogonally adjacent field cells (directly above, below, left, and right) while powered, supplied, and enabled. Scripts find it with `outpost.harvesting_machines()`."""
     name: _str
     def set_enabled(self, enabled: _bool) -> ActionResult[Literal["ok"]]:
         """Command salting on or off. Power loss pauses the script but preserves this setpoint; stopping the machine script resets it to `False`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
@@ -4721,7 +5621,7 @@ class Dispenser(Component):
         ...
 
 class CropAutomator(Component):
-    """Crop Automator: Queues harvest, plant, and treatment jobs across up to 24 other cells in a centered 5 by 5 service area, then executes one job at a time with a short pause between them."""
+    """Crop Automator: Queues harvest, plant, and treatment jobs across up to 24 other cells in a centered 5 by 5 service area, then executes one job at a time with a short pause between them. Scripts find it with `outpost.harvesting_machines()`."""
     name: _str
     def harvest(self, sector: _str) -> JobReceipt[Literal["queued", "queue_full", "not_placed", "out_of_range"]]:
         """Submit one harvest job for a covered sector. Submission is immediate; valid field work later takes **0.1 hours**. Missing output space pauses this FIFO head without bypassing it. A target mismatch is terminal, takes no work time, and advances the queue. Fixed result contract: `JobReceipt`; branch on `.status` and read `.message`. Payload fields: `.job_id` and `.queue_position`."""
@@ -4784,14 +5684,14 @@ class CropAutomator(Component):
         ...
 
 class GarbageDisposal(Component):
-    """Waste Processor: Permanently destroys one script-selected waste stream: items, liquids, or gases. Use the item input for unwanted stock, `liquid_in` for surplus water or other liquids, and `gas_in` for gases. It has no output and recovers no value."""
+    """Waste Processor: Permanently destroys one script-selected waste stream: items, liquids, or gases. Use the item input for unwanted stock, `liquid_in` for surplus water or other liquids, and `gas_in` for gases. It destroys only while the script that armed it is still running. It has no output and recovers no value."""
     name: _str
     outpost: OutpostRef
     def set_enabled(self, enabled: _bool) -> ActionResult[Literal["ok"]]:
-        """Arm or pause destruction in the selected mode. Stopping the owning script resets this setpoint to off. Staged items and fluids remain intact. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        """Arm or pause destruction in the selected mode. The processor destroys only while the script that armed it keeps running: when that script stops, completes, or errors, this setpoint returns to off and `status()` reads `\"disabled\"`. A Smelter keeps working from its committed recipe, this machine does not. Staged items and fluids remain intact. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def is_enabled(self) -> _bool:
-        """Read whether the owning script has armed the processor."""
+        """Read whether the processor is currently armed. The arm belongs to a running script, so it reads `False` again once that script ends."""
         ...
     def set_mode(self, mode: _str) -> ActionResult[Literal["ok"]]:
         """Select exactly one destruction stream: `\"items\"`, `\"liquid\"`, or `\"gas\"`. Changing modes pauses the other buffers without deleting them. The selected fluid port accepts flow only while enabled. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
@@ -4800,7 +5700,7 @@ class GarbageDisposal(Component):
         """Read the selected waste stream."""
         ...
     def status(self) -> Literal["disabled", "no_power", "idle", "processing"]:
-        """Read the exact live state: `\"disabled\"`, `\"no_power\"`, `\"idle\"`, or `\"processing\"`."""
+        """Read the exact live state: `\"disabled\"`, `\"no_power\"`, `\"idle\"`, or `\"processing\"`. `\"disabled\"` means no running script has armed the processor, so staged waste waits untouched."""
         ...
     def throughput(self) -> _float:
         """Read the selected mode's current destruction rate. Item mode reports units/h; liquid and gas modes report t/h."""
@@ -4844,7 +5744,7 @@ class Habitat(Component):
         """Bring this Habitat's selected revival target to life with `self.revive()`. Stock at least **2** of its feed first: revival spends one and one must remain for rearing. Stage the exact rarity-scaled Bio Lab reagents shown by the Habitat or `journal.cataloged_creatures(...)`. Creature bonuses do not change this one-time recipe. Failed checks spend nothing and keep the selected target. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def rehouse(self, creature_id: _str) -> ActionResult[Literal["ok", "occupied", "no_colony", "not_established", "insufficient_capacity", "unknown_creature"]]:
-        """Attach an established species colony to this Habitat with `self.rehouse(\"salt_tortoise\")`. The destination must be empty and its current capacity must fit the entire colony. The same call moves a colony directly from another Habitat or restores one after its former Habitat was undeployed. Population, life stage, brood progress, Insight history, and purchased bonuses are preserved. Growth and active Wildlife contribution pause while a colony is unhoused. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        """Attach an established species colony to this Habitat with `self.rehouse(\"salt_tortoise\")`. The destination must be empty and its current capacity must fit the entire colony. The same call moves a colony directly from another Habitat or restores one after its former Habitat was undeployed. Population, life stage, brood progress, Insight history, and purchased bonuses are preserved, and the population keeps counting toward Wildlife. Only growth pauses while a colony is unhoused. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def set_gas_intake(self, rate: _float) -> ActionResult[Literal["ok"]]:
         """Set the gas inflow rate in **t/h**, pulled from the connected Gas Tank (wire it with `self.gas_in.connect(\"gas_tank_1\")`) into the enclosure's gas reserve. This is the regulator actuator: read `gas_level()`, compare it with `gas_band()`, and raise intake below the band or lower it above the band. Idle at **0**. Clamps to `>= 0`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
@@ -4874,7 +5774,7 @@ class Habitat(Component):
         """The creature id explicitly selected with `set_revival_target(...)`, or `\"\"` before selection and after establishment. Failed setup checks and rearing attempts retain this value, while `species()` remains empty until revival actually starts."""
         ...
     def life_stage(self) -> Literal["empty", "founded", "first_breeding", "self_sustaining", "thriving", "abundant"]:
-        """The colony's stage as a string: `\"empty\"`, `\"founded\"`, `\"first_breeding\"`, `\"self_sustaining\"`, `\"thriving\"`, or `\"abundant\"`. The colony climbs as its own population crosses each stage threshold; each climb opens a harder requirement and raises the ceiling. Branch on it to scale up your supply: `if self.life_stage() == \"thriving\": self.set_liquid_intake(...)`."""
+        """The colony's stage as a string: `\"empty\"`, `\"founded\"`, `\"first_breeding\"`, `\"self_sustaining\"`, `\"thriving\"`, or `\"abundant\"`. The colony advances as its population crosses each stage threshold. Later stages can change support requirements; earlier advances raise base capacity, but entering Abundant does not. Branch on the stage to scale up your supply: `if self.life_stage() == \"thriving\": self.set_liquid_intake(...)`."""
         ...
     def is_established(self) -> _bool:
         """`True` once the colony cleared the Founded rearing window and is counting on the sensor; `False` during rearing or when empty. Gate breeding logic on it: `if self.is_established(): regulate()`."""
@@ -4955,10 +5855,10 @@ class Habitat(Component):
         """The next life stage's exact liquid window as `[low, high]` in **tons**. Returns `[]` if that stage needs no liquid or the colony is already Abundant. Pair with `next_required_liquid()`."""
         ...
     def carrying_capacity(self) -> _int:
-        """The colony's ceiling at its current life stage. Population breeds toward it and plateaus there; a maxed colony consumes nothing. Life-stage advancement raises the base ceiling, and Habitat Mk II doubles it. Adaptations never change capacity. Reads **0** when empty."""
+        """The colony's current ceiling. Population breeds toward it and plateaus there; a maxed colony consumes nothing. Earlier stage advances raise base capacity, but Thriving and Abundant share a base of **175,000**. Habitat Mk II doubles the base, while overcrowding can lower the live ceiling. Adaptations never change capacity. Reads **0** when empty."""
         ...
     def headroom(self) -> _int:
-        """Individuals still breedable before the current ceiling (`carrying_capacity() - population()`, floored at **0**). **0** means this colony is capped and idling. Before Abundant, reach the next stage; at Abundant Mk I, apply the sole Habitat Mk II pack or grow another species."""
+        """Individuals still breedable before the current ceiling (`carrying_capacity() - population()`, floored at **0**). **0** means this colony is capped and idling. Upgrade a capped Thriving Mk I Habitat to Mk II to make the **175,001** Abundant threshold reachable. Reduce overcrowding if it lowers the ceiling below a stage threshold. When an Abundant colony is fully capped, grow another species."""
         ...
     def next_stage_population(self) -> _int:
         """Exact population that opens the next life stage: **250**, **2,500**, **25,000**, or **175,001**. Returns **0** when the Habitat is empty or already Abundant. Mk I stops at **175,000**, so entering Abundant requires Mk II. Compare the result with `population()` so your script can prepare the next supply before the transition."""
@@ -4996,7 +5896,7 @@ class FeedMaker(Component):
     def find_recipe(self, recipe_id: _str) -> Recipe | None:
         """Find one unlocked feed recipe by id without looping through `list_recipes()`. Returns its `Recipe` object, or `None` when the id is unknown, locked, or belongs to another machine."""
         ...
-    def set_recipe(self, recipe_or_id: Any) -> ActionResult[Literal["ok", "unknown_recipe", "offline", "recipe_locked", "busy", "material_mismatch"]]:
+    def set_recipe(self, recipe_or_id: RecipeRef) -> ActionResult[Literal["ok", "unknown_recipe", "offline", "recipe_locked", "busy", "material_mismatch"]]:
         """Pick which creature feed to craft by id or by passing a Recipe from `list_recipes()`, e.g. `self.set_recipe(\"craft_feed_salt_tortoise\")`. Once set, ProcessingSystem crafts automatically whenever the stockpile holds the inputs and the output bin has room. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def clear_recipe(self) -> ActionResult[Literal["ok", "busy", "material_present"]]:
@@ -5006,10 +5906,10 @@ class FeedMaker(Component):
         """Returns the current recipe id, or `\"\"` when none is set (or the set recipe is no longer unlocked). Use to check state before re-setting: `if self.get_recipe() == \"\": self.set_recipe(...)`."""
         ...
     def get_recipe_inputs(self) -> _dict[_str, _int]:
-        """Dict mapping each input `item_id` → units consumed per craft for the current recipe (empty dict if no recipe set). Iterate it to know what to stock: `for item, qty in self.get_recipe_inputs().items(): self.input.take(item, qty * 5)`."""
+        """A dict mapping each input `item_id` → units consumed per craft for the current recipe (empty dict if no recipe set). Iterate it to know what to stock: `for item, qty in self.get_recipe_inputs().items(): self.input.take(item, qty * 5)`."""
         ...
     def get_stockpile(self) -> _dict[_str, _int]:
-        """Dict mapping each `item_id` currently in the input stockpile → its unit count. Read it to see what's loaded before crafting."""
+        """A dict mapping each `item_id` currently in the input stockpile → its unit count. Read it to see what's loaded before crafting."""
         ...
     def get_stockpile_used(self) -> _int:
         """Total units across every material in the input stockpile. Compare to `get_stockpile_capacity()` to avoid overfilling."""
@@ -5051,7 +5951,7 @@ class Refiner(Component):
     def find_recipe(self, recipe_id: _str) -> Recipe | None:
         """Find one unlocked refining recipe by id without looping through `list_recipes()`. Returns its `Recipe` object, or `None` when the id is unknown, locked, or belongs to another machine."""
         ...
-    def set_recipe(self, recipe_or_id: Any) -> ActionResult[Literal["ok", "unknown_recipe", "offline", "recipe_locked", "busy", "output_busy"]]:
+    def set_recipe(self, recipe_or_id: RecipeRef) -> ActionResult[Literal["ok", "unknown_recipe", "offline", "recipe_locked", "busy", "output_busy"]]:
         """Pick which exotic to refine by id or by passing a Recipe from `list_recipes()`, e.g. `self.set_recipe(\"refine_chlorine\")`. Once set, the refiner crafts automatically whenever the raw feedstock + tar are present and the out port has room. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def clear_recipe(self) -> ActionResult[Literal["ok", "busy", "material_present"]]:
@@ -5064,7 +5964,7 @@ class Refiner(Component):
         """Returns the current recipe id, or `\"\"` when none is set (or the set recipe is no longer unlocked). Use to check state before re-setting: `if self.get_recipe() == \"\": self.set_recipe(\"refine_sulfur_gas\")`."""
         ...
     def get_recipe_inputs(self) -> _dict[_str, _int]:
-        """Dict mapping each input `item_id` → units consumed per craft, for the Refiner this is the **tar** cost, e.g. `{\"tar\": 5}` for a rare exotic. Empty dict if no recipe is set. Read it to keep the tar bin stocked: `for item, qty in self.get_recipe_inputs().items(): self.input.take(item, qty * 5)`. (The raw-feedstock fluid amount is metered on the input ports, not listed here.)"""
+        """A dict mapping each input `item_id` → units consumed per craft, for the Refiner this is the **tar** cost, e.g. `{\"tar\": 5}` for a rare exotic. Empty dict if no recipe is set. Read it to keep the tar bin stocked: `for item, qty in self.get_recipe_inputs().items(): self.input.take(item, qty * 5)`. (The raw-feedstock fluid amount is metered on the input ports, not listed here.)"""
         ...
     def is_running(self) -> _bool:
         """`True` while a refine craft is actively advancing this tick (recipe set + unlocked, raw feedstock + tar present, out port has room). `False` when stalled, idle, or powered off."""
@@ -5115,7 +6015,7 @@ class ExoticGasCap(Component):
         """Current release-valve setting, `0.0` (holding) to `1.0` (wide open). Read it back after `set_throttle(...)`."""
         ...
     def set_throttle(self, t: _float) -> ActionResult[Literal["ok"]]:
-        """Open the cap's release valve in the `0.0 to 1.0` range (clamped). `0` holds the buffer; `1.0` releases gas across reachable connected destinations as fast as buffer supply, headroom, and throughput allow. This script-owned setpoint resets to `0` when the script stops, ends, or errors. `[self only]` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        """Open the cap's release valve from `0.0` to `1.0` (clamped). `0` holds the buffer; `1.0` releases gas across reachable connected destinations as fast as buffer supply, headroom, and throughput allow. This script-owned setpoint resets to `0` when the script stops, ends, or errors. `[self only]` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     gas_out: FluidPort
     def peek_command(self) -> ScriptCommand | None:
@@ -5150,7 +6050,7 @@ class ExoticSpringTap(Component):
         """Current release-valve setting, `0.0` (holding) to `1.0` (wide open). Read it back after `set_throttle(...)`."""
         ...
     def set_throttle(self, t: _float) -> ActionResult[Literal["ok"]]:
-        """Open the tap's release valve in the `0.0 to 1.0` range (clamped). `0` holds the buffer; `1.0` releases liquid across reachable connected destinations as fast as buffer supply, headroom, and throughput allow. This script-owned setpoint resets to `0` when the script stops, ends, or errors. `[self only]` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
+        """Open the tap's release valve from `0.0` to `1.0` (clamped). `0` holds the buffer; `1.0` releases liquid across reachable connected destinations as fast as buffer supply, headroom, and throughput allow. This script-owned setpoint resets to `0` when the script stops, ends, or errors. `[self only]` Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     liquid_out: FluidPort
     def peek_command(self) -> ScriptCommand | None:
@@ -5167,7 +6067,7 @@ class ExoticSpringTap(Component):
         ...
 
 class LeadCask(Component):
-    """Lead Cask: The only safe stationary home for hot radioactive cargo. Drones drop Raw Uranium into it, the Fuel Assembler draws from it and returns finished Fuel Rods, and the Reactor pulls its fuel from it."""
+    """Lead Cask: Shielded stationary storage for hot radioactive cargo. Drones drop Raw Uranium into it, the Fuel Assembler draws from it and returns finished Fuel Rods, and the Reactor pulls its fuel from it."""
     name: _str
     outpost: OutpostRef
     def count(self, item_id: _str) -> _int:
@@ -5182,7 +6082,7 @@ class LeadCask(Component):
     def material(self) -> Literal["", "raw_uranium", "fuel_rod"]:
         """What the cask is latched to, `\"raw_uranium\"`, `\"fuel_rod\"`, or empty. One material per cask, like every stock bin."""
         ...
-    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: Any = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
+    def transfer_to(self, target: _str, item_id: _str, count: _int, properties: ItemProperties | None = ..., property_match: _str | None = ...) -> TransferResult[Literal["ok", "partial", "no_op", "research_required", "busy", "invalid_properties", "invalid_property_match", "target_missing", "unsupported_target", "same_storage", "target_not_local", "source_under_construction", "source_wrong_material", "source_empty", "source_changed", "target_under_construction", "target_wrong_material", "hot_cargo_requires_cask", "cask_accepts_hot_only", "slots_full", "target_full", "target_changed"]]:
         """Requires **Auto Feeders** research. Move up to whole-number `count` units of `item_id` from this storage endpoint to another Storage Bin, Warehouse, Large Warehouse, Lead Cask, or Inventory. Pass a storage building's display name or instance id, or `\"inventory\"`. Inventory participates only at **Nocturna Base**. The call waits for the physical store's feeder cycle to finish, and every participating storage building remains busy during that cycle. Exact item properties are preserved; optional `properties` and `property_match` select a variant. The calling script may run anywhere, but cargo never crosses outpost boundaries through this method. Fixed result contract: `TransferResult`; branch on `.status` and read `.message`. Payload fields: `.requested` and `.moved`."""
         ...
 
@@ -5224,7 +6124,7 @@ class FuelAssembler(Component):
     def find_recipe(self, recipe_id: _str) -> Recipe | None:
         """Find one unlocked fuel recipe by id without looping through `list_recipes()`. Returns its `Recipe` object, or `None` when the id is unknown, locked, or belongs to another machine."""
         ...
-    def set_recipe(self, recipe_or_id: Any) -> ActionResult[Literal["ok", "unknown_recipe", "recipe_locked", "offline", "busy", "material_mismatch"]]:
+    def set_recipe(self, recipe_or_id: RecipeRef) -> ActionResult[Literal["ok", "unknown_recipe", "recipe_locked", "offline", "busy", "material_mismatch"]]:
         """Select a Fuel Rod or Nuclear Battery recipe by id or by passing a Recipe from `list_recipes()`. Fixed result contract: `ActionResult`; branch on `.status` and read `.message`."""
         ...
     def clear_recipe(self) -> ActionResult[Literal["ok", "busy", "material_present"]]:
@@ -5242,7 +6142,7 @@ class FuelAssembler(Component):
     def get_progress(self) -> _float:
         """Current craft progress **0-1**. Progress survives power cuts and resumes."""
         ...
-    def get_stockpile(self) -> _dict[_str, Any]:
+    def get_stockpile(self) -> _dict[_str, _int]:
         """Staged inputs by item id, `{\"raw_uranium\": 12, \"lead_plate\": 4}`-shaped dict."""
         ...
     def get_output_count(self) -> _int:
@@ -5349,6 +6249,8 @@ def get_component(name: Literal["power_control"]) -> PowerControl | None: ...
 @overload
 def get_component(name: Literal["run_control"]) -> RunControl | None: ...
 @overload
+def get_component(name: Literal["computer"]) -> Computer | None: ...
+@overload
 def get_component(name: Literal["research"]) -> Research | None: ...
 @overload
 def get_component(name: Literal["item_catalog"]) -> ItemCatalog | None: ...
@@ -5426,18 +6328,18 @@ def list_pipes() -> _list[Pipe]:
     """List every infrastructure pipe currently laid (complete or in-progress) as live read-only `Pipe` handles."""
     ...
 # Output text to the console. Multiple values are joined by `sep` (default a single space). `end` is appended after the last value (default a newline). Console output is a character stream and the newlines in it are what break lines, so `end=""` leaves the line open and the next `print()` continues it: use that to build a row from several calls, then close it with a bare `print()`. Every call updates an unfinished line immediately. Within that row, `\r` returns the write position to the start and `\b` moves it back one visible character. Neither control erases text by itself; following text overwrites existing text. Neither control can enter an earlier row, and ANSI escape sequences are not interpreted.
-def print(*values: Any, sep: _str = ..., end: _str = ...) -> None: ...
+def print(*values: object, sep: _str = ..., end: _str = ...) -> None: ...
 # Output an amber warning line to the persistent console. Same argument behavior as `print()`, but routed to the WARNINGS filter. Use it for background monitors that need attention without showing a toast. Use `notify(text, "warn")` when the player should be interrupted.
-def warn(*values: Any, sep: _str = ..., end: _str = ...) -> None: ...
+def warn(*values: object, sep: _str = ..., end: _str = ...) -> None: ...
 # Output low-priority telemetry to the persistent console. Same argument behavior as `print()`, but hidden from the ALL view unless debug output is enabled in console options. Use it for noisy tuning data that should not crowd normal logs.
-def debug(*values: Any, sep: _str = ..., end: _str = ...) -> None: ...
+def debug(*values: object, sep: _str = ..., end: _str = ...) -> None: ...
 def notify(text: _str, /, level: _str = ..., duration_seconds: _float = ..., dismissible: _bool = ...) -> None:
     """Show a toast to the player and add it to the **Computer → Notifications** archive. Use sparingly: for events that genuinely need the operator's attention (battery critical, contract solved, drone stranded); prefer `print()` for ongoing telemetry. `level` is `\"info\"` (default), `\"warn\"`, or `\"error\"` and drives the toast's color + the history entry's color dot. `duration_seconds` sets how long the toast stays before auto-dismissing: clamped to **0.5-30s**; omitted uses the default (**5s** info/warn, **6s** error). Pass **0** as the duration to make the toast **sticky**: it never auto-dismisses and stays until the player clicks it. Use this for fatal errors that must be acknowledged. `dismissible` defaults to `True`; pass `False` as the fourth argument for a forced-read toast with no early close. A sticky toast is always dismissible, so it can never pin the screen. Identical consecutive notifications from the same script collapse inside a 1-second window, and a sticky already on screen is never duplicated, so a tight loop can't spam the screen."""
     ...
 def sleep(seconds: _float, /) -> None:
     """Wait before continuing. **The argument is in real seconds**, not world-clock hours. The day cycle compresses **24** world-clock hours into a shorter real-time window, so `sleep(25)` is about 1 world-clock hour at the default 10-min-per-day pacing. For planet-aware delays, query the conversion: `sleep(get_component(\"clock\").real_seconds_per_hour() * 2)` waits exactly two world-clock hours regardless of pacing. Loops are paced automatically; `sleep()` is for deliberate delays."""
     ...
-def len(value: Any, /) -> _int:
+def len(value: Sized, /) -> _int:
     """Length of a list, tuple, string, dict, or set."""
     ...
 class range(_list[_int]):
@@ -5446,35 +6348,41 @@ class range(_list[_int]):
     def __init__(self, stop: _int, /) -> None: ...
     @overload
     def __init__(self, start: _int, stop: _int, step: _int = ..., /) -> None: ...
-def chr(code: _float, /) -> _str:
+def chr(code: _int, /) -> _str:
     """Character from Unicode code point (e.g. chr(65) → 'A')."""
     ...
 def ord(char: _str, /) -> _int:
     """Unicode code point from character (e.g. ord('A') → 65)."""
     ...
-def object_type(value: Any, /) -> _str:
+def object_type(value: object, /) -> _str:
     """Return a concrete registered name such as `\"MiningSite\"`, `\"CatalogedFragment\"`, or `\"Position\"` for a game data object without changing the established result of `type(value)`. Component references return `\"Component\"`; other values use the same public category as `type(value)`."""
     ...
-def vars(object: Any, /) -> _dict[_str, Any]:
+def vars(object: object, /) -> _dict[_str, Any]:
     """Return a detached, shallow dictionary of an object's public data fields. Structured results, positions, journal entries, and other game data values include their documented attribute fields but not methods; class instances include their own stored attributes. Changing the returned dictionary does not change the object, although nested lists and dictionaries are shared. Use `object_type(object)` separately when the concrete registered name is needed. Pass exactly one object; the no-argument local-scope form is not supported."""
     ...
-def total_ordering(cls: Any, /) -> Any:
+def total_ordering(cls: _type, /) -> _type:
     """Class decorator that preserves the class object and fills missing ordering methods from `__eq__` plus one of `__lt__`, `__le__`, `__gt__`, or `__ge__`. Explicit methods are never replaced. Applying it mutates the local class namespace."""
     ...
-def wraps(wrapped: Any, /) -> Any:
+def wraps(wrapped: Callable[..., Any], /) -> Callable[..., Any]:
     """Return a decorator that preserves the wrapped callable's supported name, qualified name, docstring, custom attributes, and `__wrapped__` link while keeping the wrapper's call behavior. Applying the returned decorator mutates only that local wrapper function."""
     ...
-def TypedDict(name: _str, fields: Any, /) -> Any:
-    """Declare a fixed-key dict shape for the editor. Use the functional form (`State = TypedDict(\"State\", {\"mode\": str})`) and annotate records with that name (`state: State = {...}`). Runtime treats this as an inert type marker; the editor uses it for key autocomplete, field type flow, and typo lint."""
+def TypedDict(name: _str, fields: _dict[_str, object], /) -> _type:
+    """Declare a fixed-key dict shape for the editor. Use the functional form (`State = TypedDict(\"State\", {\"mode\": str})`) and annotate records with that name (`state: State = {...}`). Runtime treats this as an inert type marker; the editor uses it for key autocomplete, field type flow, and typo lint. The field dictionary is ordinary code, so a game type used as a field type needs its import first (`from __builtins__ import Site`, then `\"site\": Site`) or the name in quotes (`\"site\": \"Site\"`); both give the same editor type flow."""
     ...
 # Return `True` if `value.name` is readable, otherwise `False`. The attribute name must be a string. Useful in duck-typed helpers that accept several documented object shapes, e.g. `hasattr(value, "required_recipe")`. Gameplay result objects keep their fixed fields, so branch on `.status` before reading a documented payload such as `analysis.info`. Missing mounted sub-objects such as `self.sonar` return `False` when the module is not installed.
-def hasattr(value: Any, name: _str, /) -> _bool: ...
+def hasattr(value: object, name: _str, /) -> _bool: ...
 # Read an attribute by string name, exactly like `value.name`. Without `default`, a missing attribute raises `AttributeError`; with `default`, missing attributes return that fallback. Works for game object properties/methods and built-in methods such as `getattr([1], "append")`. Use with `hasattr()` for duck-typed helpers, not as a replacement for a gameplay result's documented `.status`, `.message`, and payload fields.
 @overload
-def getattr(value: Any, name: _str, /) -> Any: ...
+def getattr(value: object, name: _str, /) -> Any: ...
 @overload
-def getattr(value: Any, name: _str, default: Any, /) -> Any: ...
-def abs(number: Any, /) -> _float:
+def getattr(value: object, name: _str, default: object, /) -> Any: ...
+def setattr(value: object, name: _str, new_value: object, /) -> None:
+    """Set the attribute called `name` on `value`, exactly as `value.name = new_value` does, when the name is only known while the script runs: `setattr(state, field, 0)`."""
+    ...
+def delattr(value: object, name: _str, /) -> None:
+    """Remove the attribute called `name` from `value`, exactly as `del value.name` does."""
+    ...
+def abs(number: _float, /) -> _float:
     """Absolute value."""
     ...
 def isclose(a: _float, b: _float, rel_tol: _float = ..., abs_tol: _float = ...) -> _bool:
@@ -5494,11 +6402,11 @@ def max(a: _T, b: _T, /, *args: _T, key: Callable[[_T], Any] | None = ...) -> _T
 def max(iterable: Iterable[_T], /, *, key: Callable[[_T], Any] | None = ...) -> _T: ...
 @overload
 def max(iterable: Iterable[_T], /, *, key: Callable[[_T], Any] | None = ..., default: _U) -> _T | _U: ...
-def round(number: _float, ndigits: Any = ...) -> _float:
+def round(number: _float, ndigits: _int | None = ...) -> _float:
     """Round with ties to even. Without `ndigits` (or with `None`), returns the nearest whole value and rejects NaN/infinity. Integer and boolean inputs remain exact; negative `ndigits` rounds exact integers in decimal. Both arguments accept keyword form."""
     ...
-def pow(base: _float, exp: _float, mod: Any = ...) -> _float:
-    """`base` raised to `exp`. Optional `mod` performs exact modular exponentiation and accepts negative exponents when the base has a modular inverse. `base`, `exp`, and `mod` accept positional or keyword form."""
+def pow(base: _float, exp: _float, mod: _int | None = ...) -> _float:
+    """`base` raised to `exp`, exactly like `base ** exp`, so your own classes that define `__pow__` or `__rpow__` work too. Optional `mod` performs exact modular exponentiation and accepts negative exponents when the base has a modular inverse; a class base receives it as `__pow__(exp, mod)`. `base`, `exp`, and `mod` accept positional or keyword form."""
     ...
 def random() -> _float:
     """Random floating-point number `>= 0` and `< 1`. Each successful run begins a new automatic sequence. Also available as `random.random()` after `import random`."""
@@ -5506,95 +6414,107 @@ def random() -> _float:
 def rand() -> _float:
     """Short alias for `random()`: a random floating-point number `>= 0` and `< 1`. Each successful run begins a new automatic sequence. Also available as `random.rand()` after `import random`."""
     ...
-def randint(min: _float, max: _float, /) -> _int:
+def randint(min: _int, max: _int, /) -> _int:
     """Random integer `N` where `min <= N <= max`. Bounds are inclusive and must be whole numbers. Each successful run begins a new automatic sequence. Useful with `planet.get_bounds()` for random valid coordinates. Also available as `random.randint(min, max)` after `import random`."""
     ...
-def sqrt(number: Any, /) -> _float:
+def sqrt(number: _float, /) -> _float:
     """Square root. Errors on negative input."""
     ...
-def floor(number: Any, /) -> _int:
+def floor(number: _float, /) -> _int:
     """Round down to the nearest integer."""
     ...
-def ceil(number: Any, /) -> _int:
+def ceil(number: _float, /) -> _int:
     """Round up to the nearest integer."""
     ...
-def trunc(number: Any, /) -> _int:
+def trunc(number: _float, /) -> _int:
     """Drop the fractional part (round toward zero)."""
     ...
-def divmod(a: Any, b: Any, /) -> _tuple[_float, ...]:
+def divmod(a: _float, b: _float, /) -> _tuple[_float, ...]:
     """Divides `a` by `b` and returns two values: the quotient rounded down, and the remainder left over. For example, `divmod(19, 2)` returns `(9, 1)` because 2 fits into 19 nine times with 1 left over."""
     ...
-def sign(number: Any, /) -> _int:
+def sign(number: _float, /) -> _int:
     """Returns `-1`, `0`, or `1` for negative, zero, or positive input."""
     ...
-def exp(number: Any, /) -> _float:
+def exp(number: _float, /) -> _float:
     """`e` raised to the power of the argument."""
     ...
-def log(number: Any, base: _float = ..., /) -> _float:
+def log(number: _float, base: _float = ..., /) -> _float:
     """Natural log, or log with the given base."""
     ...
-def log2(number: Any, /) -> _float:
+def log2(number: _float, /) -> _float:
     """Base-2 logarithm."""
     ...
-def log10(number: Any, /) -> _float:
+def log10(number: _float, /) -> _float:
     """Base-10 logarithm."""
     ...
-def sin(radians: Any, /) -> _float:
+def sin(radians: _float, /) -> _float:
     """Sine of an angle in radians."""
     ...
-def cos(radians: Any, /) -> _float:
+def cos(radians: _float, /) -> _float:
     """Cosine of an angle in radians."""
     ...
-def tan(radians: Any, /) -> _float:
+def tan(radians: _float, /) -> _float:
     """Tangent of an angle in radians."""
     ...
-def asin(number: Any, /) -> _float:
-    """Arc sine. Input must be in `-1 to 1`."""
+def asin(number: _float, /) -> _float:
+    """Arc sine. Input must be from `-1` to `1`."""
     ...
-def acos(number: Any, /) -> _float:
-    """Arc cosine. Input must be in `-1 to 1`."""
+def acos(number: _float, /) -> _float:
+    """Arc cosine. Input must be from `-1` to `1`."""
     ...
-def atan(number: Any, /) -> _float:
+def atan(number: _float, /) -> _float:
     """Arc tangent."""
     ...
 def atan2(y: _float, x: _float, /) -> _float:
     """Arc tangent of `y/x`, correctly choosing the quadrant."""
     ...
-def degrees(radians: Any, /) -> _float:
+def degrees(radians: _float, /) -> _float:
     """Convert radians to degrees."""
     ...
 def radians(degrees: _float, /) -> _float:
     """Convert degrees to radians."""
     ...
-def sorted(sequence: Any, /, *, key: Any = ..., reverse: _bool = ...) -> _list[Any]:
+def sorted(sequence: Iterable[_T], /, *, key: Callable[[_T], Any] | None = ..., reverse: _bool = ...) -> _list[_T]:
     """Return a new list sorted using `<` between mutually comparable keys. With `key=None` (the default), each value is its own key. Numeric and boolean keys compare across that family, strings compare lexicographically, and user objects may define the exact rich-comparison slots needed by `<`; unsupported pairs raise. `key=` is called once per item and must be pure: it cannot suspend or mutate game state. `reverse` is truth-tested, and the finite input is handled eagerly within the interpreter's collection limit."""
     ...
 class reversed(_list[_T], Generic[_T]):
     """Return a reversed list copy of any finite iterable. This consumes the input fully, so an infinite generator exceeds the collection limit; dictionaries (their keys), sets (deterministic insertion order), generators, and custom iterator-protocol classes are accepted."""
     def __init__(self, sequence: Iterable[_T], /) -> None: ...
 class enumerate(_list[_tuple[_int, _T]], Generic[_T]):
-    """List of (index, value) pairs. Optional integer `start=N` shifts the index: `enumerate(items, start=1)` for 1-based indexing. Arbitrarily large integer starts remain exact. `start` may be positional or keyword, but not both."""
+    """List of (index, value) pairs. Optional integer `start=N` shifts the index: `enumerate(items, start=1)` for 1-based indexing. Arbitrarily large integer starts remain exact. `start` may be positional or keyword, but not both. Given a generator, it returns a lazy iterator instead of a list, taking each item only when the loop asks for it."""
+    @overload
+    def __new__(cls, sequence: Generator[_T, Any, Any], /, start: _int = ...) -> Iterator[_tuple[_int, _T]]: ...  # pyright: ignore[reportOverlappingOverload]
+    @overload
+    def __new__(cls, sequence: Iterable[_T], /, start: _int = ...) -> enumerate[_T]: ...
     def __init__(self, sequence: Iterable[_T], /, start: _int = ...) -> None: ...
-# Sum of every numeric item in an iterable. Optional `start` (number or list): `sum(list_of_lists, [])` flattens. `start` may be positional or keyword, but not both.
+# Adds up the items of an iterable with `+`, starting from `start` (default `0`). Works for numbers, lists (`sum(list_of_lists, [])` flattens), tuples, and your own classes that define `__add__` or `__radd__`. Strings are refused: use `"".join(items)`. `start` may be positional or keyword, but not both.
 @overload
 def sum(iterable: Iterable[Any], /, start: _float = ...) -> _float: ...
 @overload
 def sum(iterable: Iterable[Any], /, start: _list[Any]) -> _list[Any]: ...
-def prod(iterable: Any, /, start: _float = ...) -> _float:
-    """Product of every numeric item in an iterable. Empty iterables return `start`. `start` may be positional or keyword, but not both."""
+@overload
+def sum(iterable: Iterable[Any], /, start: object) -> Any: ...
+def prod(iterable: Iterable[_float], /, start: _float = ...) -> _float:
+    """Multiplies the items of an iterable with `*`, starting from `start` (default `1`). Works for numbers and for your own classes that define `__mul__` or `__rmul__`. Empty iterables return `start`. `start` may be positional or keyword, but not both."""
     ...
-def all(iterable: Any, /) -> _bool:
+def all(iterable: Iterable[Any], /) -> _bool:
     """True if every item in the iterable is truthy. Stops at the first falsy item, so generators are consumed only as far as needed."""
     ...
-def any(iterable: Any, /) -> _bool:
+def any(iterable: Iterable[Any], /) -> _bool:
     """True if any item in the iterable is truthy. Stops at the first truthy item, so generators are consumed only as far as needed."""
     ...
 class zip(_list[_Z], Generic[_Z]):
-    """Combine iterables into tuples. With no args, returns empty list. With one arg, returns a list of 1-tuples. Stops at the shortest input unless `strict=True`, which raises if input lengths differ."""
+    """Combine iterables into tuples. With no args, returns empty list. With one arg, returns a list of 1-tuples. Stops at the shortest input unless `strict=True`, which raises if input lengths differ. When an input is a generator, it returns a lazy iterator instead of a list."""
     @overload
     def __new__(cls, *, strict: _bool = ...) -> zip[_tuple[Any, ...]]: ...
     @overload
+    def __new__(cls, iter1: Generator[_T, Any, Any], /, *, strict: _bool = ...) -> Iterator[_tuple[_T]]: ...  # pyright: ignore[reportOverlappingOverload]
+    @overload
     def __new__(cls, iter1: Iterable[_T], /, *, strict: _bool = ...) -> zip[_tuple[_T]]: ...
+    @overload
+    def __new__(cls, iter1: Generator[_T, Any, Any], iter2: Iterable[_U], /, *, strict: _bool = ...) -> Iterator[_tuple[_T, _U]]: ...  # pyright: ignore[reportOverlappingOverload]
+    @overload
+    def __new__(cls, iter1: Iterable[_T], iter2: Generator[_U, Any, Any], /, *, strict: _bool = ...) -> Iterator[_tuple[_T, _U]]: ...  # pyright: ignore[reportOverlappingOverload]
     @overload
     def __new__(cls, iter1: Iterable[_T], iter2: Iterable[_U], /, *, strict: _bool = ...) -> zip[_tuple[_T, _U]]: ...
     @overload
@@ -5602,28 +6522,31 @@ class zip(_list[_Z], Generic[_Z]):
     @overload
     def __new__(cls, iter1: Iterable[Any], iter2: Iterable[Any], iter3: Iterable[Any], *iterables: Iterable[Any], strict: _bool = ...) -> zip[_tuple[Any, ...]]: ...
     def __init__(self, *iterables: Iterable[Any], strict: _bool = ...) -> None: ...
-def isinstance(value: Any, type_or_tuple: Any, /) -> _bool:
-    """Check if a value is of the given type. Accepts a builtin type callable (`object`, `int`, `float`, `str`, `list`, `dict`, `set`, `tuple`, `slice`, `bool`), a string type name, a tuple of types, or a type union like `int | float` (matches any). `int` matches whole numbers and booleans, `float` matches fractional / non-finite numbers, and string `\"number\"` remains the broad numeric family for scripts that intentionally accept either."""
+def isinstance(value: object, type_or_tuple: _type | _tuple[Any, ...], /) -> _bool:
+    """Check if a value is of the given type. Accepts a builtin type callable (`object`, `int`, `float`, `str`, `list`, `dict`, `set`, `tuple`, `slice`, `bool`), a class of your own, a game class imported from `__builtins__` (after `from __builtins__ import Smelter`, a smelter is an instance of `Smelter` and of `Component`), a string type name, a tuple of types, or a type union like `int | float` (matches any). `int` matches whole numbers and booleans, `float` matches fractional / non-finite numbers, and string `\"number\"` remains the broad numeric family for scripts that intentionally accept either."""
     ...
-def hex(integer: Any, /) -> _str:
+def hex(integer: _int, /) -> _str:
     """Render an integer as a Python-style hex string with `0x` prefix. `hex(255)` → `'0xff'`, `hex(-16)` → `'-0x10'`. Floats reject."""
     ...
-def bin(integer: Any, /) -> _str:
+def bin(integer: _int, /) -> _str:
     """Render an integer as a binary string with `0b` prefix. `bin(10)` → `'0b1010'`. Floats reject."""
     ...
-def oct(integer: Any, /) -> _str:
+def oct(integer: _int, /) -> _str:
     """Render an integer as an octal string with `0o` prefix. `oct(8)` → `'0o10'`. Floats reject."""
     ...
-def repr(value: Any, /) -> _str:
+def repr(value: object, /) -> _str:
     """Developer-readable string for a value, with quotes around strings and nested-repr for containers. `repr([1, \"a\"])` → `\"[1, 'a']\"` (note the quotes around `'a'`). Use when you want to see the value's structure, not its display form. Also reached via f-string `!r` conversion: `f\"{name!r}\"`."""
     ...
-def callable(value: Any, /) -> _bool:
+def format(value: object, format_spec: _str = ..., /) -> _str:
+    """Format one value by a format spec, the same text an f-string field produces: `format(3.14159, \".2f\")` → `\"3.14\"`, `format(42, \">6\")` → `\"    42\"`. With no spec it is `str(value)`."""
+    ...
+def callable(value: object, /) -> _bool:
     """`True` when a value has a call surface: user-defined `def` / `lambda`, built-in functions, classes, bound methods, and class instances whose type defines `__call__`. Like Python, this checks the type-level call slot without executing its descriptor; an actual call can still raise if that slot resolves to a non-callable value."""
     ...
-def dir(value: Any, /) -> _list[Any]:
+def dir(value: object, /) -> _list[_str]:
     """Lists the method and attribute names available on `value`, sorted: runtime introspection for discovering what you can do with something. On a component or game object (`dir(self)`, `dir(get_component(\"smelter_1\"))`) it returns that object's callable methods and properties, straight from the console. On a built-in container it returns the type's methods: `dir([1, 2])` → `\"append\"`, `\"pop\"`, …; `dir(\"hi\")` → `\"upper\"`, `\"split\"`, …. Values with no members (numbers, booleans, `None`) return an empty list. Pass exactly one value: the no-argument `dir()` that lists current-scope names is not supported."""
     ...
-# Return an iterator. Built-in iterables use a compatibility list-shaped iterator; protocol iterators and generators keep their identity, so `iter(iterator) is iterator`. `for` advances generators and custom iterators one item at a time, so it can break out of an infinite iterator. Consumers that must finish, such as `list(...)`, remain bounded.
+# Return an iterator. Built-in iterables use a compatibility list-shaped iterator; protocol iterators and generators keep their identity, so `iter(iterator) is iterator`. `for` advances generators and custom iterators one item at a time, so it can break out of an infinite iterator. Consumers that must finish, such as `list(...)`, remain bounded. With a `sentinel`, `iter(read, None)` calls `read()` for each item and stops at the first result equal to `None`.
 @overload
 def iter(iterable: _IteratorT) -> _IteratorT: ...
 @overload
@@ -5635,44 +6558,52 @@ def next(iterator: Iterator[_T]) -> _T: ...
 def next(iterator: Iterator[_T], default: _U) -> _T | _U: ...
 @overload
 def next(iterator: Any, default: Any = ...) -> Any: ...
-def hash(value: Any, /) -> _int:
+def hash(value: object, /) -> _int:
     """Hash any hashable value to an integer: strings, numbers, booleans, `None`, tuples of hashable values, functions, classes, and hashable user instances. Instances are identity-hashable by default; defining `__eq__` without `__hash__` makes them unhashable, and a custom `__hash__` controls `hash(obj)`, dict keys, and set membership."""
     ...
-def issubclass(cls: Any, class_or_tuple: Any, /) -> _bool:
-    """`True` if `cls` is the given class or a subclass of it (or of any class in the tuple), per the MRO. `issubclass(Dog, Animal)` is `True`; every class is a subclass of `object`."""
+def issubclass(cls: _type, class_or_tuple: _type | _tuple[Any, ...], /) -> _bool:
+    """`True` if `cls` is the given class or a subclass of it (or of any class in the tuple), per the MRO. `issubclass(Dog, Animal)` is `True`; every class is a subclass of `object`. Game classes imported from `__builtins__` work the same way: `issubclass(Smelter, Component)` and `issubclass(MiningSite, Site)` are `True`."""
     ...
-def pairwise(iterable: Any, /) -> _list[_tuple[Any, ...]]:
+def pairwise(iterable: Iterable[_T], /) -> _list[_tuple[_T, _T]]:
     """Return neighboring pairs from an iterable. `pairwise([1,2,3])` → `[(1,2), (2,3)]`."""
     ...
-def batched(iterable: Any, size: _float, /) -> _list[_tuple[Any, ...]]:
+def batched(iterable: Iterable[_T], size: _int, /) -> _list[_tuple[_T, ...]]:
     """Split an iterable into tuple batches of `size`. The final batch may be shorter. `batched([1,2,3,4,5], 2)` → `[(1,2), (3,4), (5,)]`."""
     ...
-def starmap(fn: Any, iterable: Any, /) -> _list[Any]:
+def starmap(fn: Callable[..., Any], iterable: Iterable[Any], /) -> _list[Any]:
     """Call pure `fn` with each tuple/list item unpacked as arguments. The callback cannot suspend the script or mutate game state. `starmap(pow, [(2,3), (3,2)])` → `[8,9]`. An empty input never inspects or calls `fn`."""
     ...
-def flatten(iterable: Any, /) -> _list[Any]:
+def flatten(iterable: Iterable[Any], /) -> _list[Any]:
     """Flatten one level of nested iterables into a list. `flatten([[1,2], (3,4)])` → `[1,2,3,4]`."""
     ...
-def count_by(iterable: Any, key_fn: Any = ..., /) -> _dict[Any, _float]:
+def count_by(iterable: Iterable[_T], key_fn: Callable[[_T], Any] = ..., /) -> _dict[Any, _int]:
     """Count items into a dict. Without `key_fn` (or with `None`), counts each item. With a pure `key_fn`, counts the computed key; callbacks cannot suspend the script or mutate game state: `count_by(items, lambda x: x.kind)`. An empty input never inspects or calls the key function."""
     ...
-def chain(*iterables: Any) -> _list[Any]:
+def chain(*iterables: Iterable[_T]) -> _list[_T]:
     """Flattens any number of iterables into one list, in order. `chain([1,2], [3,4])` → `[1,2,3,4]`. Accepts lists, tuples, strings, sets."""
     ...
-def accumulate(iterable: Any, /) -> _list[_float]:
-    """Running prefix sum over any finite iterable. `accumulate([1,2,3,4])` → `[1,3,6,10]`. Numeric items only; booleans participate as integers and arbitrarily large integers remain exact."""
+def accumulate(iterable: Iterable[_float], /) -> _list[_float]:
+    """Running totals over any finite iterable: the first item, then each total so far plus the next item with `+`. `accumulate([1,2,3,4])` → `[1,3,6,10]`. Works for anything `+` works on, including strings, lists and your own classes that define `__add__`. Arbitrarily large integers remain exact."""
     ...
-def combinations(iterable: Any, k: Any, /) -> _list[_tuple[Any, ...]]:
+def combinations(iterable: Iterable[_T], k: _int, /) -> _list[_tuple[_T, ...]]:
     """All `k`-element combinations from an iterable, in input order, no repeats. Returns a list of tuples. `combinations([1,2,3], 2)` → `[(1,2), (1,3), (2,3)]`."""
     ...
-def permutations(iterable: Any, k: Any = ..., /) -> _list[_tuple[Any, ...]]:
+def permutations(iterable: Iterable[_T], k: _int = ..., /) -> _list[_tuple[_T, ...]]:
     """All `k`-length ordered arrangements from an iterable. `k` defaults to the full length. `permutations([1,2,3])` → all 6 orderings as tuples."""
     ...
-def product(*iterables: Any, repeat: _float = ...) -> _list[_tuple[Any, ...]]:
+def product(*iterables: Iterable[Any], repeat: _int = ...) -> _list[_tuple[Any, ...]]:
     """Cartesian product. `product([0,1], [0,1])` → `[(0,0), (0,1), (1,0), (1,1)]`. Each input must be iterable; result is a list of tuples. Optional keyword `repeat=N` repeats the input pools, matching `itertools.product([0,1], repeat=2)`."""
     ...
 class map(_list[_R], Generic[_R]):
-    """Apply pure `fn` to corresponding items of each iterable. Callbacks cannot suspend the script or mutate game state. Single-iter form calls `fn(x)`; multi-iter form calls `fn(x, y, ...)` and stops at the shortest input unless `strict=True`, which raises if input lengths differ. If no row is produced, `fn` is never inspected or called."""
+    """Apply pure `fn` to corresponding items of each iterable. Callbacks cannot suspend the script or mutate game state. Single-iter form calls `fn(x)`; multi-iter form calls `fn(x, y, ...)` and stops at the shortest input unless `strict=True`, which raises if input lengths differ. If no row is produced, `fn` is never inspected or called. When an input is a generator, it returns a lazy iterator instead of a list."""
+    @overload
+    def __new__(cls, fn: Callable[[_T], _R], iter1: Generator[_T, Any, Any], /, *, strict: _bool = ...) -> Iterator[_R]: ...  # pyright: ignore[reportOverlappingOverload]
+    @overload
+    def __new__(cls, fn: Callable[[_T, _U], _R], iter1: Generator[_T, Any, Any], iter2: Iterable[_U], /, *, strict: _bool = ...) -> Iterator[_R]: ...  # pyright: ignore[reportOverlappingOverload]
+    @overload
+    def __new__(cls, fn: Callable[[_T, _U], _R], iter1: Iterable[_T], iter2: Generator[_U, Any, Any], /, *, strict: _bool = ...) -> Iterator[_R]: ...  # pyright: ignore[reportOverlappingOverload]
+    @overload
+    def __new__(cls, fn: Callable[..., _R], iter1: Iterable[Any], *iterables: Iterable[Any], strict: _bool = ...) -> map[_R]: ...
     @overload
     def __init__(self, fn: Callable[[_T], _R], iter1: Iterable[_T], /, *, strict: _bool = ...) -> None: ...
     @overload
@@ -5682,9 +6613,13 @@ class map(_list[_R], Generic[_R]):
     @overload
     def __init__(self, fn: Callable[..., _R], iter1: Iterable[Any], *iterables: Iterable[Any], strict: _bool = ...) -> None: ...
 class filter(_list[_T], Generic[_T]):
-    """Keep items for which pure `fn(item)` is truthy; callbacks cannot suspend the script or mutate game state. `filter(None, iter)` keeps every truthy item without a callback. An empty input never inspects or calls `fn`."""
+    """Keep items for which pure `fn(item)` is truthy; callbacks cannot suspend the script or mutate game state. `filter(None, iter)` keeps every truthy item without a callback. An empty input never inspects or calls `fn`. Given a generator, it returns a lazy iterator instead of a list."""
+    @overload
+    def __new__(cls, fn: Callable[[_T], object] | None, iterable: Generator[_T, Any, Any], /) -> Iterator[_T]: ...  # pyright: ignore[reportOverlappingOverload]
+    @overload
+    def __new__(cls, fn: Callable[[_T], object] | None, iterable: Iterable[_T], /) -> filter[_T]: ...
     def __init__(self, fn: Callable[[_T], object] | None, iterable: Iterable[_T], /) -> None: ...
-def reduce(fn: Any, iterable: Any, initializer: Any = ..., /) -> Any:
+def reduce(fn: Callable[[Any, _T], Any], iterable: Iterable[_T], initializer: object = ..., /) -> Any:
     """Combine an iterable into one value by repeatedly calling pure `fn(total, item)`; callbacks cannot suspend the script or mutate game state. With no initializer, the first item becomes the initial total; empty iterables then raise. Empty-with-initializer and singleton-without-initializer perform no callback call. Also available as `from functools import reduce`."""
     ...
 
@@ -5695,6 +6630,8 @@ inf: _float
 pi: _float
 # Mathematical constant `τ = 2π`.
 tau: _float
+# The name of the module the code runs in: `"__main__"` in the script you run, and the library's name when the code runs because another script imported it. `if __name__ == "__main__":` runs a block only when the file itself is run.
+__name__: _str
 
 # Script-owner locals such as self and panel are intentionally omitted.
 

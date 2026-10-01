@@ -2,9 +2,11 @@ Code Terraform keeps this folder in sync with the game. Each .py file here is on
 
 VS Code: in the game, open Settings > Editor > External Editor and choose Set Up VS Code. This installs the bundled extension and opens this save's scripts. Later the button says Open in VS Code and also updates the extension when needed. VS Code must already be installed. Nothing is installed when the game launches. Show Extension Package remains available for custom installations.
 
-Game scripts switch to the Code Terraform language mode automatically; no Python interpreter is required. The Command Palette has Code Terraform commands to create or import Libraries, rename a Library and update its imports, and run or stop scripts in the game. Save edits and resolve source conflicts before running. Unregistered files offer an Import as Game Library action. Attach and delete scripts in the game. The language service does not execute Python on your computer.
+Game scripts switch to the Code Terraform language mode automatically; no Python interpreter is required. The Command Palette has Code Terraform commands to create or import Libraries, rename a Library and update its imports, apply one Library or all of them, and run or stop scripts in the game. Save edits and resolve source conflicts before running. Unregistered files offer an Import as Game Library action. Attach and delete scripts in the game. The language service does not execute Python on your computer.
 
 Completion and diagnostics use the latest exported save context and unsaved Library documents. Keep the save open while editing to refresh machine ownership, research and names.
+
+Every machine and API type is already in scope here, so annotate directly and skip the import: def run(smelter: Smelter) -> str: needs no import line. Importing one from __builtins__ works too, and a line that runs needs it: after from __builtins__ import Smelter, isinstance(machine, Smelter) is True for a smelter. Every machine is also a Component, and type_id names its type.
 
 Console output: the game mirrors it to logs/all.log in this folder from the first time you open the folder or the extension package. In VS Code, Code Terraform: Open Game Output follows it live in the Output panel; other editors can tail the file.
 
@@ -43,16 +45,32 @@ Sublime Text (LSP package, LSP.sublime-settings):
     }
   }
 
-PyCharm needs an LSP plugin that can launch this server; its own Python checker does not know the game's owner globals and runtime rules.
+PyCharm: choose Set Up PyCharm in the game's settings, which installs the game's own plugin. The PyCharm section below has the details.
 
 ## Debugging in the game
 
 Keep this save open and the game unpaused. In VS Code, open a machine, panel, or contract script, set a breakpoint, and press F5. An idle script starts; a running script attaches without restarting. Breakpoints, conditions, logpoints, call stacks, locals, watches, hover inspection, and Step Over/Into/Out use the game's interpreter. Library breakpoints are reached through a script that imports that Library. Each session controls one script.
 
-Shift+F5 or closing the debug session disconnects and leaves the script running. Use **Stop Script in Game** to stop it. Watches and the Debug Console accept read-only expressions; they cannot execute world actions or assign variables. Save your files first. To run changed main-script code, use **Run Script in Game** before attaching again. Apply edited Libraries in the game and resolve any source conflicts. If you enabled **Pause When Inactive**, turn it off when you want execution to continue while the game is minimized.
+Shift+F5 or closing the debug session disconnects and leaves the script running. Use **Stop Script in Game** to stop it. Watches and the Debug Console accept read-only expressions; they cannot execute world actions or assign variables. Save your files first. To run changed main-script code, use **Run Script in Game** before attaching again. Apply edited Libraries, from the editor or in the game, and resolve any source conflicts. If you enabled **Pause When Inactive**, turn it off when you want execution to continue while the game is minimized.
 
 Other editors with a Debug Adapter Protocol client can launch `node /path/to/debug-adapter.cjs`. That file lives beside the installed `server.cjs`. Use a `launch` request to attach and run an idle script, or `attach` to inspect an existing runtime. Set `workspace` to this save's scripts directory and `script` to the script's file path. The adapter uses standard input/output. It needs Node.js 20 or later outside VS Code.
 
+
+## Formatting
+
+Format Document, Format Selection and format on save work on game scripts through Ruff: the language server runs the Ruff you already have (the VS Code Ruff extension's own binary, `ruff` on PATH, or a pipx/uv/cargo install). A `ruff.toml`, `.ruff.toml` or `pyproject.toml` in this folder applies. Nothing is downloaded; without Ruff the format action says how to get it.
+
+## Zed
+
+Zed runs the game's server through a small extension the game ships as source at
+  C:/Users/jobsb/AppData/Roaming/io.codeterraform.game/external-ide/zed/code-terraform
+Zed builds it from that folder: install Rust once with rustup (rustup.rs; Zed uses the `cargo` your shell finds first, and rustup's carries the WebAssembly target), then run `zed: install dev extension` in Zed and choose the folder. After a game update, run the same command on the same folder again. Then open this folder in Zed (or use Open in Zed in the game's settings) and trust it when asked. The folder's `.zed/settings.json` makes the game's server the Python server and formatter for this folder only. Zed supplies Node itself, so nothing else is installed.
+
+## PyCharm
+
+Set Up PyCharm in the game's settings installs the game's own PyCharm plugin, and the LSP4IJ plugin it builds on, into PyCharm (close PyCharm first) and opens this folder. The plugin launches the game's server on any file in a scripts folder, turns PyCharm's own Python inspections off for those files, adds the Machines view and Game Output to the Code Terraform tool window, puts Run, Stop and Debug in the gutter of every script, and adds Apply Library in Game and Apply All Libraries in Game to the Code Terraform menu of every Library file; debugging reaches the game through the adapter at `C:/Users/jobsb/AppData/Roaming/io.codeterraform.game/external-ide/server/debug-adapter.cjs` with no configuration to fill in. Node.js 20 or later must be installed; PyCharm does not supply it, and its path can be set in PyCharm's Settings > Tools > Code Terraform. To install by hand: Settings > Plugins > Marketplace > LSP4IJ, then Settings > Plugins > Install Plugin from Disk... with
+  C:/Users/jobsb/AppData/Roaming/io.codeterraform.game/external-ide/pycharm/code-terraform.zip
+and restart PyCharm.
 
 Files in this folder:
   <name>.py            one file per machine, panel or contract script, named as in the in-game editor
@@ -64,6 +82,10 @@ Files in this folder:
   CODE-TERRAFORM-IDE.txt         this guide
   *.pyi, pyrightconfig.codeterraform.json   fallback stubs for generic Python editors; they cannot represent every game rule or owner-specific self/panel binding, and a new pyrightconfig.json extends the generated one
   .codeterraform/      transient files the editor and the game exchange while a command runs (Run, Stop, Library operations, debugging); safe to ignore
+  codeterraform-fleet.json       the machine panel's data (owners, scripts, status); do not edit
+  .vscode/settings.json          written once if missing: folds the helper files under the workspace file in VS Code's Explorer; yours afterwards
+  .zed/settings.json             written once if missing: makes the game's server Zed's Python server and formatter for this folder; yours afterwards
+  .gitignore                     written once if missing: ignores machine-specific and regenerated files; yours afterwards
   *.codeterraform-retired-<token>.bak   recovery archives the game keeps when a file is renamed, deleted, replaced or in conflict, so an editor writing through a stale handle can never lose code; delete old ones whenever you like
   *.codeterraform-write.bak      a crash-safety copy that exists only during an atomic write; the game removes it
 Only each script's running source is a file. The Variants and Notes tabs live in the save, not in this folder, so named variants cannot be listed, switched or edited from outside the game.
