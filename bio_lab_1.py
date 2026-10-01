@@ -14,6 +14,15 @@ bio_lab = biolab.BioLabWrapper(
 bio_lab.run()
 
 
+
+
+# self: BioLab
+#
+# self.output.connect("inventory")
+# self.output.send("st_scute_plate", 1)
+# self.output.disconnect()
+
+
 # print(f"{bio_lab.input.connect("inventory")=}")
 # bio_lab.buy_and_load_reagents()
 # print(f"{bio_lab.input.disconnect()=}")
