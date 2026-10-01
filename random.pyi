@@ -12,9 +12,12 @@ from builtins import (
     slice as _slice,
     str as _str,
     tuple as _tuple,
+    type as _type,
 )
-from typing import Any
-from __builtins__ import Match
+from typing import Any, Callable, Iterable, Iterator, TypeVar
+from __builtins__ import JsonValue, Match, Pattern
+
+_T = TypeVar("_T")
 
 def random() -> _float:
     """Random floating-point number `>= 0` and `< 1`. Each successful run begins a new automatic sequence. Also available as `random.random()` after `import random`."""
@@ -22,9 +25,30 @@ def random() -> _float:
 def rand() -> _float:
     """Short alias for `random()`: a random floating-point number `>= 0` and `< 1`. Each successful run begins a new automatic sequence. Also available as `random.rand()` after `import random`."""
     ...
-def randint(min: _float, max: _float, /) -> _int:
+def randint(min: _int, max: _int, /) -> _int:
     """Random integer `N` where `min <= N <= max`. Bounds are inclusive and must be whole numbers. Each successful run begins a new automatic sequence. Useful with `planet.get_bounds()` for random valid coordinates. Also available as `random.randint(min, max)` after `import random`."""
     ...
-def seed(a: Any = ...) -> None:
+def seed(a: _int | _float | _str | _bool | None = ...) -> None:
     """Initialize random-number generation. Omit `a` or pass `None` to select another automatic sequence. Pass a number, boolean, or string to make later draws reproducible; the same value produces the same sequence."""
+    ...
+def randrange(start: _int, stop: _int | None = ..., step: _int = ..., /) -> _int:
+    """Random whole number from `range(start, stop, step)`: `randrange(10)` is 0 to 9, `randrange(5, 20, 5)` is 5, 10 or 15. The stop value is never picked."""
+    ...
+def choice(seq: _list[_T] | _tuple[_T, ...] | _str, /) -> _T:
+    """One random item of a list, tuple or string: `random.choice([\"iron\", \"copper\"])`. An empty one is an `IndexError`."""
+    ...
+def choices(population: _list[_T] | _tuple[_T, ...] | _str, weights: Iterable[_float] | None = ..., *, cum_weights: Iterable[_float] | None = ..., k: _int = ...) -> _list[_T]:
+    """`k` random items picked with repetition, as a list. `weights` makes some items likelier: `random.choices([\"ore\", \"ice\"], weights=[3, 1], k=5)`."""
+    ...
+def shuffle(x: _list[object], /) -> None:
+    """Put a list's items in random order, in place. Returns `None`; the list itself changes."""
+    ...
+def sample(population: _list[_T] | _tuple[_T, ...] | _str, k: _int, *, counts: Iterable[_int] | None = ...) -> _list[_T]:
+    """`k` different random items, as a list, never picking one place twice: `random.sample(range(100), 3)`. `counts` repeats items: `counts=[3, 2]` puts the first item in the pool three times and the second twice."""
+    ...
+def uniform(a: _float, b: _float, /) -> _float:
+    """Random decimal number between `a` and `b`: `random.uniform(-1, 1)`."""
+    ...
+def gauss(mu: _float = ..., sigma: _float = ...) -> _float:
+    """Random number from a bell curve around `mu` with spread `sigma`: most results fall within `sigma` of `mu`."""
     ...

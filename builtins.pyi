@@ -117,15 +117,15 @@ class object:
     def __new__(cls) -> Self: ...
     # N.B. `object.__setattr__` and `object.__delattr__` are heavily special-cased by type checkers.
     # Overriding them in subclasses has different semantics, even if the override has an identical signature.
-    def __setattr__(self, _ct_name: str, value: Any, /) -> None: ...
-    def __delattr__(self, _ct_name: str, /) -> None: ...
+    def __setattr__(self, name: str, value: Any, /) -> None: ...
+    def __delattr__(self, name: str, /) -> None: ...
     def __eq__(self, value: object, /) -> bool: ...
     def __ne__(self, value: object, /) -> bool: ...
     def __str__(self) -> str: ...  # noqa: Y029
     def __repr__(self) -> str: ...  # noqa: Y029
     def __hash__(self) -> int: ...
     def __format__(self, format_spec: str, /) -> str: ...
-    def __getattribute__(self, _ct_name: str, /) -> Any: ...
+    def __getattribute__(self, name: str, /) -> Any: ...
     def __sizeof__(self) -> int: ...
     # return type of pickle methods is rather hard to express in the current type system
     # see #6661 and https://docs.python.org/3/library/pickle.html#object.__reduce__
@@ -212,13 +212,13 @@ class type:
     @overload
     def __init__(self, o: object, /) -> None: ...
     @overload
-    def __init__(self, _ct_name: str, bases: tuple[type, ...], dict: dict[str, Any], /, **kwds: Any) -> None: ...
+    def __init__(self, name: str, bases: tuple[type, ...], dict: dict[str, Any], /, **kwds: Any) -> None: ...
 
     @overload
     def __new__(cls, o: object, /) -> type: ...
     @overload
     def __new__(
-        _ct_cls: type[_typeshed.Self], _ct_name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwds: Any
+        cls: type[_typeshed.Self], name: str, bases: tuple[type, ...], namespace: dict[str, Any], /, **kwds: Any
     ) -> _typeshed.Self: ...
 
     def __call__(self, *args: Any, **kwds: Any) -> Any: ...
@@ -229,7 +229,7 @@ class type:
     def __instancecheck__(self, instance: Any, /) -> bool: ...
     def __subclasscheck__(self, subclass: type, /) -> bool: ...
     @classmethod
-    def __prepare__(metacls, _ct_name: str, bases: tuple[type, ...], /, **kwds: Any) -> MutableMapping[str, object]: ...
+    def __prepare__(metacls, name: str, bases: tuple[type, ...], /, **kwds: Any) -> MutableMapping[str, object]: ...
     # `int | str` produces an instance of `UnionType`, but `int | int` produces an instance of `type`,
     # and `abc.ABC | abc.ABC` produces an instance of `abc.ABCMeta`.
     def __or__(self: _typeshed.Self, value: Any, /) -> types.UnionType | _typeshed.Self: ...
@@ -260,18 +260,18 @@ class int:
     @overload
     def __new__(cls, x: str | _ct_bytes | _ct_bytearray, /, base: SupportsIndex) -> Self: ...
 
-    def _ct_as_integer_ratio(self) -> tuple[int, Literal[1]]: ...
+    def as_integer_ratio(self) -> tuple[int, Literal[1]]: ...
     @property
-    def _ct_real(self) -> int: ...
+    def real(self) -> int: ...
     @property
-    def _ct_imag(self) -> Literal[0]: ...
+    def imag(self) -> Literal[0]: ...
     @property
-    def _ct_numerator(self) -> int: ...
+    def numerator(self) -> int: ...
     @property
-    def _ct_denominator(self) -> Literal[1]: ...
-    def _ct_conjugate(self) -> int: ...
-    def _ct_bit_length(self) -> int: ...
-    def _ct_bit_count(self) -> int: ...
+    def denominator(self) -> Literal[1]: ...
+    def conjugate(self) -> int: ...
+    def bit_length(self) -> int: ...
+    def bit_count(self) -> int: ...
 
     if sys.version_info >= (3, 11):
         def _ct_to_bytes(
@@ -281,9 +281,9 @@ class int:
         def _ct_from_bytes(
             cls,
             _ct_bytes: Iterable[SupportsIndex] | SupportsBytes | ReadableBuffer,
-            _ct_byteorder: Literal["little", "big"] = "big",
+            byteorder: Literal["little", "big"] = "big",
             *,
-            _ct_signed: bool = False,
+            signed: bool = False,
         ) -> Self: ...
     else:
         def _ct_to_bytes(self, length: SupportsIndex, byteorder: Literal["little", "big"], *, signed: bool = False) -> _ct_bytes: ...
@@ -291,13 +291,13 @@ class int:
         def _ct_from_bytes(
             cls,
             _ct_bytes: Iterable[SupportsIndex] | SupportsBytes | ReadableBuffer,
-            _ct_byteorder: Literal["little", "big"],
+            byteorder: Literal["little", "big"],
             *,
-            _ct_signed: bool = False,
+            signed: bool = False,
         ) -> Self: ...
 
     if sys.version_info >= (3, 12):
-        def _ct_is_integer(self) -> Literal[True]: ...
+        def is_integer(self) -> Literal[True]: ...
 
     def __add__(self, value: int, /) -> int: ...
     def __sub__(self, value: int, /) -> int: ...
@@ -323,7 +323,7 @@ class int:
     @overload
     def __pow__(self, value: _NegativeInteger, mod: None = None, /) -> float: ...
     # positive __value -> int; negative __value -> float
-    # return type must be Any as `int | float` causes too many false-positive _ct_errors
+    # return type must be Any as `int | float` causes too many false-positive errors
     @overload
     def __pow__(self, value: int, mod: None = None, /) -> Any: ...
     @overload
@@ -369,16 +369,16 @@ class int:
 @disjoint_base
 class float:
     def __new__(cls, x: ConvertibleToFloat = 0, /) -> Self: ...
-    def _ct_as_integer_ratio(self) -> tuple[int, int]: ...
+    def as_integer_ratio(self) -> tuple[int, int]: ...
     def _ct_hex(self) -> str: ...
-    def _ct_is_integer(self) -> bool: ...
+    def is_integer(self) -> bool: ...
     @classmethod
     def _ct_fromhex(cls, string: str, /) -> Self: ...
     @property
-    def _ct_real(self) -> float: ...
+    def real(self) -> float: ...
     @property
-    def _ct_imag(self) -> float: ...
-    def _ct_conjugate(self) -> float: ...
+    def imag(self) -> float: ...
+    def conjugate(self) -> float: ...
     def __add__(self, value: float, /) -> float: ...
     def __sub__(self, value: float, /) -> float: ...
     def __mul__(self, value: float, /) -> float: ...
@@ -390,7 +390,7 @@ class float:
     @overload
     def __pow__(self, value: int, mod: None = None, /) -> float: ...
     # positive __value -> float; negative __value -> _ct_complex
-    # return type must be Any as `float | _ct_complex` causes too many false-positive _ct_errors
+    # return type must be Any as `float | _ct_complex` causes too many false-positive errors
     @overload
     def __pow__(self, value: float, mod: None = None, /) -> Any: ...
 
@@ -406,7 +406,7 @@ class float:
     def __rpow__(self, value: _PositiveInteger, mod: None = None, /) -> float: ...
     @overload
     def __rpow__(self, value: _NegativeInteger, mod: None = None, /) -> _ct_complex: ...
-    # Returning `_ct_complex` for the general case gives too many false-positive _ct_errors.
+    # Returning `_ct_complex` for the general case gives too many false-positive errors.
     @overload
     def __rpow__(self, value: float, mod: None = None, /) -> Any: ...
 
@@ -494,7 +494,7 @@ class str(Sequence[str]):
     @overload
     def __new__(cls, object: object = "") -> Self: ...
     @overload
-    def __new__(cls, object: ReadableBuffer, _ct_encoding: str = "utf-8", _ct_errors: str = "strict") -> Self: ...
+    def __new__(cls, object: ReadableBuffer, encoding: str = "utf-8", errors: str = "strict") -> Self: ...
 
     @overload
     def capitalize(self: LiteralString) -> LiteralString: ...
@@ -511,43 +511,43 @@ class str(Sequence[str]):
     @overload
     def center(self, width: SupportsIndex, fillchar: str = " ", /) -> str: ...  # type: ignore[misc]
 
-    def count(self, sub: str, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /) -> int: ...
-    def _ct_encode(self, _ct_encoding: str = "utf-8", _ct_errors: str = "strict") -> _ct_bytes: ...
+    def count(self, sub: str, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /) -> int: ...
+    def _ct_encode(self, encoding: str = "utf-8", errors: str = "strict") -> _ct_bytes: ...
     def endswith(
-        self, suffix: str | tuple[str, ...], start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, suffix: str | tuple[str, ...], start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> bool: ...
 
     @overload
-    def _ct_expandtabs(self: LiteralString, tabsize: SupportsIndex = 8) -> LiteralString: ...
+    def expandtabs(self: LiteralString, tabsize: SupportsIndex = 8) -> LiteralString: ...
     @overload
-    def _ct_expandtabs(self, tabsize: SupportsIndex = 8) -> str: ...  # type: ignore[misc]
+    def expandtabs(self, tabsize: SupportsIndex = 8) -> str: ...  # type: ignore[misc]
 
-    def find(self, sub: str, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /) -> int: ...
+    def find(self, sub: str, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /) -> int: ...
 
     @overload
-    def _ct_format(self: LiteralString, *args: LiteralString, **kwargs: LiteralString) -> LiteralString: ...
+    def format(self: LiteralString, *args: LiteralString, **kwargs: LiteralString) -> LiteralString: ...
     @overload
-    def _ct_format(self, *args: object, **kwargs: object) -> str: ...
+    def format(self, *args: object, **kwargs: object) -> str: ...
 
-    def _ct_format_map(self, mapping: _FormatMapMapping, /) -> str: ...
-    def index(self, sub: str, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /) -> int: ...
+    def format_map(self, mapping: _FormatMapMapping, /) -> str: ...
+    def index(self, sub: str, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /) -> int: ...
     def isalnum(self) -> bool: ...
     def isalpha(self) -> bool: ...
-    def _ct_isascii(self) -> bool: ...
-    def _ct_isdecimal(self) -> bool: ...
+    def isascii(self) -> bool: ...
+    def isdecimal(self) -> bool: ...
     def isdigit(self) -> bool: ...
-    def _ct_isidentifier(self) -> bool: ...
+    def isidentifier(self) -> bool: ...
     def islower(self) -> bool: ...
-    def _ct_isnumeric(self) -> bool: ...
-    def _ct_isprintable(self) -> bool: ...
+    def isnumeric(self) -> bool: ...
+    def isprintable(self) -> bool: ...
     def isspace(self) -> bool: ...
     def istitle(self) -> bool: ...
     def isupper(self) -> bool: ...
 
     @overload
-    def join(self: LiteralString, _ct_iterable: Iterable[LiteralString], /) -> LiteralString: ...
+    def join(self: LiteralString, iterable: Iterable[LiteralString], /) -> LiteralString: ...
     @overload
-    def join(self, _ct_iterable: Iterable[str], /) -> str: ...  # type: ignore[misc]
+    def join(self, iterable: Iterable[str], /) -> str: ...  # type: ignore[misc]
 
     @overload
     def ljust(self: LiteralString, width: SupportsIndex, fillchar: LiteralString = " ", /) -> LiteralString: ...
@@ -565,21 +565,21 @@ class str(Sequence[str]):
     def lstrip(self, chars: str | None = None, /) -> str: ...  # type: ignore[misc]
 
     @overload
-    def partition(self: LiteralString, _ct_sep: LiteralString, /) -> tuple[LiteralString, LiteralString, LiteralString]: ...
+    def partition(self: LiteralString, sep: LiteralString, /) -> tuple[LiteralString, LiteralString, LiteralString]: ...
     @overload
-    def partition(self, _ct_sep: str, /) -> tuple[str, str, str]: ...  # type: ignore[misc]
+    def partition(self, sep: str, /) -> tuple[str, str, str]: ...  # type: ignore[misc]
 
     if sys.version_info >= (3, 13):
         @overload
         def replace(
-            _ct_self: LiteralString, old: LiteralString, new: LiteralString, /, count: SupportsIndex = -1
+            self: LiteralString, old: LiteralString, new: LiteralString, /, count: SupportsIndex = -1
         ) -> LiteralString: ...
         @overload
         def replace(self, old: str, new: str, /, count: SupportsIndex = -1) -> str: ...  # type: ignore[misc]
     else:
         @overload
         def replace(
-            _ct_self: LiteralString, old: LiteralString, new: LiteralString, count: SupportsIndex = -1, /
+            self: LiteralString, old: LiteralString, new: LiteralString, count: SupportsIndex = -1, /
         ) -> LiteralString: ...
         @overload
         def replace(self, old: str, new: str, count: SupportsIndex = -1, /) -> str: ...  # type: ignore[misc]
@@ -594,8 +594,8 @@ class str(Sequence[str]):
     @overload
     def removesuffix(self, suffix: str, /) -> str: ...  # type: ignore[misc]
 
-    def rfind(self, sub: str, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /) -> int: ...
-    def rindex(self, sub: str, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /) -> int: ...
+    def rfind(self, sub: str, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /) -> int: ...
+    def rindex(self, sub: str, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /) -> int: ...
 
     @overload
     def rjust(self: LiteralString, width: SupportsIndex, fillchar: LiteralString = " ", /) -> LiteralString: ...
@@ -603,14 +603,14 @@ class str(Sequence[str]):
     def rjust(self, width: SupportsIndex, fillchar: str = " ", /) -> str: ...  # type: ignore[misc]
 
     @overload
-    def rpartition(self: LiteralString, _ct_sep: LiteralString, /) -> tuple[LiteralString, LiteralString, LiteralString]: ...
+    def rpartition(self: LiteralString, sep: LiteralString, /) -> tuple[LiteralString, LiteralString, LiteralString]: ...
     @overload
-    def rpartition(self, _ct_sep: str, /) -> tuple[str, str, str]: ...  # type: ignore[misc]
+    def rpartition(self, sep: str, /) -> tuple[str, str, str]: ...  # type: ignore[misc]
 
     @overload
-    def _ct_rsplit(self: LiteralString, _ct_sep: LiteralString | None = None, maxsplit: SupportsIndex = -1) -> list[LiteralString]: ...
+    def rsplit(self: LiteralString, sep: LiteralString | None = None, maxsplit: SupportsIndex = -1) -> list[LiteralString]: ...
     @overload
-    def _ct_rsplit(self, _ct_sep: str | None = None, maxsplit: SupportsIndex = -1) -> list[str]: ...  # type: ignore[misc]
+    def rsplit(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> list[str]: ...  # type: ignore[misc]
 
     @overload
     def rstrip(self: LiteralString, chars: LiteralString | None = None, /) -> LiteralString: ...
@@ -618,9 +618,9 @@ class str(Sequence[str]):
     def rstrip(self, chars: str | None = None, /) -> str: ...  # type: ignore[misc]
 
     @overload
-    def split(self: LiteralString, _ct_sep: LiteralString | None = None, maxsplit: SupportsIndex = -1) -> list[LiteralString]: ...
+    def split(self: LiteralString, sep: LiteralString | None = None, maxsplit: SupportsIndex = -1) -> list[LiteralString]: ...
     @overload
-    def split(self, _ct_sep: str | None = None, maxsplit: SupportsIndex = -1) -> list[str]: ...  # type: ignore[misc]
+    def split(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> list[str]: ...  # type: ignore[misc]
 
     @overload
     def splitlines(self: LiteralString, keepends: bool = False) -> list[LiteralString]: ...
@@ -628,7 +628,7 @@ class str(Sequence[str]):
     def splitlines(self, keepends: bool = False) -> list[str]: ...  # type: ignore[misc]
 
     def startswith(
-        self, prefix: str | tuple[str, ...], start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, prefix: str | tuple[str, ...], start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> bool: ...
 
     @overload
@@ -646,7 +646,7 @@ class str(Sequence[str]):
     @overload
     def title(self) -> str: ...  # type: ignore[misc]
 
-    def _ct_translate(self, table: _TranslateTable, /) -> str: ...
+    def translate(self, table: _TranslateTable, /) -> str: ...
 
     @overload
     def upper(self: LiteralString) -> LiteralString: ...
@@ -661,8 +661,8 @@ class str(Sequence[str]):
     if sys.version_info >= (3, 15):
         @staticmethod
         @overload
-        def _ct_maketrans(
-            _ct_x: (
+        def maketrans(
+            x: (
                 dict[int, _T]
                 | dict[str, _T]
                 | dict[str | int, _T]
@@ -675,14 +675,14 @@ class str(Sequence[str]):
     else:
         @staticmethod
         @overload
-        def _ct_maketrans(x: dict[int, _T] | dict[str, _T] | dict[str | int, _T], /) -> dict[int, _T]: ...
+        def maketrans(x: dict[int, _T] | dict[str, _T] | dict[str | int, _T], /) -> dict[int, _T]: ...
 
     @staticmethod
     @overload
-    def _ct_maketrans(x: str, y: str, /) -> dict[int, int]: ...
+    def maketrans(x: str, y: str, /) -> dict[int, int]: ...
     @staticmethod
     @overload
-    def _ct_maketrans(x: str, y: str, z: str, /) -> dict[int, int | None]: ...
+    def maketrans(x: str, y: str, z: str, /) -> dict[int, int | None]: ...
 
     @overload
     def __add__(self: LiteralString, value: LiteralString, /) -> LiteralString: ...
@@ -736,30 +736,30 @@ class _ct_bytes(Sequence[int]):
     @overload
     def __new__(cls, o: Iterable[SupportsIndex] | SupportsIndex | SupportsBytes | ReadableBuffer, /) -> Self: ...
     @overload
-    def __new__(cls, string: str, /, _ct_encoding: str, _ct_errors: str = "strict") -> Self: ...
+    def __new__(cls, string: str, /, encoding: str, errors: str = "strict") -> Self: ...
     @overload
     def __new__(cls) -> Self: ...
 
     def capitalize(self) -> _ct_bytes: ...
     def center(self, width: SupportsIndex, fillchar: _ct_bytes = b" ", /) -> _ct_bytes: ...
     def count(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
-    def decode(self, _ct_encoding: str = "utf-8", _ct_errors: str = "strict") -> str: ...
+    def decode(self, encoding: str = "utf-8", errors: str = "strict") -> str: ...
     def endswith(
         self,
         suffix: ReadableBuffer | tuple[ReadableBuffer, ...],
         start: SupportsIndex | None = None,
-        _ct_end: SupportsIndex | None = None,
+        end: SupportsIndex | None = None,
         /,
     ) -> bool: ...
     def expandtabs(self, tabsize: SupportsIndex = 8) -> _ct_bytes: ...
     def find(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
-    def hex(self, _ct_sep: str | _ct_bytes = ..., bytes_per_sep: SupportsIndex = 1) -> str: ...
+    def hex(self, sep: str | _ct_bytes = ..., bytes_per_sep: SupportsIndex = 1) -> str: ...
     def index(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
     def isalnum(self) -> bool: ...
     def isalpha(self) -> bool: ...
@@ -773,7 +773,7 @@ class _ct_bytes(Sequence[int]):
     def ljust(self, width: SupportsIndex, fillchar: _ct_bytes | _ct_bytearray = b" ", /) -> _ct_bytes: ...
     def lower(self) -> _ct_bytes: ...
     def lstrip(self, _ct_bytes: ReadableBuffer | None = None, /) -> _ct_bytes: ...
-    def partition(self, _ct_sep: ReadableBuffer, /) -> tuple[_ct_bytes, _ct_bytes, _ct_bytes]: ...
+    def partition(self, sep: ReadableBuffer, /) -> tuple[_ct_bytes, _ct_bytes, _ct_bytes]: ...
     if sys.version_info >= (3, 15):
         def replace(self, old: ReadableBuffer, new: ReadableBuffer, /, count: SupportsIndex = -1) -> _ct_bytes: ...
     else:
@@ -782,22 +782,22 @@ class _ct_bytes(Sequence[int]):
     def removeprefix(self, prefix: ReadableBuffer, /) -> _ct_bytes: ...
     def removesuffix(self, suffix: ReadableBuffer, /) -> _ct_bytes: ...
     def rfind(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
     def rindex(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
     def rjust(self, width: SupportsIndex, fillchar: _ct_bytes | _ct_bytearray = b" ", /) -> _ct_bytes: ...
-    def rpartition(self, _ct_sep: ReadableBuffer, /) -> tuple[_ct_bytes, _ct_bytes, _ct_bytes]: ...
-    def rsplit(self, _ct_sep: ReadableBuffer | None = None, maxsplit: SupportsIndex = -1) -> list[_ct_bytes]: ...
+    def rpartition(self, sep: ReadableBuffer, /) -> tuple[_ct_bytes, _ct_bytes, _ct_bytes]: ...
+    def rsplit(self, sep: ReadableBuffer | None = None, maxsplit: SupportsIndex = -1) -> list[_ct_bytes]: ...
     def rstrip(self, _ct_bytes: ReadableBuffer | None = None, /) -> _ct_bytes: ...
-    def split(self, _ct_sep: ReadableBuffer | None = None, maxsplit: SupportsIndex = -1) -> list[_ct_bytes]: ...
+    def split(self, sep: ReadableBuffer | None = None, maxsplit: SupportsIndex = -1) -> list[_ct_bytes]: ...
     def splitlines(self, keepends: bool = False) -> list[_ct_bytes]: ...
     def startswith(
         self,
         prefix: ReadableBuffer | tuple[ReadableBuffer, ...],
         start: SupportsIndex | None = None,
-        _ct_end: SupportsIndex | None = None,
+        end: SupportsIndex | None = None,
         /,
     ) -> bool: ...
     def strip(self, _ct_bytes: ReadableBuffer | None = None, /) -> _ct_bytes: ...
@@ -841,7 +841,7 @@ class _ct_bytes(Sequence[int]):
     if sys.version_info >= (3, 11):
         def __bytes__(self) -> _ct_bytes: ...
 
-    def __buffer__(self, _ct_flags: int, /) -> _ct_memoryview: ...
+    def __buffer__(self, flags: int, /) -> _ct_memoryview: ...
 
 @disjoint_base
 class _ct_bytearray(MutableSequence[int]):
@@ -850,31 +850,31 @@ class _ct_bytearray(MutableSequence[int]):
     @overload
     def __init__(self, ints: Iterable[SupportsIndex] | SupportsIndex | ReadableBuffer, /) -> None: ...
     @overload
-    def __init__(self, string: str, /, _ct_encoding: str, _ct_errors: str = "strict") -> None: ...
+    def __init__(self, string: str, /, encoding: str, errors: str = "strict") -> None: ...
 
     def append(self, item: SupportsIndex, /) -> None: ...
     def capitalize(self) -> _ct_bytearray: ...
     def center(self, width: SupportsIndex, fillchar: _ct_bytes = b" ", /) -> _ct_bytearray: ...
     def count(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
     def copy(self) -> _ct_bytearray: ...
-    def decode(self, _ct_encoding: str = "utf-8", _ct_errors: str = "strict") -> str: ...
+    def decode(self, encoding: str = "utf-8", errors: str = "strict") -> str: ...
     def endswith(
         self,
         suffix: ReadableBuffer | tuple[ReadableBuffer, ...],
         start: SupportsIndex | None = None,
-        _ct_end: SupportsIndex | None = None,
+        end: SupportsIndex | None = None,
         /,
     ) -> bool: ...
     def expandtabs(self, tabsize: SupportsIndex = 8) -> _ct_bytearray: ...
     def extend(self, iterable_of_ints: Iterable[SupportsIndex], /) -> None: ...
     def find(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
-    def hex(self, _ct_sep: str | _ct_bytes = ..., bytes_per_sep: SupportsIndex = 1) -> str: ...
+    def hex(self, sep: str | _ct_bytes = ..., bytes_per_sep: SupportsIndex = 1) -> str: ...
     def index(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
     def insert(self, index: SupportsIndex, item: SupportsIndex, /) -> None: ...
     def isalnum(self) -> bool: ...
@@ -889,7 +889,7 @@ class _ct_bytearray(MutableSequence[int]):
     def ljust(self, width: SupportsIndex, fillchar: _ct_bytes | _ct_bytearray = b" ", /) -> _ct_bytearray: ...
     def lower(self) -> _ct_bytearray: ...
     def lstrip(self, _ct_bytes: ReadableBuffer | None = None, /) -> _ct_bytearray: ...
-    def partition(self, _ct_sep: ReadableBuffer, /) -> tuple[_ct_bytearray, _ct_bytearray, _ct_bytearray]: ...
+    def partition(self, sep: ReadableBuffer, /) -> tuple[_ct_bytearray, _ct_bytearray, _ct_bytearray]: ...
     def pop(self, index: int = -1, /) -> int: ...
     def remove(self, value: int, /) -> None: ...
     def removeprefix(self, prefix: ReadableBuffer, /) -> _ct_bytearray: ...
@@ -900,22 +900,22 @@ class _ct_bytearray(MutableSequence[int]):
         def replace(self, old: ReadableBuffer, new: ReadableBuffer, count: SupportsIndex = -1, /) -> _ct_bytearray: ...
 
     def rfind(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
     def rindex(
-        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, _ct_end: SupportsIndex | None = None, /
+        self, sub: ReadableBuffer | SupportsIndex, start: SupportsIndex | None = None, end: SupportsIndex | None = None, /
     ) -> int: ...
     def rjust(self, width: SupportsIndex, fillchar: _ct_bytes | _ct_bytearray = b" ", /) -> _ct_bytearray: ...
-    def rpartition(self, _ct_sep: ReadableBuffer, /) -> tuple[_ct_bytearray, _ct_bytearray, _ct_bytearray]: ...
-    def rsplit(self, _ct_sep: ReadableBuffer | None = None, maxsplit: SupportsIndex = -1) -> list[_ct_bytearray]: ...
+    def rpartition(self, sep: ReadableBuffer, /) -> tuple[_ct_bytearray, _ct_bytearray, _ct_bytearray]: ...
+    def rsplit(self, sep: ReadableBuffer | None = None, maxsplit: SupportsIndex = -1) -> list[_ct_bytearray]: ...
     def rstrip(self, _ct_bytes: ReadableBuffer | None = None, /) -> _ct_bytearray: ...
-    def split(self, _ct_sep: ReadableBuffer | None = None, maxsplit: SupportsIndex = -1) -> list[_ct_bytearray]: ...
+    def split(self, sep: ReadableBuffer | None = None, maxsplit: SupportsIndex = -1) -> list[_ct_bytearray]: ...
     def splitlines(self, keepends: bool = False) -> list[_ct_bytearray]: ...
     def startswith(
         self,
         prefix: ReadableBuffer | tuple[ReadableBuffer, ...],
         start: SupportsIndex | None = None,
-        _ct_end: SupportsIndex | None = None,
+        end: SupportsIndex | None = None,
         /,
     ) -> bool: ...
     def strip(self, _ct_bytes: ReadableBuffer | None = None, /) -> _ct_bytearray: ...
@@ -968,7 +968,7 @@ class _ct_bytearray(MutableSequence[int]):
     def __gt__(self, value: ReadableBuffer, /) -> bool: ...
     def __ge__(self, value: ReadableBuffer, /) -> bool: ...
     def __alloc__(self) -> int: ...
-    def __buffer__(self, _ct_flags: int, /) -> _ct_memoryview: ...
+    def __buffer__(self, flags: int, /) -> _ct_memoryview: ...
     def __release_buffer__(self, buffer: _ct_memoryview, /) -> None: ...
     if sys.version_info >= (3, 14):
         def resize(self, size: int, /) -> None: ...
@@ -980,7 +980,7 @@ _IntegerFormats: TypeAlias = Literal[
 @final
 class _ct_memoryview(Sequence[_I]):
     @property
-    def _ct_format(self) -> str: ...
+    def format(self) -> str: ...
     @property
     def itemsize(self) -> int: ...
     @property
@@ -1007,20 +1007,20 @@ class _ct_memoryview(Sequence[_I]):
     def __enter__(self) -> Self: ...
     def __exit__(
         self,
-        exc_type: type[BaseException] | None,  # noqa: PYI036 # This is the _ct_module declaring BaseException
+        exc_type: type[BaseException] | None,  # noqa: PYI036 # This is the module declaring BaseException
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
         /,
     ) -> None: ...
 
     @overload
-    def cast(self, _ct_format: Literal["c", "@c"], shape: list[int] | tuple[int, ...] = ...) -> _ct_memoryview[_ct_bytes]: ...
+    def cast(self, format: Literal["c", "@c"], shape: list[int] | tuple[int, ...] = ...) -> _ct_memoryview[_ct_bytes]: ...
     @overload
-    def cast(self, _ct_format: Literal["f", "@f", "d", "@d"], shape: list[int] | tuple[int, ...] = ...) -> _ct_memoryview[float]: ...
+    def cast(self, format: Literal["f", "@f", "d", "@d"], shape: list[int] | tuple[int, ...] = ...) -> _ct_memoryview[float]: ...
     @overload
-    def cast(self, _ct_format: Literal["?"], shape: list[int] | tuple[int, ...] = ...) -> _ct_memoryview[bool]: ...
+    def cast(self, format: Literal["?"], shape: list[int] | tuple[int, ...] = ...) -> _ct_memoryview[bool]: ...
     @overload
-    def cast(self, _ct_format: _IntegerFormats, shape: list[int] | tuple[int, ...] = ...) -> _ct_memoryview: ...
+    def cast(self, format: _IntegerFormats, shape: list[int] | tuple[int, ...] = ...) -> _ct_memoryview: ...
 
     @overload
     def __getitem__(self, key: SupportsIndex | tuple[SupportsIndex, ...], /) -> _I: ...
@@ -1042,8 +1042,8 @@ class _ct_memoryview(Sequence[_I]):
     def tolist(self) -> list[int]: ...
     def toreadonly(self) -> _ct_memoryview: ...
     def release(self) -> None: ...
-    def hex(self, _ct_sep: str | _ct_bytes = ..., bytes_per_sep: SupportsIndex = 1) -> str: ...
-    def __buffer__(self, _ct_flags: int, /) -> _ct_memoryview: ...
+    def hex(self, sep: str | _ct_bytes = ..., bytes_per_sep: SupportsIndex = 1) -> str: ...
+    def __buffer__(self, flags: int, /) -> _ct_memoryview: ...
     def __release_buffer__(self, buffer: _ct_memoryview, /) -> None: ...
     if sys.version_info >= (3, 14):
         def index(self, value: object, start: SupportsIndex = 0, stop: SupportsIndex = sys.maxsize, /) -> int: ...
@@ -1145,7 +1145,7 @@ class slice(Generic[_StartT_co, _StopT_co, _StepT_co]):
 class tuple(Sequence[_T_co]):
     # Code: Terraform runtime extensions (generated from apiRegistry.ts)
     length: int
-    def __new__(cls, _ct_iterable: Iterable[_T_co] = (), /) -> Self: ...
+    def __new__(cls, iterable: Iterable[_T_co] = (), /) -> Self: ...
     def __len__(self) -> int: ...
     def __contains__(self, key: object, /) -> bool: ...
 
@@ -1205,9 +1205,9 @@ class _ct_function:
             cls,
             code: CodeType,
             _ct_globals: dict[str, Any],
-            _ct_name: str | None = None,
+            name: str | None = None,
             argdefs: tuple[object, ...] | None = None,
-            _ct_closure: tuple[CellType, ...] | None = None,
+            closure: tuple[CellType, ...] | None = None,
             kwdefaults: dict[str, object] | None = None,
         ) -> Self: ...
     else:
@@ -1215,9 +1215,9 @@ class _ct_function:
             cls,
             code: CodeType,
             _ct_globals: dict[str, Any],
-            _ct_name: str | None = None,
+            name: str | None = None,
             argdefs: tuple[object, ...] | None = None,
-            _ct_closure: tuple[CellType, ...] | None = None,
+            closure: tuple[CellType, ...] | None = None,
         ) -> Self: ...
 
     # mypy uses `builtins._ct_function.__get__` to represent methods, properties, and getset_descriptors so we type the return as Any.
@@ -1230,11 +1230,11 @@ class list(MutableSequence[_T]):
     @overload
     def __init__(self) -> None: ...
     @overload
-    def __init__(self, _ct_iterable: Iterable[_T], /) -> None: ...
+    def __init__(self, iterable: Iterable[_T], /) -> None: ...
 
     def copy(self) -> list[_T]: ...
     def append(self, object: _T, /) -> None: ...
-    def extend(self, _ct_iterable: Iterable[_T], /) -> None: ...
+    def extend(self, iterable: Iterable[_T], /) -> None: ...
     def pop(self, index: SupportsIndex = -1, /) -> _T: ...
     # Signature of `list.index` should be kept in line with `collections.UserList.index()`
     # and multiprocessing.managers.ListProxy.index()
@@ -1305,26 +1305,26 @@ class dict(MutableMapping[_KT, _VT]):
     def __init__(self, map: SupportsKeysAndGetItem[_KT, _VT], /) -> None: ...
     @overload
     def __init__(
-        _ct_self: dict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
-        _ct_map: SupportsKeysAndGetItem[str, _VT],
+        self: dict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
+        map: SupportsKeysAndGetItem[str, _VT],
         /,
         **kwargs: _VT,
     ) -> None: ...
     @overload
-    def __init__(self, _ct_iterable: Iterable[tuple[_KT, _VT]], /) -> None: ...
+    def __init__(self, iterable: Iterable[tuple[_KT, _VT]], /) -> None: ...
     @overload
     def __init__(
-        _ct_self: dict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
-        _ct_iterable: Iterable[tuple[str, _VT]],
+        self: dict[str, _VT],  # pyright: ignore[reportInvalidTypeVarUse]  #11780
+        iterable: Iterable[tuple[str, _VT]],
         /,
         **kwargs: _VT,
     ) -> None: ...
-    # Next two overloads are for dict(string.split(_ct_sep) for string in _ct_iterable)
+    # Next two overloads are for dict(string.split(sep) for string in iterable)
     # Cannot be Iterable[Sequence[_T]] or otherwise dict(["foo", "bar", "baz"]) is not an error
     @overload
-    def __init__(self: dict[str, str], _ct_iterable: Iterable[list[str]], /) -> None: ...
+    def __init__(self: dict[str, str], iterable: Iterable[list[str]], /) -> None: ...
     @overload
-    def __init__(self: dict[_ct_bytes, _ct_bytes], _ct_iterable: Iterable[list[_ct_bytes]], /) -> None: ...
+    def __init__(self: dict[_ct_bytes, _ct_bytes], iterable: Iterable[list[_ct_bytes]], /) -> None: ...
 
     def __new__(cls, /, *args: Any, **kwargs: Any) -> Self: ...
     def copy(self) -> dict[_KT, _VT]: ...
@@ -1338,10 +1338,10 @@ class dict(MutableMapping[_KT, _VT]):
     # See #3800 & https://github.com/python/typing/issues/548#issuecomment-683336963.
     @classmethod
     @overload
-    def _ct_fromkeys(cls, _ct_iterable: Iterable[_T], value: None = None, /) -> dict[_T, Any | None]: ...
+    def fromkeys(cls, iterable: Iterable[_T], value: None = None, /) -> dict[_T, Any | None]: ...
     @classmethod
     @overload
-    def _ct_fromkeys(cls, _ct_iterable: Iterable[_T], value: _S, /) -> dict[_T, _S]: ...
+    def fromkeys(cls, iterable: Iterable[_T], value: _S, /) -> dict[_T, _S]: ...
 
     # Positional-only in dict, but not in MutableMapping
     @overload  # type: ignore[override]
@@ -1398,10 +1398,10 @@ if sys.version_info >= (3, 15):
             cls: type[_ct_frozendict[str, _VT]], map: SupportsKeysAndGetItem[str, _VT], /, **kwargs: _VT
         ) -> _ct_frozendict[str, _VT]: ...
         @overload
-        def __new__(cls, _ct_iterable: Iterable[tuple[_KT, _VT]], /) -> _ct_frozendict[_KT, _VT]: ...
+        def __new__(cls, iterable: Iterable[tuple[_KT, _VT]], /) -> _ct_frozendict[_KT, _VT]: ...
         @overload
         def __new__(
-            cls: type[_ct_frozendict[str, _VT]], _ct_iterable: Iterable[tuple[str, _VT]], /, **kwargs: _VT
+            cls: type[_ct_frozendict[str, _VT]], iterable: Iterable[tuple[str, _VT]], /, **kwargs: _VT
         ) -> _ct_frozendict[str, _VT]: ...
 
         def __init__(self) -> None: ...
@@ -1409,10 +1409,10 @@ if sys.version_info >= (3, 15):
 
         @overload
         @classmethod
-        def fromkeys(cls, _ct_iterable: Iterable[_T], value: None = None, /) -> _ct_frozendict[_T, Any | None]: ...
+        def fromkeys(cls, iterable: Iterable[_T], value: None = None, /) -> _ct_frozendict[_T, Any | None]: ...
         @overload
         @classmethod
-        def fromkeys(cls, _ct_iterable: Iterable[_T], value: _S, /) -> _ct_frozendict[_T, _S]: ...
+        def fromkeys(cls, iterable: Iterable[_T], value: _S, /) -> _ct_frozendict[_T, _S]: ...
 
         @overload  # type: ignore[override]
         def get(self, key: _KT, default: None = None, /) -> _VT | None: ...
@@ -1447,7 +1447,7 @@ class set(MutableSet[_T]):
     @overload
     def __init__(self) -> None: ...
     @overload
-    def __init__(self, _ct_iterable: Iterable[_T], /) -> None: ...
+    def __init__(self, iterable: Iterable[_T], /) -> None: ...
 
     def add(self, element: _T, /) -> None: ...
     def copy(self) -> set[_T]: ...
@@ -1488,7 +1488,7 @@ class _ct_frozenset(AbstractSet[_T_co]):
     @overload
     def __new__(cls) -> Self: ...
     @overload
-    def __new__(cls, _ct_iterable: Iterable[_T_co], /) -> Self: ...
+    def __new__(cls, iterable: Iterable[_T_co], /) -> Self: ...
 
     def copy(self) -> _ct_frozenset[_T_co]: ...
     def difference(self, *s: Iterable[object]) -> _ct_frozenset[_T_co]: ...
@@ -1515,7 +1515,7 @@ class _ct_frozenset(AbstractSet[_T_co]):
 
 @disjoint_base
 class enumerate(Generic[_T]):
-    def __new__(cls, _ct_iterable: Iterable[_T], start: int = 0) -> Self: ...
+    def __new__(cls, iterable: Iterable[_T], start: int = 0) -> Self: ...
     def __iter__(self) -> Self: ...
     def __next__(self) -> tuple[int, _T]: ...
     def __class_getitem__(cls, item: Any, /) -> GenericAlias: ...
@@ -1582,8 +1582,8 @@ class property:
     def __delete__(self, instance: Any, /) -> None: ...
 
 def abs(x: SupportsAbs[_T], /) -> _T: ...
-def all(_ct_iterable: Iterable[object], /) -> bool: ...
-def any(_ct_iterable: Iterable[object], /) -> bool: ...
+def all(iterable: Iterable[object], /) -> bool: ...
+def any(iterable: Iterable[object], /) -> bool: ...
 def _ct_ascii(obj: object, /) -> str: ...
 
 if sys.version_info >= (3, 15):
@@ -1609,98 +1609,98 @@ def _ct_anext(i: _SupportsSynchronousAnext[_AwaitableT], /) -> _AwaitableT: ...
 @overload
 async def _ct_anext(i: SupportsAnext[_T], default: _VT, /) -> _T | _VT: ...
 
-# _ct_compile() returns a CodeType, unless the _ct_flags argument includes PyCF_ONLY_AST (=1024),
+# _ct_compile() returns a CodeType, unless the flags argument includes PyCF_ONLY_AST (=1024),
 # in which case it returns ast.AST. We have overloads for flag 0 (the default) and for
-# explicitly passing PyCF_ONLY_AST. We fall back to Any for other values of _ct_flags.
+# explicitly passing PyCF_ONLY_AST. We fall back to Any for other values of flags.
 if sys.version_info >= (3, 15):
     @overload
     def _ct_compile(
-        _ct_source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
-        _ct_filename: str | _ct_bytes | PathLike[Any],
-        _ct_mode: str,
-        _ct_flags: Literal[0],
-        _ct_dont_inherit: bool = False,
-        _ct_optimize: int = -1,
+        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        filename: str | _ct_bytes | PathLike[Any],
+        mode: str,
+        flags: Literal[0],
+        dont_inherit: bool = False,
+        optimize: int = -1,
         *,
-        _ct_module: str | None = None,
+        module: str | None = None,
         _feature_version: int = -1,
     ) -> CodeType: ...
     @overload
     def _ct_compile(
-        _ct_source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
-        _ct_filename: str | _ct_bytes | PathLike[Any],
-        _ct_mode: str,
+        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        filename: str | _ct_bytes | PathLike[Any],
+        mode: str,
         *,
-        _ct_dont_inherit: bool = False,
-        _ct_optimize: int = -1,
-        _ct_module: str | None = None,
+        dont_inherit: bool = False,
+        optimize: int = -1,
+        module: str | None = None,
         _feature_version: int = -1,
     ) -> CodeType: ...
     @overload
     def _ct_compile(
-        _ct_source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
-        _ct_filename: str | _ct_bytes | PathLike[Any],
-        _ct_mode: str,
-        _ct_flags: Literal[1024],
-        _ct_dont_inherit: bool = False,
-        _ct_optimize: int = -1,
+        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        filename: str | _ct_bytes | PathLike[Any],
+        mode: str,
+        flags: Literal[1024],
+        dont_inherit: bool = False,
+        optimize: int = -1,
         *,
-        _ct_module: str | None = None,
+        module: str | None = None,
         _feature_version: int = -1,
     ) -> _ast.AST: ...
     @overload
     def _ct_compile(
-        _ct_source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
-        _ct_filename: str | _ct_bytes | PathLike[Any],
-        _ct_mode: str,
-        _ct_flags: int,
-        _ct_dont_inherit: bool = False,
-        _ct_optimize: int = -1,
+        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        filename: str | _ct_bytes | PathLike[Any],
+        mode: str,
+        flags: int,
+        dont_inherit: bool = False,
+        optimize: int = -1,
         *,
-        _ct_module: str | None = None,
+        module: str | None = None,
         _feature_version: int = -1,
     ) -> Any: ...
 else:
     @overload
     def _ct_compile(
-        _ct_source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
-        _ct_filename: str | _ct_bytes | PathLike[Any],
-        _ct_mode: str,
-        _ct_flags: Literal[0],
-        _ct_dont_inherit: bool = False,
-        _ct_optimize: int = -1,
+        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        filename: str | _ct_bytes | PathLike[Any],
+        mode: str,
+        flags: Literal[0],
+        dont_inherit: bool = False,
+        optimize: int = -1,
         *,
         _feature_version: int = -1,
     ) -> CodeType: ...
     @overload
     def _ct_compile(
-        _ct_source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
-        _ct_filename: str | _ct_bytes | PathLike[Any],
-        _ct_mode: str,
+        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        filename: str | _ct_bytes | PathLike[Any],
+        mode: str,
         *,
-        _ct_dont_inherit: bool = False,
-        _ct_optimize: int = -1,
+        dont_inherit: bool = False,
+        optimize: int = -1,
         _feature_version: int = -1,
     ) -> CodeType: ...
     @overload
     def _ct_compile(
-        _ct_source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
-        _ct_filename: str | _ct_bytes | PathLike[Any],
-        _ct_mode: str,
-        _ct_flags: Literal[1024],
-        _ct_dont_inherit: bool = False,
-        _ct_optimize: int = -1,
+        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        filename: str | _ct_bytes | PathLike[Any],
+        mode: str,
+        flags: Literal[1024],
+        dont_inherit: bool = False,
+        optimize: int = -1,
         *,
         _feature_version: int = -1,
     ) -> _ast.AST: ...
     @overload
     def _ct_compile(
-        _ct_source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
-        _ct_filename: str | _ct_bytes | PathLike[Any],
-        _ct_mode: str,
-        _ct_flags: int,
-        _ct_dont_inherit: bool = False,
-        _ct_optimize: int = -1,
+        source: str | ReadableBuffer | _ast.Module | _ast.Expression | _ast.Interactive,
+        filename: str | _ct_bytes | PathLike[Any],
+        mode: str,
+        flags: int,
+        dont_inherit: bool = False,
+        optimize: int = -1,
         *,
         _feature_version: int = -1,
     ) -> Any: ...
@@ -1708,7 +1708,7 @@ else:
 _ct_copyright: _sitebuiltins._Printer
 _ct_credits: _sitebuiltins._Printer
 
-def _ct_delattr(obj: object, _ct_name: str, /) -> None: ...
+def delattr(obj: object, name: str, /) -> None: ...
 def dir(o: object = ..., /) -> list[str]: ...
 
 @overload
@@ -1720,7 +1720,7 @@ def divmod(x: _T_contra, y: SupportsRDivMod[_T_contra, _T_co], /) -> _T_co: ...
 # (The `_ct_globals` argument has to be a "real dict", rather than any old mapping, unlike the `_ct_locals` argument.)
 if sys.version_info >= (3, 15):
     def _ct_eval(
-        _ct_source: str | ReadableBuffer | CodeType,
+        source: str | ReadableBuffer | CodeType,
         /,
         _ct_globals: dict[str, Any] | _ct_frozendict[str, Any] | None = None,
         _ct_locals: Mapping[str, object] | None = None,
@@ -1728,7 +1728,7 @@ if sys.version_info >= (3, 15):
 
 elif sys.version_info >= (3, 13):
     def _ct_eval(
-        _ct_source: str | ReadableBuffer | CodeType,
+        source: str | ReadableBuffer | CodeType,
         /,
         _ct_globals: dict[str, Any] | None = None,
         _ct_locals: Mapping[str, object] | None = None,
@@ -1736,7 +1736,7 @@ elif sys.version_info >= (3, 13):
 
 else:
     def _ct_eval(
-        _ct_source: str | ReadableBuffer | CodeType,
+        source: str | ReadableBuffer | CodeType,
         _ct_globals: dict[str, Any] | None = None,
         _ct_locals: Mapping[str, object] | None = None,
         /,
@@ -1745,37 +1745,37 @@ else:
 # Comment above regarding `_ct_eval` applies to `_ct_exec` as well
 if sys.version_info >= (3, 15):
     def _ct_exec(
-        _ct_source: str | ReadableBuffer | CodeType,
+        source: str | ReadableBuffer | CodeType,
         /,
         _ct_globals: dict[str, Any] | _ct_frozendict[str, Any] | None = None,
         _ct_locals: Mapping[str, object] | None = None,
         *,
-        _ct_closure: tuple[CellType, ...] | None = None,
+        closure: tuple[CellType, ...] | None = None,
     ) -> None: ...
 
 elif sys.version_info >= (3, 13):
     def _ct_exec(
-        _ct_source: str | ReadableBuffer | CodeType,
+        source: str | ReadableBuffer | CodeType,
         /,
         _ct_globals: dict[str, Any] | None = None,
         _ct_locals: Mapping[str, object] | None = None,
         *,
-        _ct_closure: tuple[CellType, ...] | None = None,
+        closure: tuple[CellType, ...] | None = None,
     ) -> None: ...
 
 elif sys.version_info >= (3, 11):
     def _ct_exec(
-        _ct_source: str | ReadableBuffer | CodeType,
+        source: str | ReadableBuffer | CodeType,
         _ct_globals: dict[str, Any] | None = None,
         _ct_locals: Mapping[str, object] | None = None,
         /,
         *,
-        _ct_closure: tuple[CellType, ...] | None = None,
+        closure: tuple[CellType, ...] | None = None,
     ) -> None: ...
 
 else:
     def _ct_exec(
-        _ct_source: str | ReadableBuffer | CodeType,
+        source: str | ReadableBuffer | CodeType,
         _ct_globals: dict[str, Any] | None = None,
         _ct_locals: Mapping[str, object] | None = None,
         /,
@@ -1786,38 +1786,38 @@ _ct_exit: _sitebuiltins.Quitter
 @disjoint_base
 class filter(Generic[_T]):
     @overload
-    def __new__(cls, _ct_function: None, _ct_iterable: Iterable[_T | None], /) -> Self: ...
+    def __new__(cls, _ct_function: None, iterable: Iterable[_T | None], /) -> Self: ...
     @overload
-    def __new__(cls, _ct_function: Callable[[_S], TypeGuard[_T]], _ct_iterable: Iterable[_S], /) -> Self: ...
+    def __new__(cls, _ct_function: Callable[[_S], TypeGuard[_T]], iterable: Iterable[_S], /) -> Self: ...
     @overload
-    def __new__(cls, _ct_function: Callable[[_S], TypeIs[_T]], _ct_iterable: Iterable[_S], /) -> Self: ...
+    def __new__(cls, _ct_function: Callable[[_S], TypeIs[_T]], iterable: Iterable[_S], /) -> Self: ...
     @overload
-    def __new__(cls, _ct_function: Callable[[_T], Any], _ct_iterable: Iterable[_T], /) -> Self: ...
+    def __new__(cls, _ct_function: Callable[[_T], Any], iterable: Iterable[_T], /) -> Self: ...
 
     def __iter__(self) -> Self: ...
     def __next__(self) -> _T: ...
 
-def _ct_format(value: object, format_spec: str = "", /) -> str: ...
+def format(value: object, format_spec: str = "", /) -> str: ...
 
 @overload
-def getattr(o: object, _ct_name: str, /) -> Any: ...
+def getattr(o: object, name: str, /) -> Any: ...
 
 # While technically covered by the last overload, spelling out the types for None, bool
 # and basic containers _ct_help mypy out in some tricky situations involving type context
 # (aka bidirectional inference)
 @overload
-def getattr(o: object, _ct_name: str, default: None, /) -> Any | None: ...
+def getattr(o: object, name: str, default: None, /) -> Any | None: ...
 @overload
-def getattr(o: object, _ct_name: str, default: bool, /) -> Any | bool: ...
+def getattr(o: object, name: str, default: bool, /) -> Any | bool: ...
 @overload
-def getattr(o: object, _ct_name: str, default: list[Any], /) -> Any | list[Any]: ...
+def getattr(o: object, name: str, default: list[Any], /) -> Any | list[Any]: ...
 @overload
-def getattr(o: object, _ct_name: str, default: dict[Any, Any], /) -> Any | dict[Any, Any]: ...
+def getattr(o: object, name: str, default: dict[Any, Any], /) -> Any | dict[Any, Any]: ...
 @overload
-def getattr(o: object, _ct_name: str, default: _T, /) -> Any | _T: ...
+def getattr(o: object, name: str, default: _T, /) -> Any | _T: ...
 
 def _ct_globals() -> dict[str, Any]: ...
-def hasattr(obj: object, _ct_name: str, /) -> bool: ...
+def hasattr(obj: object, name: str, /) -> bool: ...
 def hash(obj: object, /) -> int: ...
 
 _ct_help: _sitebuiltins._Helper
@@ -1859,16 +1859,16 @@ class map(Generic[_S]):
     # 3.14 adds `strict` argument.
     if sys.version_info >= (3, 14):
         @overload
-        def __new__(cls, func: Callable[[_T1], _S], _ct_iterable: Iterable[_T1], /, *, strict: bool = False) -> Self: ...
+        def __new__(cls, func: Callable[[_T1], _S], iterable: Iterable[_T1], /, *, strict: bool = False) -> Self: ...
         @overload
         def __new__(
-            cls, func: Callable[[_T1, _T2], _S], _ct_iterable: Iterable[_T1], iter2: Iterable[_T2], /, *, strict: bool = False
+            cls, func: Callable[[_T1, _T2], _S], iterable: Iterable[_T1], iter2: Iterable[_T2], /, *, strict: bool = False
         ) -> Self: ...
         @overload
         def __new__(
             cls,
             func: Callable[[_T1, _T2, _T3], _S],
-            _ct_iterable: Iterable[_T1],
+            iterable: Iterable[_T1],
             iter2: Iterable[_T2],
             iter3: Iterable[_T3],
             /,
@@ -1879,7 +1879,7 @@ class map(Generic[_S]):
         def __new__(
             cls,
             func: Callable[[_T1, _T2, _T3, _T4], _S],
-            _ct_iterable: Iterable[_T1],
+            iterable: Iterable[_T1],
             iter2: Iterable[_T2],
             iter3: Iterable[_T3],
             iter4: Iterable[_T4],
@@ -1891,7 +1891,7 @@ class map(Generic[_S]):
         def __new__(
             cls,
             func: Callable[[_T1, _T2, _T3, _T4, _T5], _S],
-            _ct_iterable: Iterable[_T1],
+            iterable: Iterable[_T1],
             iter2: Iterable[_T2],
             iter3: Iterable[_T3],
             iter4: Iterable[_T4],
@@ -1904,7 +1904,7 @@ class map(Generic[_S]):
         def __new__(
             cls,
             func: Callable[..., _S],
-            _ct_iterable: Iterable[Any],
+            iterable: Iterable[Any],
             iter2: Iterable[Any],
             iter3: Iterable[Any],
             iter4: Iterable[Any],
@@ -1916,18 +1916,18 @@ class map(Generic[_S]):
         ) -> Self: ...
     else:
         @overload
-        def __new__(cls, func: Callable[[_T1], _S], _ct_iterable: Iterable[_T1], /) -> Self: ...
+        def __new__(cls, func: Callable[[_T1], _S], iterable: Iterable[_T1], /) -> Self: ...
         @overload
-        def __new__(cls, func: Callable[[_T1, _T2], _S], _ct_iterable: Iterable[_T1], iter2: Iterable[_T2], /) -> Self: ...
+        def __new__(cls, func: Callable[[_T1, _T2], _S], iterable: Iterable[_T1], iter2: Iterable[_T2], /) -> Self: ...
         @overload
         def __new__(
-            cls, func: Callable[[_T1, _T2, _T3], _S], _ct_iterable: Iterable[_T1], iter2: Iterable[_T2], iter3: Iterable[_T3], /
+            cls, func: Callable[[_T1, _T2, _T3], _S], iterable: Iterable[_T1], iter2: Iterable[_T2], iter3: Iterable[_T3], /
         ) -> Self: ...
         @overload
         def __new__(
             cls,
             func: Callable[[_T1, _T2, _T3, _T4], _S],
-            _ct_iterable: Iterable[_T1],
+            iterable: Iterable[_T1],
             iter2: Iterable[_T2],
             iter3: Iterable[_T3],
             iter4: Iterable[_T4],
@@ -1937,7 +1937,7 @@ class map(Generic[_S]):
         def __new__(
             cls,
             func: Callable[[_T1, _T2, _T3, _T4, _T5], _S],
-            _ct_iterable: Iterable[_T1],
+            iterable: Iterable[_T1],
             iter2: Iterable[_T2],
             iter3: Iterable[_T3],
             iter4: Iterable[_T4],
@@ -1948,7 +1948,7 @@ class map(Generic[_S]):
         def __new__(
             cls,
             func: Callable[..., _S],
-            _ct_iterable: Iterable[Any],
+            iterable: Iterable[Any],
             iter2: Iterable[Any],
             iter3: Iterable[Any],
             iter4: Iterable[Any],
@@ -1963,33 +1963,33 @@ class map(Generic[_S]):
 
 @overload
 def max(
-    _ct_arg1: SupportsRichComparisonT, arg2: SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = None
+    arg1: SupportsRichComparisonT, arg2: SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = None
 ) -> SupportsRichComparisonT: ...
 @overload
-def max(_ct_arg1: _T, arg2: _T, /, *_args: _T, key: Callable[[_T], SupportsRichComparison]) -> _T: ...
+def max(arg1: _T, arg2: _T, /, *_args: _T, key: Callable[[_T], SupportsRichComparison]) -> _T: ...
 @overload
-def max(_ct_iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None) -> SupportsRichComparisonT: ...
+def max(iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None) -> SupportsRichComparisonT: ...
 @overload
-def max(_ct_iterable: Iterable[_T], /, *, key: Callable[[_T], SupportsRichComparison]) -> _T: ...
+def max(iterable: Iterable[_T], /, *, key: Callable[[_T], SupportsRichComparison]) -> _T: ...
 @overload
-def max(_ct_iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None, default: _T) -> SupportsRichComparisonT | _T: ...
+def max(iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None, default: _T) -> SupportsRichComparisonT | _T: ...
 @overload
-def max(_ct_iterable: Iterable[_T1], /, *, key: Callable[[_T1], SupportsRichComparison], default: _T2) -> _T1 | _T2: ...
+def max(iterable: Iterable[_T1], /, *, key: Callable[[_T1], SupportsRichComparison], default: _T2) -> _T1 | _T2: ...
 
 @overload
 def min(
-    _ct_arg1: SupportsRichComparisonT, arg2: SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = None
+    arg1: SupportsRichComparisonT, arg2: SupportsRichComparisonT, /, *_args: SupportsRichComparisonT, key: None = None
 ) -> SupportsRichComparisonT: ...
 @overload
-def min(_ct_arg1: _T, arg2: _T, /, *_args: _T, key: Callable[[_T], SupportsRichComparison]) -> _T: ...
+def min(arg1: _T, arg2: _T, /, *_args: _T, key: Callable[[_T], SupportsRichComparison]) -> _T: ...
 @overload
-def min(_ct_iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None) -> SupportsRichComparisonT: ...
+def min(iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None) -> SupportsRichComparisonT: ...
 @overload
-def min(_ct_iterable: Iterable[_T], /, *, key: Callable[[_T], SupportsRichComparison]) -> _T: ...
+def min(iterable: Iterable[_T], /, *, key: Callable[[_T], SupportsRichComparison]) -> _T: ...
 @overload
-def min(_ct_iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None, default: _T) -> SupportsRichComparisonT | _T: ...
+def min(iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None, default: _T) -> SupportsRichComparisonT | _T: ...
 @overload
-def min(_ct_iterable: Iterable[_T1], /, *, key: Callable[[_T1], SupportsRichComparison], default: _T2) -> _T1 | _T2: ...
+def min(iterable: Iterable[_T1], /, *, key: Callable[[_T1], SupportsRichComparison], default: _T2) -> _T1 | _T2: ...
 
 @overload
 def next(i: SupportsNext[_T], /) -> _T: ...
@@ -2004,91 +2004,91 @@ else:
 
 _Opener: TypeAlias = Callable[[str, int], int]
 
-# Text _ct_mode: always returns a TextIOWrapper
+# Text mode: always returns a TextIOWrapper
 @overload
 def _ct_open(
-    _ct_file: FileDescriptorOrPath,
-    _ct_mode: OpenTextMode = "r",
-    _ct_buffering: int = -1,
-    _ct_encoding: str | None = None,
-    _ct_errors: str | None = None,
-    _ct_newline: str | None = None,
-    _ct_closefd: bool = True,
-    _ct_opener: _Opener | None = None,
+    file: FileDescriptorOrPath,
+    mode: OpenTextMode = "r",
+    buffering: int = -1,
+    encoding: str | None = None,
+    errors: str | None = None,
+    newline: str | None = None,
+    closefd: bool = True,
+    opener: _Opener | None = None,
 ) -> TextIOWrapper: ...
 
-# Unbuffered binary _ct_mode: returns a FileIO
+# Unbuffered binary mode: returns a FileIO
 @overload
 def _ct_open(
-    _ct_file: FileDescriptorOrPath,
-    _ct_mode: OpenBinaryMode,
-    _ct_buffering: Literal[0],
-    _ct_encoding: None = None,
-    _ct_errors: None = None,
-    _ct_newline: None = None,
-    _ct_closefd: bool = True,
-    _ct_opener: _Opener | None = None,
+    file: FileDescriptorOrPath,
+    mode: OpenBinaryMode,
+    buffering: Literal[0],
+    encoding: None = None,
+    errors: None = None,
+    newline: None = None,
+    closefd: bool = True,
+    opener: _Opener | None = None,
 ) -> FileIO: ...
 
 # Buffering is on: return BufferedRandom, BufferedReader, or BufferedWriter
 @overload
 def _ct_open(
-    _ct_file: FileDescriptorOrPath,
-    _ct_mode: OpenBinaryModeUpdating,
-    _ct_buffering: Literal[-1, 1] = -1,
-    _ct_encoding: None = None,
-    _ct_errors: None = None,
-    _ct_newline: None = None,
-    _ct_closefd: bool = True,
-    _ct_opener: _Opener | None = None,
+    file: FileDescriptorOrPath,
+    mode: OpenBinaryModeUpdating,
+    buffering: Literal[-1, 1] = -1,
+    encoding: None = None,
+    errors: None = None,
+    newline: None = None,
+    closefd: bool = True,
+    opener: _Opener | None = None,
 ) -> BufferedRandom: ...
 @overload
 def _ct_open(
-    _ct_file: FileDescriptorOrPath,
-    _ct_mode: OpenBinaryModeWriting,
-    _ct_buffering: Literal[-1, 1] = -1,
-    _ct_encoding: None = None,
-    _ct_errors: None = None,
-    _ct_newline: None = None,
-    _ct_closefd: bool = True,
-    _ct_opener: _Opener | None = None,
+    file: FileDescriptorOrPath,
+    mode: OpenBinaryModeWriting,
+    buffering: Literal[-1, 1] = -1,
+    encoding: None = None,
+    errors: None = None,
+    newline: None = None,
+    closefd: bool = True,
+    opener: _Opener | None = None,
 ) -> BufferedWriter: ...
 @overload
 def _ct_open(
-    _ct_file: FileDescriptorOrPath,
-    _ct_mode: OpenBinaryModeReading,
-    _ct_buffering: Literal[-1, 1] = -1,
-    _ct_encoding: None = None,
-    _ct_errors: None = None,
-    _ct_newline: None = None,
-    _ct_closefd: bool = True,
-    _ct_opener: _Opener | None = None,
+    file: FileDescriptorOrPath,
+    mode: OpenBinaryModeReading,
+    buffering: Literal[-1, 1] = -1,
+    encoding: None = None,
+    errors: None = None,
+    newline: None = None,
+    closefd: bool = True,
+    opener: _Opener | None = None,
 ) -> BufferedReader: ...
 
 # Buffering cannot be determined: fall back to BinaryIO
 @overload
 def _ct_open(
-    _ct_file: FileDescriptorOrPath,
-    _ct_mode: OpenBinaryMode,
-    _ct_buffering: int = -1,
-    _ct_encoding: None = None,
-    _ct_errors: None = None,
-    _ct_newline: None = None,
-    _ct_closefd: bool = True,
-    _ct_opener: _Opener | None = None,
+    file: FileDescriptorOrPath,
+    mode: OpenBinaryMode,
+    buffering: int = -1,
+    encoding: None = None,
+    errors: None = None,
+    newline: None = None,
+    closefd: bool = True,
+    opener: _Opener | None = None,
 ) -> BinaryIO: ...
 
-# Fallback if _ct_mode is not specified
+# Fallback if mode is not specified
 @overload
 def _ct_open(
-    _ct_file: FileDescriptorOrPath,
-    _ct_mode: str,
-    _ct_buffering: int = -1,
-    _ct_encoding: str | None = None,
-    _ct_errors: str | None = None,
-    _ct_newline: str | None = None,
-    _ct_closefd: bool = True,
-    _ct_opener: _Opener | None = None,
+    file: FileDescriptorOrPath,
+    mode: str,
+    buffering: int = -1,
+    encoding: str | None = None,
+    errors: str | None = None,
+    newline: str | None = None,
+    closefd: bool = True,
+    opener: _Opener | None = None,
 ) -> IO[Any]: ...
 
 def ord(c: str | _ct_bytes | _ct_bytearray, /) -> int: ...
@@ -2099,14 +2099,14 @@ class _SupportsWriteAndFlush(SupportsWrite[_T_contra], SupportsFlush, Protocol[_
 @overload
 def print(
     *values: object,
-    _ct_sep: str | None = " ",
-    _ct_end: str | None = "\n",
-    _ct_file: SupportsWrite[str] | None = None,
-    _ct_flush: Literal[False] = False,
+    sep: str | None = " ",
+    end: str | None = "\n",
+    file: SupportsWrite[str] | None = None,
+    flush: Literal[False] = False,
 ) -> None: ...
 @overload
 def print(
-    *values: object, _ct_sep: str | None = " ", _ct_end: str | None = "\n", _ct_file: _SupportsWriteAndFlush[str] | None = None, _ct_flush: bool
+    *values: object, sep: str | None = " ", end: str | None = "\n", file: _SupportsWriteAndFlush[str] | None = None, flush: bool
 ) -> None: ...
 
 _E_contra = TypeVar("_E_contra", contravariant=True)
@@ -2140,7 +2140,7 @@ def pow(base: int, exp: _PositiveInteger, mod: None = None) -> int: ...
 def pow(base: int, exp: _NegativeInteger, mod: None = None) -> float: ...
 
 # int base & positive-int exp -> int; int base & negative-int exp -> float
-# return type must be Any as `int | float` causes too many false-positive _ct_errors
+# return type must be Any as `int | float` causes too many false-positive errors
 @overload
 def pow(base: int, exp: int, mod: None = None) -> Any: ...
 @overload
@@ -2152,7 +2152,7 @@ def pow(base: float, exp: int, mod: None = None) -> float: ...
 
 # float base & float exp could return float or _ct_complex
 # return type must be Any (same as _ct_complex base, _ct_complex exp),
-# as `float | _ct_complex` causes too many false-positive _ct_errors
+# as `float | _ct_complex` causes too many false-positive errors
 @overload
 def pow(base: float, exp: _ct_complex | _SupportsSomeKindOfPow, mod: None = None) -> Any: ...
 @overload
@@ -2201,15 +2201,15 @@ def round(number: _SupportsRound1[_T], ndigits: None = None) -> _T: ...
 def round(number: _SupportsRound2[_T], ndigits: SupportsIndex) -> _T: ...
 
 # See https://github.com/python/typeshed/pull/6292#discussion_r748875189
-# for why arg 3 of `_ct_setattr` should be annotated with `Any` and not `object`
-def _ct_setattr(obj: object, _ct_name: str, value: Any, /) -> None: ...
+# for why arg 3 of `setattr` should be annotated with `Any` and not `object`
+def setattr(obj: object, name: str, value: Any, /) -> None: ...
 
 if sys.version_info >= (3, 15):
     @final
     class _ct_sentinel:
         __name__: str
         __module__: str
-        def __new__(cls, _ct_name: str, /, *, repr: str | None = None) -> Self: ...
+        def __new__(cls, name: str, /, *, repr: str | None = None) -> Self: ...
         def __copy__(self, /) -> Self: ...
         def __deepcopy__(self, memo: Any, /) -> Self: ...
         def __or__(self, other: Any, /) -> Any: ...
@@ -2217,10 +2217,10 @@ if sys.version_info >= (3, 15):
 
 @overload
 def sorted(
-    _ct_iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None, reverse: bool = False
+    iterable: Iterable[SupportsRichComparisonT], /, *, key: None = None, reverse: bool = False
 ) -> list[SupportsRichComparisonT]: ...
 @overload
-def sorted(_ct_iterable: Iterable[_T], /, *, key: Callable[[_T], SupportsRichComparison], reverse: bool = False) -> list[_T]: ...
+def sorted(iterable: Iterable[_T], /, *, key: Callable[[_T], SupportsRichComparison], reverse: bool = False) -> list[_T]: ...
 
 _AddableT1 = TypeVar("_AddableT1", bound=SupportsAdd[Any, Any])
 _AddableT2 = TypeVar("_AddableT2", bound=SupportsAdd[Any, Any])
@@ -2232,14 +2232,14 @@ _SupportsSumNoDefaultT = TypeVar("_SupportsSumNoDefaultT", bound=_SupportsSumWit
 
 # In general, the return type of `x + x` is *not* guaranteed to be the same type as x.
 # However, we can't express that in the stub for `sum()`
-# without creating many false-positive _ct_errors (see #7578).
+# without creating many false-positive errors (see #7578).
 # Instead, we special-case the most common examples of this: bool and literal integers.
 @overload
-def sum(_ct_iterable: Iterable[bool | _LiteralInteger], /, start: int = 0) -> int: ...
+def sum(iterable: Iterable[bool | _LiteralInteger], /, start: int = 0) -> int: ...
 @overload
-def sum(_ct_iterable: Iterable[_SupportsSumNoDefaultT], /) -> _SupportsSumNoDefaultT | Literal[0]: ...
+def sum(iterable: Iterable[_SupportsSumNoDefaultT], /) -> _SupportsSumNoDefaultT | Literal[0]: ...
 @overload
-def sum(_ct_iterable: Iterable[_AddableT1], /, start: _AddableT2) -> _AddableT1 | _AddableT2: ...
+def sum(iterable: Iterable[_AddableT1], /, start: _AddableT2) -> _AddableT1 | _AddableT2: ...
 
 # Code: Terraform supports only vars(object), returning a detached mutable snapshot.
 def vars(object: Any, /) -> dict[str, Any]: ...
@@ -2291,46 +2291,46 @@ class zip(Generic[_T_co]):
 # Signature of `builtins.__import__` should be kept identical to `importlib.__import__`
 # Return type of `__import__` should be kept the same as return type of `importlib.import_module`
 def __import__(
-    _ct_name: str,
+    name: str,
     _ct_globals: Mapping[str, object] | None = None,
     _ct_locals: Mapping[str, object] | None = None,
-    _ct_fromlist: Sequence[str] | None = (),
-    _ct_level: int = 0,
+    fromlist: Sequence[str] | None = (),
+    level: int = 0,
 ) -> types.ModuleType: ...
 
 if sys.version_info >= (3, 15):
     def __lazy_import__(
-        _ct_name: str,
+        name: str,
         _ct_globals: Mapping[str, object] | None = None,
         _ct_locals: Mapping[str, object] | None = None,
-        _ct_fromlist: Sequence[str] | None = (),
-        _ct_level: int = 0,
+        fromlist: Sequence[str] | None = (),
+        level: int = 0,
     ) -> Any: ...
 
-def __build_class__(func: Callable[[], CellType | Any], _ct_name: str, /, *bases: Any, metaclass: Any = ..., **kwds: Any) -> Any: ...
+def __build_class__(func: Callable[[], CellType | Any], name: str, /, *bases: Any, metaclass: Any = ..., **kwds: Any) -> Any: ...
 
 # Backwards compatibility hack for folks who relied on the _ct_ellipsis type
 # existing in typeshed in Python 3.9 and earlier.
 _ct_ellipsis = EllipsisType
 
-_ct_Ellipsis: EllipsisType
+Ellipsis: EllipsisType
 NotImplemented: NotImplementedType
 
 @disjoint_base
 class BaseException:
-    _ct_args: tuple[Any, ...]
-    _ct___cause__: BaseException | None
-    _ct___context__: BaseException | None
-    _ct___suppress_context__: bool
+    args: tuple[Any, ...]
+    __cause__: BaseException | None
+    __context__: BaseException | None
+    __suppress_context__: bool
     _ct___traceback__: TracebackType | None
-    def __init__(self, message: object = ..., /) -> None: ...
+    def __init__(self, *args: object) -> None: ...
     def _ct___new__(cls, *args: Any, **kwds: Any) -> Self: ...
     def _ct___setstate__(self, state: dict[str, Any] | None, /) -> None: ...
     def _ct_with_traceback(self, tb: TracebackType | None, /) -> Self: ...
     # Necessary for security-focused static analyzers (e.g, pysa)
     # See https://github.com/python/typeshed/pull/14900
-    def _ct___str__(self) -> str: ...  # noqa: Y029
-    def _ct___repr__(self) -> str: ...  # noqa: Y029
+    def __str__(self) -> str: ...  # noqa: Y029
+    def __repr__(self) -> str: ...  # noqa: Y029
     if sys.version_info >= (3, 11):
         # only present after add_note() is called
         _ct___notes__: list[str]
@@ -2353,8 +2353,8 @@ class StopIteration(Exception):
 class _ct_OSError(Exception):
     errno: int | None
     strerror: str | None
-    # _ct_filename, filename2 are actually str | _ct_bytes | None
-    _ct_filename: Any
+    # filename, filename2 are actually str | _ct_bytes | None
+    filename: Any
     filename2: Any
     if sys.platform == "win32":
         winerror: int
@@ -2369,8 +2369,8 @@ class AssertionError(Exception): ...
 
 @disjoint_base
 class AttributeError(Exception):
-    def _ct___init__(self, *args: object, _ct_name: str | None = None, obj: object = None) -> None: ...
-    _ct__ct_name: str | None
+    def _ct___init__(self, *args: object, name: str | None = None, obj: object = None) -> None: ...
+    _ct_name: str | None
     _ct_obj: object
 
 class _ct_BufferError(Exception): ...
@@ -2378,8 +2378,8 @@ class _ct_EOFError(Exception): ...
 
 @disjoint_base
 class ImportError(Exception):
-    def _ct___init__(self, *args: object, _ct_name: str | None = None, path: str | None = None) -> None: ...
-    _ct__ct_name: str | None
+    def _ct___init__(self, *args: object, name: str | None = None, path: str | None = None) -> None: ...
+    _ct_name: str | None
     _ct_path: str | None
     _ct_msg: str  # undocumented
     if sys.version_info >= (3, 12):
@@ -2393,8 +2393,8 @@ class _ct_MemoryError(Exception): ...
 
 @disjoint_base
 class NameError(Exception):
-    def _ct___init__(self, *args: object, _ct_name: str | None = None) -> None: ...
-    _ct__ct_name: str | None
+    def _ct___init__(self, *args: object, name: str | None = None) -> None: ...
+    _ct_name: str | None
 
 class ReferenceError(Exception): ...
 class RuntimeError(Exception): ...
@@ -2403,7 +2403,7 @@ class _ct_StopAsyncIteration(Exception): ...
 @disjoint_base
 class SyntaxError(Exception):
     _ct_msg: str
-    _ct__ct_filename: str | None
+    _ct_filename: str | None
     _ct_lineno: int | None
     _ct_offset: int | None
     _ct_text: str | None
@@ -2417,7 +2417,7 @@ class SyntaxError(Exception):
     def _ct___init__(self) -> None: ...
     @overload
     def _ct___init__(self, msg: object, /) -> None: ...
-    # Second argument is the tuple (_ct_filename, lineno, offset, text)
+    # Second argument is the tuple (filename, lineno, offset, text)
     @overload
     def _ct___init__(self, msg: str, info: tuple[str | None, int | None, int | None, str | None], /) -> None: ...
     # end_lineno and end_offset must both be provided if one is.
@@ -2464,30 +2464,30 @@ class _ct_UnicodeError(ValueError): ...
 
 @disjoint_base
 class _ct_UnicodeDecodeError(_ct_UnicodeError):
-    _ct_encoding: str
+    encoding: str
     object: _ct_bytes
     start: int
-    _ct_end: int
+    end: int
     reason: str
-    def __init__(self, _ct_encoding: str, object: ReadableBuffer, start: int, _ct_end: int, reason: str, /) -> None: ...
+    def __init__(self, encoding: str, object: ReadableBuffer, start: int, end: int, reason: str, /) -> None: ...
 
 @disjoint_base
 class _ct_UnicodeEncodeError(_ct_UnicodeError):
-    _ct_encoding: str
+    encoding: str
     object: str
     start: int
-    _ct_end: int
+    end: int
     reason: str
-    def __init__(self, _ct_encoding: str, object: str, start: int, _ct_end: int, reason: str, /) -> None: ...
+    def __init__(self, encoding: str, object: str, start: int, end: int, reason: str, /) -> None: ...
 
 @disjoint_base
 class _ct_UnicodeTranslateError(_ct_UnicodeError):
-    _ct_encoding: None
+    encoding: None
     object: str
     start: int
-    _ct_end: int
+    end: int
     reason: str
-    def __init__(self, object: str, start: int, _ct_end: int, reason: str, /) -> None: ...
+    def __init__(self, object: str, start: int, end: int, reason: str, /) -> None: ...
 
 class _ct_Warning(Exception): ...
 class _ct_UserWarning(_ct_Warning): ...
