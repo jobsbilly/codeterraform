@@ -4,7 +4,9 @@
 .zed/
 logs/
 /CODE-TERRAFORM-IDE.txt
+/typeshed-LICENSE.txt
 /codeterraform-fleet.json
 /codeterraform-scripts.json
 /codeterraform-workspace.json
+/pyrightconfig*
 *.pyi
