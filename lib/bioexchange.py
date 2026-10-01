@@ -31,6 +31,19 @@ class BioExchangeWrapper(wrapper.WrapperBase):
     self._journal = journal
     self._all_biome_work_assigned = False
 
+  def _take_and_deliver_sample(self, work_order: BioWorkOrder) -> None:
+    raise_if_error(self.set_order(work_order.order))
+
+    if self.input.count() == 0:
+      raise_if_error(self.input.connect(work_order.lab))
+      for _ in range(5):
+        if (result := self.input.take(work_order.fragment, 1)).status != "busy":
+          break
+        sleep(0.25)  # Time it takes auto feeders to transfer 1 item.
+      raise_if_error(result)
+
+    raise_if_error(self.deliver(), ignore=["complete"])
+
   def deliver_waiting_samples(self) -> None:
     while True:
       # Block if there's no other kind of work left; otherwise, just consume what's there and move on.
@@ -40,19 +53,13 @@ class BioExchangeWrapper(wrapper.WrapperBase):
         debug(f"{self.id!r} RESUME: wait({PREPARED_SAMPLES_CHANNEL!r})")
       elif (result := self._comms.receive(PREPARED_SAMPLES_CHANNEL)).status == "empty":
         break  # No samples waiting.
-
       work_order = BioWorkOrder.from_comms_message(assign_or_raise(result))
-      # TODO: consider persisting the work order until delivery is complete.
-      raise_if_error(self.set_order(work_order.order))
-      raise_if_error(self.input.connect(work_order.lab))
 
-      for _ in range(5):
-        if (result := self.input.take(work_order.fragment, 1)).status != "busy":
-          break
-        sleep(0.25)  # Time it takes auto feeders to transfer 1 item.
-      raise_if_error(result)
+      raise_if_error(work_order.claim(self.id, self._notebook))
 
-      raise_if_error(self.deliver(), ignore=["complete"])
+      self._take_and_deliver_sample(work_order)
+
+      raise_if_error(work_order.release(self.id, self._notebook))
 
   def assign_work_to_collectors(self) -> bool:
     # Get the latest fragment discoveries.
@@ -98,11 +105,13 @@ class BioExchangeWrapper(wrapper.WrapperBase):
     if self._value.output.count() > 0:
       raise BioExchangeError("Output was not empty during startup.")
 
+    work_order = BioWorkOrder.get_claimed(self.id, self._notebook)
+    if work_order is not None:
+      self._take_and_deliver_sample(work_order)
+      raise_if_error(work_order.release(self.id, self._notebook))
+
     if self._value.input.count() > 0:
-      print(f"{self.id!r} found something in input; attempting to deliver...")
-      if not self._value.active_order():
-        raise BioExchangeError("Input was non-empty with no active order during startup.")
-      raise_if_error(self.deliver())
+      raise BioExchangeError("Input was non-empty after claimed order handling during startup.")
 
   # TODO: rename this to something less silly.
   def _do_loopy_things(self) -> None:
