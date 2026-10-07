@@ -1,6 +1,6 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
-from typing import NamedTuple
+from typing import Iterable, NamedTuple
 
 from error import raise_if_error
 
@@ -47,7 +47,7 @@ def return_home(throttle: float, brake_tolerance_meters: float = 2, emergency_st
   debug(f"{pioneer.nav.set_throttle(throttle)=}")
   while pioneer.nav.get_distance_to(*target) >= brake_tolerance_meters:
     actual_speed = pioneer.nav.get_speed()
-    if pioneer.battery.level() < emergency_stop_battery_level:
+    if emergency_stop_battery_level and pioneer.battery.level() < emergency_stop_battery_level:
       warn(f"BATTERY LOW; {pioneer.nav.brake()=}")
       if pioneer.nav.get_speed() != 0:
         raise RuntimeError("SPEED IS NOT ZERO AFTER BRAKING!")
@@ -64,23 +64,25 @@ class ThrottleInfo(NamedTuple):
   watt_hours_used: float
 
 
-def stats_for_throttle(target: tuple[float, float], throttle: float, min_battery_level: float = 0.6) -> ThrottleInfo:
+def stats_for_throttle(target: tuple[float, float], throttle: float, min_battery_level: float = 0.6, iterations: int = 20) -> ThrottleInfo:
   start_distance = pioneer.nav.get_distance_to(*target)
   start_battery = pioneer.battery.wh()
 
-  target_speed = round(100 * throttle)
+  # target_speed = round(200 * throttle)
 
   # debug(f"{pioneer.nav.set_target(*target)=}")
   raise_if_error(pioneer.nav.set_target(*target))
   debug(f"{pioneer.nav.set_throttle(throttle)=}")
   # raise_if_error(pioneer.nav.set_throttle(throttle))
 
-  for _ in range(20):
-    if not isclose((actual_speed := pioneer.nav.get_speed()), target_speed):
-      warn(f"{actual_speed=} did not match {target_speed=}; {pioneer.nav.brake()=}")
-      if pioneer.nav.get_speed() != 0:
-        raise RuntimeError("SPEED IS NOT ZERO AFTER BRAKING!")
-      raise RuntimeError("Unexpected speed")
+  actual_speed = pioneer.nav.get_speed()
+
+  for _ in range(iterations):
+    # if not isclose((actual_speed := pioneer.nav.get_speed()), target_speed):
+    #   warn(f"{actual_speed=} did not match {target_speed=}; {pioneer.nav.brake()=}")
+    #   if pioneer.nav.get_speed() != 0:
+    #     raise RuntimeError("SPEED IS NOT ZERO AFTER BRAKING!")
+    #   raise RuntimeError("Unexpected speed")
     if pioneer.battery.level() < min_battery_level:
       warn(f"BATTERY LOW; {pioneer.nav.brake()=}")
       if pioneer.nav.get_speed() != 0:
@@ -98,7 +100,7 @@ def stats_for_throttle(target: tuple[float, float], throttle: float, min_battery
                       start_distance - pioneer.nav.get_distance_to(*target),
                       start_battery - pioneer.battery.wh())
 
-def experiment_02():
+def experiment_02(throttle_times_tens: Iterable = tuple(range(1, 11)), min_battery_level: float = 0.6):
   print("Starting experiment 02...")
   if not isclose(pioneer.battery.level(), 1):
     warn(f"Aborted: {pioneer.battery.level()=} needs to be fully charged before starting experiment.")
@@ -109,13 +111,14 @@ def experiment_02():
 
   target = (500, pioneer.nav.get_position().y)
 
-  for x in range(1, 11):
-    info = stats_for_throttle(target, x / 10)
+  # for x in range(1, 11):
+  for x in throttle_times_tens:
+    info = stats_for_throttle(target, x / 10, min_battery_level=min_battery_level)
     print(f"{info.throttle}|{info.meters_per_hour}|{info.meters_traveled}|{info.watt_hours_used}")
 
   print("experiment 02 complete.")
 
-def test_wh_per_m():
+def test_wh_per_m(min_battery_level: float = 0.6, iterations: int = 20):
   print("Doing a quick Wh/m test at full throttle...")
   if not isclose(pioneer.battery.level(), 1):
     warn(f"Aborted: {pioneer.battery.level()=} needs to be fully charged before starting test.")
@@ -123,17 +126,16 @@ def test_wh_per_m():
   if pioneer.nav.get_distance_to(0, 0) > 2:
     warn("Aborted: test can only be started from home.")
     return
-  info = stats_for_throttle((500, pioneer.nav.get_position().y), 1)
-  # print(f"{info.throttle}|{info.meters_per_hour}|{info.meters_traveled}|{info.watt_hours_used}")
+  info = stats_for_throttle((500, pioneer.nav.get_position().y), 1, min_battery_level, iterations=iterations)
+  print(f"{info.throttle}|{info.meters_per_hour}|{info.meters_traveled}|{info.watt_hours_used}")
   print(f"Wh/m = {info.watt_hours_used / info.meters_traveled}")
   print("Test complete.")
-  return_home(1, brake_tolerance_meters=1)
 
 
-# test_wh_per_m()
+# test_wh_per_m(min_battery_level=0.4, iterations=10)
+# return_home(0.3, brake_tolerance_meters=1)
 
 
-experiment_02()
-
-return_home(1, brake_tolerance_meters=1)
+# experiment_02(min_battery_level=0.2)
+# return_home(0.1, brake_tolerance_meters=1, emergency_stop_battery_level=0)
 
