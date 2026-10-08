@@ -18,7 +18,7 @@ RANGE_AFFECTING_MODULES = (
   "constructor_module",
 )
 
-def wh_per_m(throttle: float, modules: Iterable[MountSlot], cargo_count: int) -> float:
+def wh_per_m(throttle: float, cargo_count: int, modules: Iterable[MountSlot]) -> float:
   heavy_module_count_by_id = collections.Counter(
     m.module_id for m in modules if m.module_id in RANGE_AFFECTING_MODULES)
   heavy_module_count = heavy_module_count_by_id.total()
