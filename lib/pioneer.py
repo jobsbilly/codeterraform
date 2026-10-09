@@ -3,6 +3,7 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 import collections
 from typing import Iterable
 
+from error import CodeTerraformError, raise_if_error
 import wrapper
 
 SPORT_NAV_MODULE = "nav_module_sport"
@@ -35,6 +36,35 @@ class PioneerWrapper(wrapper.WrapperBase):
   def __init__(self, value: Pioneer):
     super().__init__(value)
     self._value: Pioneer
+
+  def load(self, item_id: str, quantity: int = 1, source: str = "inventory") -> None:
+    raise_if_error(self.input.connect(source))
+    raise_if_error(self.input.take(item_id, quantity))  # Blocks for 2.5 ticks per item (total rounded up).
+    raise_if_error(self.input.disconnect())
+
+  def unload(self, item_id: str, quantity: int = 1, destination: str = "inventory") -> None:
+    quantity_in_cargo = sum(stack.count for stack in self.cargo.stacks() if stack.id == item_id)
+    if quantity > quantity_in_cargo:
+      raise CodeTerraformError(f"Aborted; tried to unload {quantity} {item_id!r}, but cargo only has "
+                               f"{quantity_in_cargo}")
+    raise_if_error(self.output.connect(destination))
+    unsent_count = quantity
+    for stack in self.cargo.stacks():
+      if stack.id != item_id:
+        continue
+      send_quantity = min(stack.count, unsent_count)
+      raise_if_error(self.output.send(stack.id, send_quantity))  # Blocks for 2.5 ticks per item.
+      unsent_count -= send_quantity
+      if unsent_count == 0:
+        break
+    raise_if_error(self.output.disconnect())
+
+  def unload_all(self, item_id: str | None = None, destination: str = "inventory") -> None:
+    raise_if_error(self.output.connect(destination))
+    for stack in self.cargo.stacks():
+      if item_id is None or stack.id == item_id:
+        raise_if_error(self.output.send(stack.id, stack.count))  # Blocks for 2.5 ticks per item.
+    raise_if_error(self.output.disconnect())
 
   def _prepare_for_main_loop(self) -> None:
     raise NotImplementedError()
