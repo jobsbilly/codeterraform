@@ -3,7 +3,7 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 import bioorder
 import error
 from error import assign_or_raise, raise_if_error
-import notebook as notebook_
+import notebook as notebooklib
 from workorders import BioWorkOrder
 import wrapper
 
@@ -16,15 +16,9 @@ ESTIMATED_WORK_ORDER_DURATION_SECONDS = 20  # Calculation methodology was dubiou
 class BioExchangeError(error.CodeTerraformError):
   pass
 
-class BioExchangeWrapper(wrapper.WrapperBase):
-  def __init__(self, value: BioExchange, comms: Comms, notebook: notebook_.NotebookWrapper, journal: Journal):
-    if comms is None:
-      raise TypeError("`comms` cannot be None")
-    if notebook is None:
-      raise TypeError("`notebook` cannot be None")
-    if journal is None:
-      raise TypeError("`journal` cannot be None")
-    super().__init__(value)
+class BioExchangeWrapper(wrapper.MachineWrapper):
+  def __init__(self, value: BioExchange, comms: Comms, notebook: notebooklib.NotebookWrapper, journal: Journal):
+    super().__init__(value, required=(comms, notebook, journal))
     self._value: BioExchange
     self._comms = comms
     self._notebook = notebook
@@ -96,8 +90,6 @@ class BioExchangeWrapper(wrapper.WrapperBase):
     return self._all_biome_work_assigned or bioorder.all_work_assigned(self.outpost.biome, self._notebook)
 
   def _prepare_for_main_loop(self) -> None:
-    print(f"Starting up: {self.id!r}")
-
     bioorder.populate_table_if_not_exists(self._value, self._journal, self._notebook)
 
     self._all_biome_work_assigned = bioorder.all_work_assigned(self.outpost.biome, self._notebook)
@@ -113,8 +105,7 @@ class BioExchangeWrapper(wrapper.WrapperBase):
     if self._value.input.count() > 0:
       raise BioExchangeError("Input was non-empty after claimed order handling during startup.")
 
-  # TODO: rename this to something less silly.
-  def _do_loopy_things(self) -> None:
+  def _main_loop_iteration(self) -> bool:
     self.deliver_waiting_samples()
 
     if not self.all_work_assigned():
@@ -123,7 +114,5 @@ class BioExchangeWrapper(wrapper.WrapperBase):
         sleep(ESTIMATED_WORK_ORDER_DURATION_SECONDS)
       # If work was assigned this loop, don't bother sleeping; the assignments probably took some time.
 
-  def run(self) -> None:
-    self._prepare_for_main_loop()
-    while True:
-      self._do_loopy_things()
+    # TODO: Shutdown (by returning False) when all orders in the biome have been completed.
+    return True

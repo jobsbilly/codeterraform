@@ -45,7 +45,7 @@ class Point(NamedTuple):
     return self.__class__(self.x + x, self.y + y)
 
 
-class PioneerWrapper(wrapper.WrapperBase):
+class PioneerWrapper(wrapper.MachineWrapper):
   def __init__(self, value: Pioneer):
     super().__init__(value)
     self._value: Pioneer
@@ -100,12 +100,5 @@ class PioneerWrapper(wrapper.WrapperBase):
   def _prepare_for_main_loop(self) -> None:
     raise NotImplementedError()
 
-  def _do_loopy_things(self) -> bool:
+  def _main_loop_iteration(self) -> bool:
     raise NotImplementedError()
-
-  def run(self) -> None:
-    print(f"STARTUP: {self.id!r}")
-    self._prepare_for_main_loop()
-    while self._do_loopy_things():
-      pass
-    print(f"SHUTDOWN: {self.id!r}")

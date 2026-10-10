@@ -2,8 +2,8 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 
 import error
 from error import assign_or_raise, raise_if_error
-import notebook as notebook_
-import shop as shop_
+import notebook as notebooklib
+import shop as shoplib
 from workorders import BioWorkOrder
 import wrapper
 
@@ -14,23 +14,15 @@ PREPARED_SAMPLES_CHANNEL = "prepared_samples"
 class BioLabError(error.CodeTerraformError):
   pass
 
-class BioLabWrapper(wrapper.WrapperBase):
+class BioLabWrapper(wrapper.MachineWrapper):
   def __init__(
       self,
       value: BioLab,
       comms: Comms,
-      notebook: notebook_.NotebookWrapper,
+      notebook: notebooklib.NotebookWrapper,
       inventory: Inventory,
-      shop: shop_.ShopWrapper):
-    if comms is None:
-      raise TypeError("`comms` cannot be None")
-    if notebook is None:
-      raise TypeError("`notebook` cannot be None")
-    if inventory is None:
-      raise TypeError("`inventory` cannot be None")
-    if shop is None:
-      raise TypeError("`shop` cannot be None")
-    super().__init__(value)
+      shop: shoplib.ShopWrapper):
+    super().__init__(value, required=(comms, notebook, inventory, shop))
     self._value: BioLab
     self._comms = comms
     self._notebook = notebook
@@ -77,8 +69,6 @@ class BioLabWrapper(wrapper.WrapperBase):
       raise_if_error(self._value.load(reagent_id, required), cls=BioLabError)
 
   def _prepare_for_main_loop(self) -> None:
-    print(f"Starting up: {self.id!r}")
-
     if (input_connection := self._value.input.connected_id()) not in ("", "inventory"):
       warn(f"{self.id!r} input was found connected to {input_connection!r} during startup.")
     raise_if_error(self._value.input.connect("inventory"), cls=BioLabError)
@@ -105,10 +95,9 @@ class BioLabWrapper(wrapper.WrapperBase):
     if input_stacks := self.input.stacks():
       raise_if_error(self._value.load(input_stacks[0].id, input_stacks[0].count), cls=BioLabError)
 
-    self._do_loopy_things(work_order)
+    self._main_loop_iteration(work_order)
 
-  # TODO: rename this to something less silly.
-  def _do_loopy_things(self, existing_work_order: BioWorkOrder | None = None) -> None:
+  def _main_loop_iteration(self, existing_work_order: BioWorkOrder | None = None) -> bool:
     work_order: BioWorkOrder = existing_work_order or self.block_until_specimen_arrives()
 
     # Analyze the specimen, which provides the recipe.
@@ -120,7 +109,7 @@ class BioLabWrapper(wrapper.WrapperBase):
       debug(f"{self.id!r} is discarding {self.specimen.fragment_id!r} from exploration work order: {work_order}")
       raise_if_error(self._value.discard(), cls=BioLabError)
       raise_if_error(work_order.release(self.id, self._notebook), cls=BioLabError)
-      return
+      return True
 
     # Load all recipe reagents, buying any that aren't already owned.
     self.buy_and_load_reagents()
@@ -141,7 +130,5 @@ class BioLabWrapper(wrapper.WrapperBase):
     # Un-persist the work order after passing it along.
     raise_if_error(work_order.release(self.id, self._notebook), cls=BioLabError)
 
-  def run(self) -> None:
-    self._prepare_for_main_loop()
-    while True:
-      self._do_loopy_things()
+    # TODO: Shutdown (by returning False) when all orders in the biome have been completed.
+    return True

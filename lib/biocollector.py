@@ -1,7 +1,7 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
 from error import assign_or_raise, raise_if_error
-import notebook as notebook_
+import notebook as notebooklib
 from workorders import BioWorkOrder
 import wrapper
 
@@ -9,14 +9,10 @@ import wrapper
 REQUESTED_FRAGMENTS_CHANNEL = "requested_fragments"
 COLLECTED_FRAGMENTS_CHANNEL = "collected_fragments"
 
-class BioCollectorWrapper(wrapper.WrapperBase):
-  def __init__(self, value: BioCollector, comms: Comms, notebook: notebook_.NotebookWrapper):
-    if comms is None:
-      raise TypeError("`comms` cannot be None")
-    if notebook is None:
-      raise TypeError("`notebook` cannot be None")
-    super().__init__(value)
-    self._value = value
+class BioCollectorWrapper(wrapper.MachineWrapper):
+  def __init__(self, value: BioCollector, comms: Comms, notebook: notebooklib.NotebookWrapper):
+    super().__init__(value, required=(comms, notebook))
+    self._value: BioCollector
     self._comms = comms
     self._notebook = notebook
     self._biome_fully_explored = False
@@ -51,19 +47,16 @@ class BioCollectorWrapper(wrapper.WrapperBase):
         raise RuntimeError(f"{self.id!r} still has cargo after {broadcast.sender!r} broadcast it took it.")
 
   def _prepare_for_main_loop(self) -> None:
-    print(f"Starting up: {self.id!r}")
-
     work_order = BioWorkOrder.get_claimed(self.id, self._notebook)
     if work_order is None:
       self.block_until_cargo_emptied()
       return
-    self._do_loopy_things(work_order)
+    self._main_loop_iteration(work_order)
 
-  # TODO: rename this to something less silly.
-  def _do_loopy_things(self, existing_work_order: BioWorkOrder | None = None) -> None:
+  def _main_loop_iteration(self, existing_work_order: BioWorkOrder | None = None) -> bool:
     work_order = existing_work_order or self.next_requested_work_order() or self.next_exploration_work_order()
     if work_order is None:
-      return  # Nothing to do; next iteration will block waiting for work.
+      return True  # Nothing to do; next iteration will block waiting for work.
 
     # Persist the work order to make sure it isn't lost if the script stops mid-loop.
     raise_if_error(work_order.claim(self.id, self._notebook))
@@ -78,7 +71,5 @@ class BioCollectorWrapper(wrapper.WrapperBase):
 
     self.block_until_cargo_emptied()
 
-  def run(self) -> None:
-    self._prepare_for_main_loop()
-    while True:
-      self._do_loopy_things()
+    # TODO: Shutdown (by returning False) when biome is fully explored and all orders in the biome have been completed.
+    return True

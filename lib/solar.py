@@ -7,9 +7,9 @@ import wrapper
 FIRST_LIGHT_GAME_HOUR = 6  # i.e., sunrise is at 6 AM.
 
 
-class SolarGeneratorWrapper(wrapper.WrapperBase):
+class SolarGeneratorWrapper(wrapper.MachineWrapper):
   def __init__(self, value: SolarGenerator, clock: Clock):
-    super().__init__(value)
+    super().__init__(value, required=(clock,))
     self._value: SolarGenerator
     self._clock = clock
 
@@ -25,18 +25,10 @@ class SolarGeneratorWrapper(wrapper.WrapperBase):
     return game_hours_until_first_light * self._clock.real_seconds_per_hour()
 
   def _prepare_for_main_loop(self) -> None:
-    if not self.get_output():
-      sleep(self.real_seconds_until_first_light())
+    pass
 
-  def _do_loopy_things(self) -> bool:
+  def _main_loop_iteration(self) -> bool:
     raise_if_error(self.set_tilt(self.best_angle()))
     if not self.get_output():
       sleep(self.real_seconds_until_first_light())
     return True
-
-  def run(self) -> None:
-    print(f"STARTUP: {self.id!r}")
-    self._prepare_for_main_loop()
-    while self._do_loopy_things():
-      pass
-    print(f"SHUTDOWN: {self.id!r}")
