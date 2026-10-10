@@ -1,10 +1,16 @@
-def best_angle(clock):
-  sun_elevation = clock.get_elevation()
-  return 90 - sun_elevation
+from __builtins__ import get_component
 
-_clock = get_component("clock")
-while True:
-  self.set_tilt(best_angle(_clock))
+import solar
+
+solar.SolarGeneratorWrapper(self, get_component("clock")).run()
+
+# def best_angle(clock):
+#   sun_elevation = clock.get_elevation()
+#   return 90 - sun_elevation
+#
+# _clock = get_component("clock")
+# while True:
+#   self.set_tilt(best_angle(_clock))
 
 # for _ in range(5):
 #   print(get_component("clock").real_seconds_per_hour())
