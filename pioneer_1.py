@@ -152,12 +152,35 @@ def goto(target: tuple[float, float]) -> None:
   debug(f"Target reached; stopped at {pioneer.nav.get_position()}")
 
 
+def goto_nearest_poi() -> pioneerlib.Point:
+  unscanned_pois = [poi for poi in get_component("nocturna").points_of_interest() if not poi.scanned]
+  nearest_poi = sorted(unscanned_pois, key=lambda poi: pioneer.nav.get_distance_to(poi.x, poi.y))[0]
+  target = pioneerlib.Point(nearest_poi.x, nearest_poi.y)
+  if pioneer.get_move_cost_wh(pioneerlib.Point(*target)) * 2 > pioneer.battery.wh() * 0.75:
+    raise RuntimeError(
+      f"Not enough battery: {pioneer.get_move_cost_wh(pioneerlib.Point(*target)) * 2} > {pioneer.battery.wh() * 0.75}")
+  goto(target)
+  return target
+
+
 
 # pioneer.load("outpost_kit")
 # goto((-330, 130))
 # print(pioneer._value.constructor.execute("outpost_blueprint_1"))
-goto((0, 0))
+# goto((0, 0))
 
 
 
 # pioneer.survey_sites_in_range()
+
+
+
+
+
+# last_poi_point = goto_nearest_poi()
+
+# raise_if_error(pioneer._value.drill.mine())
+# goto(last_poi_point)
+
+
+# return_home(1, brake_tolerance_meters=1)
