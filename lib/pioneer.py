@@ -1,7 +1,8 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
 import collections
-from typing import Iterable
+import math
+from typing import Iterable, NamedTuple, Self
 
 from error import CodeTerraformError, assign_or_raise, raise_if_error
 import wrapper
@@ -31,6 +32,17 @@ def wh_per_m(throttle: float, cargo_count: int, modules: Iterable[MountSlot]) ->
   wh_multiplier = 1 + 1.25 * sport_nav_count + 0.35 * sport_nav_count ** 2
 
   return wh_per_m_before_sport_navs / speed_multiplier * wh_multiplier
+
+
+class Point(NamedTuple):
+  x: int | float
+  y: int | float
+
+  def meters_to(self, other: Self) -> float:
+    return math.dist(self, other)
+
+  def offset(self, x: float = 0, y: float = 0) -> Self:
+    return self.__class__(self.x + x, self.y + y)
 
 
 class PioneerWrapper(wrapper.WrapperBase):
