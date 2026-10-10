@@ -3,7 +3,7 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 import collections
 from typing import Iterable
 
-from error import CodeTerraformError, raise_if_error
+from error import CodeTerraformError, assign_or_raise, raise_if_error
 import wrapper
 
 SPORT_NAV_MODULE = "nav_module_sport"
@@ -65,6 +65,14 @@ class PioneerWrapper(wrapper.WrapperBase):
       if item_id is None or stack.id == item_id:
         raise_if_error(self.output.send(stack.id, stack.count))  # Blocks for 2.5 ticks per item.
     raise_if_error(self.output.disconnect())
+
+  def survey_sites_in_range(self) -> None:
+    if not any(m.module_id.startswith("sonar_") for m in self._value.modules() if m.module_id is not None):
+      warn(f"Aborted: {self.id!r} has no sonar module mounted.")
+      return
+    for site in assign_or_raise(self.sonar.scan(), "sites"):
+      if not site.surveyed:
+        print(f"Surveyed new site: {assign_or_raise(self.sonar.survey(site))}")
 
   def _prepare_for_main_loop(self) -> None:
     raise NotImplementedError()

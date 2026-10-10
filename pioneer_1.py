@@ -139,3 +139,7 @@ def test_wh_per_m(min_battery_level: float = 0.6, iterations: int = 20):
 # experiment_02(min_battery_level=0.2)
 # return_home(0.1, brake_tolerance_meters=1, emergency_stop_battery_level=0)
 
+
+
+
+# pioneer.survey_sites_in_range()
