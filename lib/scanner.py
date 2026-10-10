@@ -8,7 +8,7 @@ import wrapper
 HEIGHT = 8
 WIDTH = 24
 
-class ScannerWrapper(wrapper.WrapperBase):
+class ScannerWrapper(wrapper.MachineWrapper):
   def __init__(self, value: Scanner):
     super().__init__(value)
     self._value: Scanner
@@ -21,21 +21,17 @@ class ScannerWrapper(wrapper.WrapperBase):
       self._sectors = tuple(f"{row}{column}" for row, column in product(row_letters, range(1, WIDTH + 1)))
     return self._sectors
 
-  def scan_all_sectors(self) -> None:
+  def scan_for_nonempty_sectors(self) -> int:
+    nonempty_sectors = 0
     for sector in random.sample(self.sectors, k=len(self.sectors)):
-      # This `raise_if_error` is currently superfluous (since "empty" and "ok" are the only statuses), but guards
-      # against potential future changes.
-      raise_if_error(self.scan(sector), ignore=["empty"])
+      if raise_if_error(self.scan(sector), ignore=["empty"]).status == "ok":
+        nonempty_sectors += 1
+    return nonempty_sectors
 
   def _prepare_for_main_loop(self) -> None:
-    print(f"Starting up: {self.id!r}")
+    pass  # Nothing to do.
 
-    # self.scan_harvester_next_steps()
-
-  def _main_loop(self) -> None:
-    self.scan_all_sectors()
-
-  def run(self) -> None:
-    self._prepare_for_main_loop()
-    while True:
-      self._main_loop()
+  def _main_loop_iteration(self) -> bool:
+    if grid_has_nonempty_sectors := (self.scan_for_nonempty_sectors() == 0):
+      print("Grid is fully harvested.")
+    return grid_has_nonempty_sectors

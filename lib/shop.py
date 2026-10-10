@@ -23,10 +23,8 @@ class ShopWrapper(wrapper.WrapperBase):
       value: Shop,
       commander: Commander,
       min_credit_balance: int = MIN_CREDIT_BALANCE_DEFAULT):
-    super().__init__(value)
+    super().__init__(value, required=(commander,))
     self._value: Shop
-    if commander is None:
-      raise TypeError("`commander` cannot be None")
     self._commander = commander
     self._min_credit_balance = min_credit_balance
 

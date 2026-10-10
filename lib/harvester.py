@@ -88,9 +88,9 @@ class Quadrant(QuadrantMixin, enum.Enum):
     raise ValueError(f"{sector!r} is outside any quadrant bounds.")
 
 
-class HarvesterWrapper(wrapper.WrapperBase):
+class HarvesterWrapper(wrapper.MachineWrapper):
   def __init__(self, value: Harvester, scanner: Scanner, shop: shoplib.ShopWrapper, clock: Clock):
-    super().__init__(value)
+    super().__init__(value, required=(scanner, shop, clock))
     self._value: Harvester
     self._scanner = scanner
     self._shop = shop
@@ -225,18 +225,13 @@ class HarvesterWrapper(wrapper.WrapperBase):
       raise_if_error(self.store())
       raise_if_error(self._shop.sell(item_id, 1))
 
-  def _harvest_everything(self) -> None:
+  def _main_loop_iteration(self) -> bool:
     all_targets = self.ordered_targets()
     if not all_targets:
       print("No targets to harvest.")
-      return
+      return False
     print(f"Found {len(all_targets)} targets to harvest.")
     for target in all_targets:
       self._harvest(target)
     print("All targets harvested")
-
-  def run(self) -> None:
-    print(f"STARTUP: {self.id!r}")
-    self._prepare_for_main_loop()
-    self._harvest_everything()
-    print(f"SHUTDOWN: {self.id!r}")
+    return False
