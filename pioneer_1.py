@@ -3,8 +3,9 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 from typing import Iterable, NamedTuple
 
 from error import raise_if_error
+import pioneer as pioneerlib
 
-pioneer = self
+pioneer = pioneerlib.PioneerWrapper(self)
 
 
 # Formula for Wh/m:  (0.11 + 0.08 * <# of special modules>) * <throttle>^0.5
@@ -139,6 +140,23 @@ def test_wh_per_m(min_battery_level: float = 0.6, iterations: int = 20):
 # experiment_02(min_battery_level=0.2)
 # return_home(0.1, brake_tolerance_meters=1, emergency_stop_battery_level=0)
 
+
+def goto(target: tuple[float, float]) -> None:
+  debug(f"Moving to target at {target}...")
+  raise_if_error(pioneer.nav.set_target(*target))
+  raise_if_error(pioneer.nav.set_throttle(1))
+
+  while pioneer.nav.get_distance_to(*target) >= pioneerlib.PROXIMITY_RADIUS_METERS:
+    pass
+  raise_if_error(pioneer.nav.brake())
+  debug(f"Target reached; stopped at {pioneer.nav.get_position()}")
+
+
+
+# pioneer.load("outpost_kit")
+# goto((-330, 130))
+# print(pioneer._value.constructor.execute("outpost_blueprint_1"))
+goto((0, 0))
 
 
 
