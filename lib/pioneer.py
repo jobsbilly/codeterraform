@@ -18,6 +18,7 @@ RANGE_AFFECTING_MODULES = (
   "drill_module_heavy",
   "constructor_module",
 )
+PROXIMITY_RADIUS_METERS = 2
 
 def wh_per_m(throttle: float, cargo_count: int, modules: Iterable[MountSlot]) -> float:
   heavy_module_count_by_id = collections.Counter(
@@ -65,6 +66,16 @@ class PioneerWrapper(wrapper.WrapperBase):
       if item_id is None or stack.id == item_id:
         raise_if_error(self.output.send(stack.id, stack.count))  # Blocks for 2.5 ticks per item.
     raise_if_error(self.output.disconnect())
+
+  def get_move_cost_wh(self, target: tuple[float, float], throttle: float = 1):
+    target_distance_meters = self.nav.get_distance_to(*target) + PROXIMITY_RADIUS_METERS
+    return target_distance_meters * wh_per_m(throttle, self.cargo.count(), self.modules())
+
+  # def goto(self, target: tuple[int, int], one_way: bool = False) -> None:
+  #   meters_to_target = self.nav.get_distance_to(*target)
+  #   if meters_to_target < 2:
+  #     warn(f"Already at {target}.")
+  #   wh_cost_full_throttle = wh_per_m(1)
 
   def survey_sites_in_range(self) -> None:
     if not any(m.module_id.startswith("sonar_") for m in self._value.modules() if m.module_id is not None):
