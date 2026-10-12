@@ -4,12 +4,9 @@ import error
 from error import assign_or_raise, raise_if_error
 import notebook as notebooklib
 import shop as shoplib
+import signalbus
 from workorders import BioWorkOrder
 import wrapper
-
-# TODO: Replace hardcoded channel name with pseudo-enum.
-COLLECTED_FRAGMENTS_CHANNEL = "collected_fragments"
-PREPARED_SAMPLES_CHANNEL = "prepared_samples"
 
 class BioLabError(error.CodeTerraformError):
   pass
@@ -18,13 +15,15 @@ class BioLabWrapper(wrapper.MachineWrapper):
   def __init__(
       self,
       value: BioLab,
-      comms: Comms,
+      comms: signalbus.CommsWrapper,
       notebook: notebooklib.NotebookWrapper,
       inventory: Inventory,
       shop: shoplib.ShopWrapper):
     super().__init__(value, required=(comms, notebook, inventory, shop))
     self._value: BioLab
-    self._comms = comms
+    self._comms = (comms
+                   .register(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, outpost=self._value.outpost.id)
+                   .register(BioWorkOrder.Channel.PREPARED_SAMPLES, outpost=self._value.outpost.id))
     self._notebook = notebook
     self._inventory = inventory
     self._shop = shop
@@ -38,14 +37,12 @@ class BioLabWrapper(wrapper.MachineWrapper):
     raise_if_error(self._value.take_from({"id": collector_id}), cls=BioLabError)
     # Release the collector by pinging the channel.
     # Note: if multiple collectors are listening, they'll all wake up, so they need to check their cargo before leaving.
-    raise_if_error(self._comms.broadcast(COLLECTED_FRAGMENTS_CHANNEL, collector_id), cls=BioLabError)
+    raise_if_error(self._comms.broadcast(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, collector_id), cls=BioLabError)
 
   def block_until_specimen_arrives(self) -> BioWorkOrder:
     # Wait for a collector's signal to take its fragment.
-    debug(f"{self.id!r} BLOCK: wait({COLLECTED_FRAGMENTS_CHANNEL!r})")
     work_order = BioWorkOrder.from_comms_message(
-      assign_or_raise(self._comms.wait(COLLECTED_FRAGMENTS_CHANNEL), cls=BioLabError))
-    debug(f"{self.id!r} RESUME: wait({COLLECTED_FRAGMENTS_CHANNEL!r})")
+      assign_or_raise(self._comms.wait(BioWorkOrder.Channel.COLLECTED_FRAGMENTS), cls=BioLabError))
 
     # Persist the work order to make sure it isn't lost if the script stops mid-loop.
     raise_if_error(work_order.claim(self.id, self._notebook), cls=BioLabError)
@@ -125,7 +122,7 @@ class BioLabWrapper(wrapper.MachineWrapper):
 
     # Send a message to the outpost Bio Exchange channel that a sample is ready.
     work_order.lab = self.id
-    raise_if_error(self._comms.send(PREPARED_SAMPLES_CHANNEL, work_order.to_json()))
+    raise_if_error(self._comms.send(BioWorkOrder.Channel.PREPARED_SAMPLES, work_order.to_json()))
 
     # Un-persist the work order after passing it along.
     raise_if_error(work_order.release(self.id, self._notebook), cls=BioLabError)

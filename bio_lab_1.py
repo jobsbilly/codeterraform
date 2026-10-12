@@ -3,10 +3,11 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 import biolab
 import notebook
 import shop
+import signalbus
 
 bio_lab = biolab.BioLabWrapper(
   self,
-  get_component("comms"),
+  signalbus.CommsWrapper(get_component("comms")),
   notebook.NotebookWrapper(get_component("notebook")),
   get_component("inventory"),
   shop.ShopWrapper(get_component("shop"), get_component("commander"))

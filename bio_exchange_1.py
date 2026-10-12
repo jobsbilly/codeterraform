@@ -2,10 +2,11 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 
 import bioexchange
 import notebook
+import signalbus
 
 bio_exchange = bioexchange.BioExchangeWrapper(
   self,
-  get_component("comms"),
+  signalbus.CommsWrapper(get_component("comms")),
   notebook.NotebookWrapper(get_component("notebook")),
   get_component("journal"),
 )

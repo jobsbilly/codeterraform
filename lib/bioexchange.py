@@ -4,12 +4,9 @@ import bioorder
 import error
 from error import assign_or_raise, raise_if_error
 import notebook as notebooklib
+import signalbus
 from workorders import BioWorkOrder
 import wrapper
-
-# TODO: Replace hardcoded channel names with pseudo-enum.
-REQUESTED_FRAGMENTS_CHANNEL = "requested_fragments"
-PREPARED_SAMPLES_CHANNEL = "prepared_samples"
 
 ESTIMATED_WORK_ORDER_DURATION_SECONDS = 20  # Calculation methodology was dubious at best.
 
@@ -17,10 +14,18 @@ class BioExchangeError(error.CodeTerraformError):
   pass
 
 class BioExchangeWrapper(wrapper.MachineWrapper):
-  def __init__(self, value: BioExchange, comms: Comms, notebook: notebooklib.NotebookWrapper, journal: Journal):
+  def __init__(
+      self,
+      value: BioExchange,
+      comms: signalbus.CommsWrapper,
+      notebook: notebooklib.NotebookWrapper,
+      journal: Journal
+  ):
     super().__init__(value, required=(comms, notebook, journal))
     self._value: BioExchange
-    self._comms = comms
+    self._comms = (comms
+                   .register(BioWorkOrder.Channel.REQUESTED_FRAGMENTS, biome=self._value.outpost.biome)
+                   .register(BioWorkOrder.Channel.PREPARED_SAMPLES, outpost=self._value.outpost.id))
     self._notebook = notebook
     self._journal = journal
     self._all_biome_work_assigned = False
@@ -42,10 +47,8 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
     while True:
       # Block if there's no other kind of work left; otherwise, just consume what's there and move on.
       if self._all_biome_work_assigned:
-        debug(f"{self.id!r} BLOCK: wait({PREPARED_SAMPLES_CHANNEL!r})")
-        result = self._comms.wait(PREPARED_SAMPLES_CHANNEL)
-        debug(f"{self.id!r} RESUME: wait({PREPARED_SAMPLES_CHANNEL!r})")
-      elif (result := self._comms.receive(PREPARED_SAMPLES_CHANNEL)).status == "empty":
+        result = self._comms.wait(BioWorkOrder.Channel.PREPARED_SAMPLES)
+      elif (result := self._comms.receive(BioWorkOrder.Channel.PREPARED_SAMPLES)).status == "empty":
         break  # No samples waiting.
       work_order = BioWorkOrder.from_comms_message(assign_or_raise(result))
 
@@ -76,7 +79,7 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
         break
       # Try to send a work assignment.
       work_order = BioWorkOrder(order=claimed_order.id, fragment=fragment_id, requester=self.id, coords=coords)
-      result = self._comms.send(REQUESTED_FRAGMENTS_CHANNEL, work_order.to_json())
+      result = self._comms.send(BioWorkOrder.Channel.REQUESTED_FRAGMENTS, work_order.to_json())
       # If the channel can't accept any more work right now, try again on the next main loop.
       if result.status == "queue_full":
         break

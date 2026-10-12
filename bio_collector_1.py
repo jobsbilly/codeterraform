@@ -2,10 +2,11 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 
 import biocollector
 import notebook
+import signalbus
 
 bio_collector = biocollector.BioCollectorWrapper(
   self,
-  get_component("comms"),
+  signalbus.CommsWrapper(get_component("comms")),
   notebook.NotebookWrapper(get_component("notebook")),
 )
 bio_collector.run()
