@@ -17,12 +17,6 @@ class ChannelIDError(error.CodeTerraformError):
   pass
 
 
-class ChannelScope(enum.Enum):
-  UNIVERSAL = enum.auto()
-  BIOME = enum.auto()
-  OUTPOST = enum.auto()
-
-
 def make_channel_id(*parts: str) -> str:
   channel_id = CHANNEL_PART_DELIMITER.join(parts)
   if not channel_id:
@@ -32,6 +26,27 @@ def make_channel_id(*parts: str) -> str:
   if re.search(r"[^\w.:-]", channel_id) is not None:
     raise ChannelIDError(f"{channel_id!r} contains invalid characters")
   return channel_id
+
+
+# Helps prevent accidental channel ID collisions.
+class ChannelIDRoot(enum.StrEnum):
+  """Directory of all channel ID roots (which may be the entire ID, if the ChannelScope is UNIVERSAL)."""
+  REQUESTED_FRAGMENTS = "requested_fragments"
+  COLLECTED_FRAGMENTS = "collected_fragments"
+  PREPARED_SAMPLES = "prepared_samples"
+
+  # Makes sure all member values adhere to format rules.
+  def __new__(cls, value: str):
+    make_channel_id(value)  # Raises if value breaks the rules.
+    member = str.__new__(cls, value)
+    member._value_ = value
+    return member
+
+
+class ChannelScope(enum.Enum):
+  UNIVERSAL = enum.auto()
+  BIOME = enum.auto()
+  OUTPOST = enum.auto()
 
 
 class ChannelBase(enum.Enum):
@@ -51,31 +66,6 @@ class ChannelBase(enum.Enum):
         raise error.CodeTerraformError(f"`outpost` must be non-empty for {self.name} channel")
       return make_channel_id(self._id_root, outpost)
     raise error.CodeTerraformError(f"Unrecognized scope: {self._scope!r}")
-
-  # def send(
-  #     self,
-  #     comms: Comms,
-  #     payload: JsonValue,
-  #     *,
-  #     biome: str | None = None,
-  #     outpost: str | None = None,
-  # ) -> SendResult:
-  #   return comms.send(self.id(biome=biome, outpost=outpost), payload)
-
-
-# Helps prevent accidental channel ID collisions.
-class ChannelIDRoot(enum.StrEnum):
-  """Directory of all channel ID roots (which may be the entire ID, if the ChannelScope is UNIVERSAL)."""
-  REQUESTED_FRAGMENTS = "requested_fragments"
-  COLLECTED_FRAGMENTS = "collected_fragments"
-  PREPARED_SAMPLES = "prepared_samples"
-
-  # Makes sure all member values adhere to format rules.
-  def __new__(cls, value: str):
-    make_channel_id(value)  # Raises if value breaks the rules.
-    member = str.__new__(cls, value)
-    member._value_ = value
-    return member
 
 
 class CommsError(error.CodeTerraformError):
