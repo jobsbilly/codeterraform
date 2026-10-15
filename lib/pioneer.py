@@ -4,7 +4,8 @@ import collections
 import math
 from typing import Iterable, NamedTuple, Self
 
-from error import CodeTerraformError, assign_or_raise, raise_if_error
+from error import CodeTerraformError
+from status import assign_or_raise, raise_if_error
 import wrapper
 
 SPORT_NAV_MODULE = "nav_module_sport"

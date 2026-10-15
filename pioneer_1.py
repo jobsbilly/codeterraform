@@ -2,8 +2,8 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 
 from typing import Iterable, NamedTuple
 
-from error import raise_if_error
 import pioneer as pioneerlib
+from status import raise_if_error
 
 pioneer = pioneerlib.PioneerWrapper(self)
 

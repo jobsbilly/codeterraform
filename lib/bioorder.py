@@ -4,8 +4,8 @@ import dataclasses
 from typing import Any, Callable, Self
 
 import error
-from error import raise_if_error
-import notebook as notebook_
+import notebook as notebooklib
+from status import raise_if_error
 
 BIO_ORDERS_KEY = "bio_orders"
 
@@ -60,21 +60,21 @@ class UnfinishedBioOrder:
         return fragment.id, fragment.coords
     return None, None
 
-  def _save_fragment_by_id(self, owner_id: str, notebook: notebook_.NotebookWrapper) -> None:
+  def _save_fragment_by_id(self, owner_id: str, notebook: notebooklib.NotebookWrapper) -> None:
     fragment_by_id_json = self.to_json()["fragment_by_id"]
     def tx_fn(value: Any) -> JsonValue:
       value["claimed_by_owner_id"][owner_id]["fragment_by_id"] = fragment_by_id_json
       return value
     raise_if_error(notebook.transaction(BIO_ORDERS_KEY, None, tx_fn))
 
-  def one_less_needed(self, fragment_id: str, owner_id: str, notebook: notebook_.NotebookWrapper) -> None:
+  def one_less_needed(self, fragment_id: str, owner_id: str, notebook: notebooklib.NotebookWrapper) -> None:
     fragment = self.fragment_by_id[fragment_id]
     fragment.needed -= 1
     if fragment.needed == 0:
       del self.fragment_by_id[fragment.id]
     self._save_fragment_by_id(owner_id, notebook)
 
-  def unclaim(self, owner_id: str, notebook: notebook_.NotebookWrapper) -> None:
+  def unclaim(self, owner_id: str, notebook: notebooklib.NotebookWrapper) -> None:
     def tx_fn(value: Any) -> JsonValue:
       del value["claimed_by_owner_id"][owner_id]
       if sum(fragment.needed for fragment in self.fragment_by_id.values()):
@@ -88,7 +88,7 @@ class UnfinishedBioOrder:
 def get_claimed_order(
     owner_id: str,
     coords_by_fragment_id: dict[str, list[int | float]],
-    notebook: notebook_.NotebookWrapper
+    notebook: notebooklib.NotebookWrapper
 ) -> UnfinishedBioOrder | None:
   order_json = notebook.get(BIO_ORDERS_KEY)["claimed_by_owner_id"].get(owner_id, None)
   return UnfinishedBioOrder.from_json(order_json, coords_by_fragment_id) if order_json else None
@@ -132,7 +132,7 @@ def claim_order(
     owner_id: str,
     biome: str,
     coords_by_fragment_id: dict[str, list[int | float]],
-    notebook: notebook_.NotebookWrapper
+    notebook: notebooklib.NotebookWrapper
 ) -> UnfinishedBioOrder | None:
   tx_return_values: _ClaimOrderTxReturnValues
   tx_fn, tx_return_values = _tx_claim_order(owner_id, biome, coords_by_fragment_id)
@@ -150,7 +150,7 @@ def _tx_populate_table_if_not_exists(table_json: JsonValue) -> Callable[[JsonVal
 def populate_table_if_not_exists(
     bio_exchange: BioExchange,
     journal: Journal,
-    notebook: notebook_.NotebookWrapper
+    notebook: notebooklib.NotebookWrapper
 ) -> None:
   if notebook.get(BIO_ORDERS_KEY, None) is not None:
     return
@@ -174,6 +174,6 @@ def populate_table_if_not_exists(
   tx_fn = _tx_populate_table_if_not_exists(table_json)
   raise_if_error(notebook.transaction(BIO_ORDERS_KEY, None, tx_fn))
 
-def all_work_assigned(biome: str, notebook: notebook_.NotebookWrapper) -> bool:
+def all_work_assigned(biome: str, notebook: notebooklib.NotebookWrapper) -> bool:
   table = notebook._value.get(BIO_ORDERS_KEY)
   return not any(o["biome"] == biome for o in chain(table["unclaimed_orders"], table["claimed_by_owner_id"].values()))

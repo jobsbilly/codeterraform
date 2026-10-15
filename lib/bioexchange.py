@@ -2,9 +2,9 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 
 import bioorder
 import error
-from error import assign_or_raise, raise_if_error
 import notebook as notebooklib
 import signalbus
+from status import assign_or_raise, auto_feeder_retry, raise_if_error
 from workorders import BioWorkOrder
 import wrapper
 
@@ -35,11 +35,7 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
 
     if self.input.count() == 0:
       raise_if_error(self.input.connect(work_order.luminizer or work_order.lab))
-      for _ in range(5):
-        if (result := self.input.take(work_order.fragment, 1)).status != "busy":
-          break
-        sleep(0.25)  # Time it takes auto feeders to transfer 1 item.
-      raise_if_error(result)
+      raise_if_error(auto_feeder_retry(lambda: self.input.take(work_order.fragment, 1)))
 
     raise_if_error(self.deliver(), ignore=["complete"])
 
