@@ -3,7 +3,7 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 import error
 import notebook as notebooklib
 import shop as shoplib
-from status import assign_or_raise, raise_if_error
+from status import assign_or_raise, raise_if_error, retry
 from workorders import BioWorkOrder
 import wrapper
 
@@ -117,11 +117,7 @@ class BioLabWrapper(wrapper.MachineWrapper):
     # Extract the sample.
     reagent_count = sum(self.loaded_reagents.values())
     busy_sleep_seconds = (0.1 + 0.05 * reagent_count) / 2
-    for _ in range(5):
-      if (result := self.extract()).status != "busy":  # Blocks for ~0.1 + 0.05 × units h
-        break
-      sleep(busy_sleep_seconds)
-    raise_if_error(result, cls=BioLabError)
+    raise_if_error(retry(self.extract, statuses=("busy",), attempts=5, wait_seconds=busy_sleep_seconds))
 
     # Send a message to the outpost Bio Exchange channel that a sample is ready.
     work_order.lab = self.id
