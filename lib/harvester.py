@@ -6,9 +6,9 @@ import enum
 from typing import NamedTuple, Self
 
 import error
-from error import assign_or_raise, raise_if_error
 import scanner as scannerlib
 import shop as shoplib
+from status import assign_or_raise, raise_if_error
 import wrapper
 
 MOVE_TO_EMPTY_HEAT_COST = 7

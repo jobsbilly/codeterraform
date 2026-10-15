@@ -2,8 +2,8 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 
 import bioorder
 import error
-from error import assign_or_raise, raise_if_error
 import notebook as notebooklib
+from status import assign_or_raise, raise_if_error
 from workorders import BioWorkOrder
 import wrapper
 

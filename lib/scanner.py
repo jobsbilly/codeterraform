@@ -2,7 +2,7 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 
 import random
 
-from error import raise_if_error
+from status import raise_if_error
 import wrapper
 
 HEIGHT = 8

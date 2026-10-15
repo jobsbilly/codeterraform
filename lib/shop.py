@@ -1,7 +1,7 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
 import error
-from error import raise_if_error
+from status import raise_if_error
 import wrapper
 
 MIN_CREDIT_BALANCE_DEFAULT = 15000
