@@ -58,8 +58,11 @@ class BioWorkOrder(_WorkOrderBase):
   coords: list[float | int] | None = None
   collector: str | None = None
   lab: str | None = None
+  glow: list[int] | None = None
+  luminizer: str | None = None
 
   class Channel(ChannelBase):
     REQUESTED_FRAGMENTS = (ChannelIDRoot.REQUESTED_FRAGMENTS, ChannelScope.BIOME)
     COLLECTED_FRAGMENTS = (ChannelIDRoot.COLLECTED_FRAGMENTS, ChannelScope.OUTPOST)
+    EXTRACTED_SAMPLES = (ChannelIDRoot.EXTRACTED_SAMPLES, ChannelScope.OUTPOST)
     PREPARED_SAMPLES = (ChannelIDRoot.PREPARED_SAMPLES, ChannelScope.OUTPOST)

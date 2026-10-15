@@ -34,7 +34,7 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
     raise_if_error(self.set_order(work_order.order))
 
     if self.input.count() == 0:
-      raise_if_error(self.input.connect(work_order.lab))
+      raise_if_error(self.input.connect(work_order.luminizer or work_order.lab))
       for _ in range(5):
         if (result := self.input.take(work_order.fragment, 1)).status != "busy":
           break
@@ -78,7 +78,8 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
         claimed_order.unclaim(self.id, self._notebook)
         break
       # Try to send a work assignment.
-      work_order = BioWorkOrder(order=claimed_order.id, fragment=fragment_id, requester=self.id, coords=coords)
+      work_order = BioWorkOrder(order=claimed_order.id, fragment=fragment_id, requester=self.id, coords=coords,
+                                glow=claimed_order.target_glow)
       result = self._comms.send(BioWorkOrder.Channel.REQUESTED_FRAGMENTS, work_order.to_json())
       # If the channel can't accept any more work right now, try again on the next main loop.
       if result.status == "queue_full":

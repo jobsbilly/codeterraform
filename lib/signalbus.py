@@ -33,6 +33,7 @@ class ChannelIDRoot(enum.StrEnum):
   """Directory of all channel ID roots (which may be the entire ID, if the ChannelScope is UNIVERSAL)."""
   REQUESTED_FRAGMENTS = "requested_fragments"
   COLLECTED_FRAGMENTS = "collected_fragments"
+  EXTRACTED_SAMPLES = "extracted_samples"
   PREPARED_SAMPLES = "prepared_samples"
 
   # Makes sure all member values adhere to format rules.

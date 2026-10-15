@@ -19,6 +19,7 @@ class BioLabWrapper(wrapper.MachineWrapper):
     self._value: BioLab
     self._comms = (comms
                    .register(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, outpost=self._value.outpost.id)
+                   .register(BioWorkOrder.Channel.EXTRACTED_SAMPLES, outpost=self._value.outpost.id)
                    .register(BioWorkOrder.Channel.PREPARED_SAMPLES, outpost=self._value.outpost.id))
     self._notebook = notebook
     self._inventory = inventory
@@ -62,6 +63,7 @@ class BioLabWrapper(wrapper.MachineWrapper):
       raise_if_error(self._value.load(reagent_id, required))
 
   def _prepare_for_main_loop(self) -> None:
+    # TODO: Support non-home outposts by implementing reagent transportation logistics.
     if (input_connection := self._value.input.connected_id()) not in ("", "inventory"):
       warn(f"{self.id!r} input was found connected to {input_connection!r} during startup.")
     raise_if_error(self._value.input.connect("inventory"))
@@ -116,9 +118,11 @@ class BioLabWrapper(wrapper.MachineWrapper):
       sleep(busy_sleep_seconds)
     raise_if_error(result)
 
-    # Send a message to the outpost Bio Exchange channel that a sample is ready.
+    # Send a message that a sample is ready.
     work_order.lab = self.id
-    raise_if_error(self._comms.send(BioWorkOrder.Channel.PREPARED_SAMPLES, work_order.to_json()))
+    channel = (BioWorkOrder.Channel.EXTRACTED_SAMPLES if self._value.outpost.biome == "coastal"
+               else BioWorkOrder.Channel.PREPARED_SAMPLES)
+    raise_if_error(self._comms.send(channel, work_order.to_json()))
 
     # Un-persist the work order after passing it along.
     raise_if_error(work_order.release(self.id, self._notebook))
