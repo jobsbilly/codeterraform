@@ -1,16 +1,18 @@
 from __builtins__ import sleep
 
 import functools
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, TypeVar
 
 from error import CodeTerraformError
 
-def raise_if_error(status: Any, cls: type[Exception] = CodeTerraformError, ignore: Iterable[str] = ()) -> Any:
+_T = TypeVar("_T")
+
+def raise_if_error(status: _T, cls: type[Exception] = CodeTerraformError, ignore: Iterable[str] = ()) -> _T:
   if status.status != "ok" and status.status not in ignore:
     raise cls(status.message)
   return status
 
-def assign_or_raise(statusor: Any, value_name: str | None = None, cls: type[Exception] = CodeTerraformError) -> Any:
+def assign_or_raise(statusor: Any, value_name: str | None = None, cls: type[Exception] = CodeTerraformError):
   raise_if_error(statusor, cls)
   if value_name:
     return getattr(statusor, value_name)
@@ -21,7 +23,7 @@ def assign_or_raise(statusor: Any, value_name: str | None = None, cls: type[Exce
     return values_by_name.values()[0]
   return values_by_name
 
-def retry(func: Callable[[], Any], statuses: Iterable[str], attempts: int, wait_seconds: float) -> Any:
+def retry(func: Callable[[], _T], statuses: Iterable[str], attempts: int, wait_seconds: float) -> _T:
   for _ in range(attempts):
     if (result := func()).status not in statuses:
       break
