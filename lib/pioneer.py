@@ -57,19 +57,19 @@ def move_cost_wh(
     return 0
   return distance_meters * wh_per_m(throttle, cargo_count, modules)
 
-def all_charging_station_coords(outpost_network: OutpostNetwork) -> tuple[list[float]]:
+def all_charging_station_coords(outpost_network: OutpostNetworkComponent) -> tuple[list[float]]:
   return tuple(outpost.coords()
                for outpost in outpost_network.outposts()
                if any(charger.powered for charger in outpost.buildings("charging_station")))
 
-def closest_charging_station_coords(coords: list[float], outpost_network: OutpostNetwork) -> list[float]:
+def closest_charging_station_coords(coords: list[float], outpost_network: OutpostNetworkComponent) -> list[float]:
   if not (all_charger_coords := all_charging_station_coords(outpost_network)):
     raise CodeTerraformError("No (powered) charging stations found")
   return sorted(all_charger_coords, key=lambda charger_coords: math.dist(coords, charger_coords))[0]
 
 
 class PioneerWrapper(wrapper.MachineWrapper):
-  def __init__(self, value: Pioneer, clock: Clock, outpost_network: OutpostNetwork, **kwargs):
+  def __init__(self, value: Pioneer, clock: Clock, outpost_network: OutpostNetworkComponent, **kwargs):
     required = itertools.chain((clock, outpost_network), kwargs.pop("required", ()))
     super().__init__(value, required=required)
     self._value: Pioneer
@@ -264,7 +264,7 @@ class CourierPioneerWrapper(PioneerWrapper):
       self,
       value: Pioneer,
       clock: Clock,
-      outpost_network: OutpostNetwork,
+      outpost_network: OutpostNetworkComponent,
       comms: signalbus.CommsWrapper,
       notebook: notebooklib.NotebookWrapper,
   ):
