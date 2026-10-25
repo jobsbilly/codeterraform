@@ -21,11 +21,18 @@ class BioLuminizerWrapper(wrapper.MachineWrapper):
     self._notebook = notebook
 
   def _block_until_sample_arrives(self) -> BioWorkOrder:
-    work_order = BioWorkOrder.from_comms_message(
-      assign_or_raise(self._comms.wait(BioWorkOrder.Channel.EXTRACTED_SAMPLES)))
+    comms_message = assign_or_raise(self._comms.wait(BioWorkOrder.Channel.EXTRACTED_SAMPLES))
 
-    # Persist the work order while working on it.
-    raise_if_error(work_order.claim(self.id, self._notebook))
+    work_order = BioWorkOrder.from_comms_message(comms_message)
+    work_order.luminizer = self.id
+
+    # Persist the work order while working on it; if it fails, put the unmodified work order back before letting the
+    # exception propagate.
+    try:
+      raise_if_error(work_order.claim(self.id, self._notebook))
+    except Exception:
+      raise_if_error(self._comms.send(BioWorkOrder.Channel.EXTRACTED_SAMPLES, comms_message.value))
+      raise
 
     return work_order
 
@@ -88,7 +95,6 @@ class BioLuminizerWrapper(wrapper.MachineWrapper):
 
     self._luminize(raise_if_none(work_order.glow))
 
-    work_order.luminizer = self.id
     raise_if_error(self._comms.send(BioWorkOrder.Channel.PREPARED_SAMPLES, work_order.to_json()))
 
     raise_if_error(work_order.release(self.id, self._notebook))
