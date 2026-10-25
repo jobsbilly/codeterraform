@@ -2,16 +2,16 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 
 import collections
 import math
-from typing import Iterable, NamedTuple, Self
+from typing import Iterable
 
 from error import CodeTerraformError
 from status import assign_or_raise, raise_if_error
 import wrapper
 
-SPORT_NAV_MODULE = "nav_module_sport"
+SPORT_NAV_MODULE_ID = "nav_module_sport"
 RANGE_AFFECTING_MODULES = (
   "nav_module",
-  SPORT_NAV_MODULE,
+  SPORT_NAV_MODULE_ID,
   "sonar_module",
   "sonar_module_wide",
   "sonar_module_deep",
@@ -26,7 +26,7 @@ def wh_per_m(throttle: float, cargo_count: int, modules: Iterable[MountSlot]) ->
   heavy_module_count_by_id = collections.Counter(
     m.module_id for m in modules if m.module_id in RANGE_AFFECTING_MODULES)
   heavy_module_count = heavy_module_count_by_id.total()
-  sport_nav_count = heavy_module_count_by_id[SPORT_NAV_MODULE]
+  sport_nav_count = heavy_module_count_by_id[SPORT_NAV_MODULE_ID]
 
   wh_per_m_before_sport_navs = (0.03 + 0.08 * heavy_module_count + 0.0004 * cargo_count) * throttle ** 0.5
   speed_multiplier = sport_nav_count + 1
@@ -35,15 +35,7 @@ def wh_per_m(throttle: float, cargo_count: int, modules: Iterable[MountSlot]) ->
   return wh_per_m_before_sport_navs / speed_multiplier * wh_multiplier
 
 
-class Point(NamedTuple):
-  x: int | float
-  y: int | float
 
-  def meters_to(self, other: Self) -> float:
-    return math.dist(self, other)
-
-  def offset(self, x: float = 0, y: float = 0) -> Self:
-    return self.__class__(self.x + x, self.y + y)
 
 
 class PioneerWrapper(wrapper.MachineWrapper):
