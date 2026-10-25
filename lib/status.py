@@ -31,3 +31,10 @@ def retry(func: Callable[[], _T], statuses: Iterable[str], attempts: int, wait_s
   return result
 
 auto_feeder_retry = functools.partial(retry, statuses=("busy",), attempts=5, wait_seconds=0.25)
+
+def retry_forever(func: Callable[[], _T], statuses: Iterable[str], wait_seconds: float) -> _T:
+  while (result := func()).status in statuses:
+    sleep(wait_seconds)
+  return result
+
+retry_while_busy = functools.partial(retry_forever, statuses=("busy",), wait_seconds=0.25)
