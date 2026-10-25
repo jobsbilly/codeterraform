@@ -62,6 +62,9 @@ class BioWorkOrder(_WorkOrderBase):
   coords: list[float | int] | None = None
   collector: str | None = None
   lab: str | None = None
+  lab_status: int | None = None
+  reagent_inventory: str | None = None
+  reagent_to_buy_by_id: dict[str, int] | None = None
   glow: list[int] | None = None
   luminizer: str | None = None
 
