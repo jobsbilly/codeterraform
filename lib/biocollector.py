@@ -12,7 +12,7 @@ class BioCollectorWrapper(wrapper.MachineWrapper):
     self._value: BioCollector
     self._comms = (comms
                    .register(BioWorkOrder.Channel.REQUESTED_FRAGMENTS, biome=self._value.outpost.biome)
-                   .register(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, biome=self._value.outpost.id))
+                   .register(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, outpost=self._value.outpost.id))
     self._notebook = notebook
     self._biome_fully_explored = False
 
