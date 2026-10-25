@@ -39,6 +39,9 @@ class _WorkOrderBase:
   def claim(self, worker_id: str, notebook: notebooklib.NotebookWrapper) -> ActionResult:
     return notebook.transaction(WORK_ORDERS_KEY, {}, self.tx_setter(worker_id))
 
+  # Provide a more intuitive name for cases when a worker needs to update the work order without releasing it.
+  save = claim
+
   @classmethod
   def release(cls, worker_id: str, notebook: notebooklib.NotebookWrapper) -> ActionResult:
     return notebook.transaction(WORK_ORDERS_KEY, {}, cls.tx_deleter(worker_id))
