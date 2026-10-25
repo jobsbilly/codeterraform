@@ -4,7 +4,7 @@ from typing import Any, Iterable
 
 
 class WrapperBase:
-  def __init__(self, value: Any, required: Iterable[Any] = ()):
+  def __init__(self, value: Any, *, required: Iterable[Any] = ()):
     if value is None:
       raise TypeError(f"{type(self)} cannot wrap None")
     for i, arg in enumerate(required):
@@ -23,8 +23,8 @@ class WrapperBase:
 
 
 class MachineWrapper(WrapperBase):
-  def __init__(self, value: Component, required: Iterable[Any] = ()):
-    super().__init__(value, required)
+  def __init__(self, value: Component, *, required: Iterable[Any] = ()):
+    super().__init__(value, required=required)
     if (obj_type := object_type(value)) != "Component":
       raise TypeError(f"{type(self)} cannot wrap non-Component {obj_type} type")
 
@@ -44,3 +44,10 @@ class MachineWrapper(WrapperBase):
     print(f"START: {self.id!r}")
     self._main_loop()
     print(f"SHUTDOWN: {self.id!r}")
+
+  def run_single_iteration(self) -> None:
+    print(f"SETUP (single-loop): {self.id!r}")
+    self._prepare_for_main_loop()
+    print(f"START (single-loop): {self.id!r}")
+    self._main_loop_iteration()
+    print(f"SHUTDOWN (single-loop): {self.id!r}")
