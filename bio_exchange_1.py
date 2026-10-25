@@ -1,13 +1,15 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
 import bioexchange
+from error import raise_if_none
 import notebook
+import signalbus
 
 bio_exchange = bioexchange.BioExchangeWrapper(
   self,
-  get_component("comms"),
-  notebook.NotebookWrapper(get_component("notebook")),
-  get_component("journal"),
+  signalbus.CommsWrapper(raise_if_none(get_component("comms"))),
+  notebook.NotebookWrapper(raise_if_none(get_component("notebook"))),
+  raise_if_none(get_component("journal")),
 )
 bio_exchange.run()
 

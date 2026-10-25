@@ -15,7 +15,7 @@ class NotebookWrapper(wrapper.WrapperBase):
       default: JsonValue,
       updater: Callable[..., Any],
       retry_while_busy: bool = True,
-      sleep_seconds: int | float = 0.1) -> ActionResult:
+      sleep_seconds: int | float = 0.1):
     result = self._value.transaction(key, default, updater)
     while result.status == "busy" and retry_while_busy:
       sleep(sleep_seconds)

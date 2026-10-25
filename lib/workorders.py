@@ -3,9 +3,12 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 import dataclasses
 from typing import Any, Callable, Self
 
-import notebook as notebook_
+from error import CodeTerraformError
+import notebook as notebooklib
+from signalbus import ChannelBase, ChannelIDRoot, ChannelScope
 
 WORK_ORDERS_KEY = "work_orders_by_worker_id"
+
 
 class _WorkOrderBase:
   def to_json(self) -> dict[str, JsonValue]:
@@ -33,15 +36,18 @@ class _WorkOrderBase:
       return work_orders_by_worker_id
     return fn
 
-  def claim(self, worker_id: str, notebook: notebook_.NotebookWrapper) -> ActionResult:
+  def claim(self, worker_id: str, notebook: notebooklib.NotebookWrapper) -> ActionResult:
     return notebook.transaction(WORK_ORDERS_KEY, {}, self.tx_setter(worker_id))
 
+  # Provide a more intuitive name for cases when a worker needs to update the work order without releasing it.
+  save = claim
+
   @classmethod
-  def release(cls, worker_id: str, notebook: notebook_.NotebookWrapper) -> ActionResult:
+  def release(cls, worker_id: str, notebook: notebooklib.NotebookWrapper) -> ActionResult:
     return notebook.transaction(WORK_ORDERS_KEY, {}, cls.tx_deleter(worker_id))
 
   @classmethod
-  def get_claimed(cls, worker_id: str, notebook: notebook_.NotebookWrapper) -> Self | None:
+  def get_claimed(cls, worker_id: str, notebook: notebooklib.NotebookWrapper) -> Self | None:
     work_order_by_worker_id = notebook.get(WORK_ORDERS_KEY, {})
     if (work_order_json := work_order_by_worker_id.get(worker_id, None)) is None:
       return None
@@ -56,3 +62,38 @@ class BioWorkOrder(_WorkOrderBase):
   coords: list[float | int] | None = None
   collector: str | None = None
   lab: str | None = None
+  lab_status: int | None = None
+  reagent_inventory: str | None = None
+  reagent_to_buy_by_id: dict[str, int] | None = None
+  glow: list[int] | None = None
+  luminizer: str | None = None
+
+  class Channel(ChannelBase):
+    REQUESTED_FRAGMENTS = (ChannelIDRoot.REQUESTED_FRAGMENTS, ChannelScope.BIOME)
+    COLLECTED_FRAGMENTS = (ChannelIDRoot.COLLECTED_FRAGMENTS, ChannelScope.OUTPOST)
+    EXTRACTED_SAMPLES = (ChannelIDRoot.EXTRACTED_SAMPLES, ChannelScope.OUTPOST)
+    PREPARED_SAMPLES = (ChannelIDRoot.PREPARED_SAMPLES, ChannelScope.OUTPOST)
+
+
+@dataclasses.dataclass
+class CourierWorkOrder(_WorkOrderBase):
+  requester: str | None
+  requested_count_by_item_id: dict[str, int]
+  pickup_coords: list[float]
+  pickup_inventory_id: str
+  delivery_coords: list[float]
+  delivery_inventory_id: str | None
+  courier: str | None = None
+  needed_count_by_item_id: dict[str, int] = None
+
+  def __post_init__(self):
+    if self.requester is None and self.delivery_inventory_id is None:
+      raise CodeTerraformError("`requester` and `delivery_inventory_id` were both None")
+
+    if self.needed_count_by_item_id is None:
+      self.needed_count_by_item_id = self.requested_count_by_item_id.copy()
+
+
+  class Channel(ChannelBase):
+    REQUESTS = (ChannelIDRoot.COURIER_REQUESTS, ChannelScope.UNIVERSAL)
+    DELIVERIES = (ChannelIDRoot.COURIER_DELIVERIES, ChannelScope.TARGET)

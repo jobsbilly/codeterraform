@@ -110,8 +110,6 @@ def _tx_claim_order(
       if order_json["biome"] == biome:
         order = UnfinishedBioOrder.from_json(order_json, coords_by_fragment_id)
         if order.total_needed_discovered_fragments() > 0:
-          if order.target_glow:
-            raise error.CodeTerraformError("Time to add support for target_glow")
           if any(f.required_genes is not None for f in order.fragment_by_id.values()):
             raise error.CodeTerraformError("Time to add support for required_genes")
           unclaimed_orders.append(order)
