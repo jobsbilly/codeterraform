@@ -51,14 +51,23 @@ def move_cost_wh(
     return 0
   return distance_meters * wh_per_m(throttle, cargo_count, modules)
 
+def all_charging_station_coords(outpost_network: OutpostNetwork) -> tuple[list[float]]:
+  return tuple(outpost.coords()
+               for outpost in outpost_network.outposts()
+               if any(charger.powered for charger in outpost.buildings("charging_station")))
 
+def closest_charging_station_coords(coords: list[float], outpost_network: OutpostNetwork) -> list[float]:
+  if not (all_charger_coords := all_charging_station_coords(outpost_network)):
+    raise CodeTerraformError("No (powered) charging stations found")
+  return sorted(all_charger_coords, key=lambda charger_coords: math.dist(coords, charger_coords))[0]
 
 
 class PioneerWrapper(wrapper.MachineWrapper):
-  def __init__(self, value: Pioneer, clock: Clock):
-    super().__init__(value, required=(clock,))
+  def __init__(self, value: Pioneer, clock: Clock, outpost_network: OutpostNetwork):
+    super().__init__(value, required=(clock, outpost_network))
     self._value: Pioneer
     self._clock = clock
+    self._outpost_network = outpost_network
 
   # TODO: move cargo-related functions into a new CargoWrapper class.
   def space_for(self, item_id: str) -> int:
@@ -154,3 +163,43 @@ class PioneerWrapper(wrapper.MachineWrapper):
     for site in assign_or_raise(self.sonar.scan(), "sites"):
       if not site.surveyed:
         print(f"Surveyed new site: {assign_or_raise(self.sonar.survey(site))}")
+
+  def recharge(self, *, disallow_movement: bool = False) -> None:
+    if not self.current_station():
+      if disallow_movement:
+        raise CodeTerraformError(f"No charging station at current location ({self.coords()})")
+      if (coords := closest_charging_station_coords(self.coords(), self._outpost_network)) is None:
+        raise CodeTerraformError("No (powered) charging stations found")
+      debug("Going to nearest charging station...")
+      self.goto(coords)
+
+    station: ChargingStation = get_component(self.current_station())  # type: ignore
+    if station is None:
+      raise CodeTerraformError("No charging station found! A `sleep(0.1)` may be necessary after `self.goto()`")
+    bay_count = station.get_bay_count()
+    # If a bay isn't available right away, check every second until one is.
+    while self.id in (queue := station.get_queue()) and self.id not in queue[:bay_count]:
+      sleep(1)
+
+    waited_for_full_charge_count = 0
+    while self.battery.level() < 0.998:
+      if waited_for_full_charge_count > 4:
+        raise CodeTerraformError(f"Battery not fully charged after {waited_for_full_charge_count} attempts")
+      if waited_for_full_charge_count > 1:
+        warn(f"Repeated misses of the estimated time to full charge: {waited_for_full_charge_count} times.")
+      if waited_for_full_charge_count == 1:
+        debug("Missed the estimated time to full charge once. Another vehicle may have docked during charging.")
+      watts_needed = self.battery.capacity() - self.battery.wh()
+
+      stopwatch_start_seconds = self._clock.elapsed_seconds()
+      while (watts_per_game_hour := station.get_charge_rate(self.id)) == 0 and self.battery.level() < 0.998:
+        sleep(0.2)
+        if (elapsed_seconds := self._clock.elapsed_seconds() - stopwatch_start_seconds) > 120:
+          raise CodeTerraformError(f"Charge rate was zero for at least {elapsed_seconds} seconds; battery = "
+                                   f"{self.battery.level()}; {station.id} queue: {station.get_queue()}")
+
+      # Add an extra tick of buffer time.
+      charge_duration_seconds = watts_needed / watts_per_game_hour * self._clock.real_seconds_per_hour() + 0.1
+      debug(f"Sleeping {charge_duration_seconds} until estimated full charge...")
+      sleep(charge_duration_seconds)
+      waited_for_full_charge_count += 1
