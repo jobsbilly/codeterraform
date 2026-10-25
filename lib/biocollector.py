@@ -15,6 +15,7 @@ class BioCollectorWrapper(wrapper.MachineWrapper):
                    .register(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, outpost=self._value.outpost.id))
     self._notebook = notebook
     self._biome_fully_explored = False
+    self._last_exploration_might_not_be_catalogued = False
 
   def next_requested_work_order(self) -> BioWorkOrder | None:
     # Always check for requested fragments, but only wait if biome is fully explored.
@@ -27,12 +28,15 @@ class BioCollectorWrapper(wrapper.MachineWrapper):
     return BioWorkOrder.from_json(assign_or_raise(result).value)
 
   def next_exploration_work_order(self) -> BioWorkOrder | None:
-    for location in self.scan():
-      if not location.cataloged:
-        return BioWorkOrder(coords=list(location.coords))
-    self._biome_fully_explored = True
-    print(f"BioCollectors have fully explored {self.outpost.biome!r} biome.")
-    return None
+    all_uncatalogued_coords = [location.coords for location in self.scan() if not location.cataloged]
+    if not all_uncatalogued_coords:
+      self._biome_fully_explored = True
+      print(f"BioCollectors have fully explored {self.outpost.biome!r} biome.")
+      return None
+    coords = all_uncatalogued_coords[0]
+    if self._last_exploration_might_not_be_catalogued and len(all_uncatalogued_coords) > 1:
+      coords = all_uncatalogued_coords[1]
+    return BioWorkOrder(coords=list(coords))
 
   def block_until_cargo_emptied(self) -> None:
     while self.cargo is not None:
@@ -55,6 +59,10 @@ class BioCollectorWrapper(wrapper.MachineWrapper):
 
     # Persist the work order to make sure it isn't lost if the script stops mid-loop.
     raise_if_error(work_order.claim(self.id, self._notebook))
+
+    # If the current work order is exploration, and so is the next, then that next exploration should skip the first
+    # uncatalogued fragment in its scan (if possible) so it doesn't collect the same fragment again.
+    self._last_exploration_might_not_be_catalogued = work_order.order is None
 
     if self.cargo is None:
       raise_if_error(self.collect(work_order.coords))
