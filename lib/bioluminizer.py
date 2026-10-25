@@ -1,8 +1,9 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
-from error import assign_or_raise, CodeTerraformError, raise_if_error
+from error import CodeTerraformError, raise_if_none
 import notebook as notebooklib
 import signalbus
+from status import assign_or_raise, raise_if_error
 from workorders import BioWorkOrder
 import wrapper
 
@@ -82,10 +83,10 @@ class BioLuminizerWrapper(wrapper.MachineWrapper):
 
     if not self.chamber:
       if self.input.count() == 0:
-        self._take_sample(work_order.fragment, work_order.lab)
+        self._take_sample(raise_if_none(work_order.fragment), raise_if_none(work_order.lab))
       raise_if_error(self.load(work_order.fragment))
 
-    self._luminize(work_order.glow)
+    self._luminize(raise_if_none(work_order.glow))
 
     work_order.luminizer = self.id
     raise_if_error(self._comms.send(BioWorkOrder.Channel.PREPARED_SAMPLES, work_order.to_json()))
