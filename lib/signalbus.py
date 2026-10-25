@@ -92,6 +92,10 @@ class CommsWrapper(wrapper.WrapperBase):
     self._channel_id_by_channel[channel] = channel.id(**kwargs)
     return self
 
+  def forget(self, channel: ChannelBase) -> None:
+    if self._channel_id_by_channel.pop(channel, None) is None:
+      warn(f"Tried to forget unregistered channel: {channel!r}")
+
   def channel_id(self, channel: ChannelBase) -> str:
     if (channel_id :=  self._channel_id_by_channel.get(channel, None)) is None:
       raise CommsError(f"Channel {channel!r} must be registered on this {type(self)} before use")
