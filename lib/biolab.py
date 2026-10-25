@@ -53,7 +53,7 @@ class BioLabWrapper(wrapper.MachineWrapper):
 
     return work_order
 
-  def buy_and_load_reagents(self) -> None:
+  def _buy_and_load_reagents(self, work_order: BioWorkOrder) -> None:
     for reagent_id, required in self.specimen.recipe.items():
       if reagent_id in self.loaded_reagents:
         continue  # This reagent is already loaded (load only accepts the full required amount).
@@ -67,6 +67,11 @@ class BioLabWrapper(wrapper.MachineWrapper):
       raise_if_error(self._value.input.take(reagent_id, required))  # Blocks for `0.01 * required` h
       # Load the full required quantity of the reagent.
       raise_if_error(self._value.load(reagent_id, required))
+
+  def _send_to_next_machine(self, work_order: BioWorkOrder) -> None:
+    channel = (BioWorkOrder.Channel.EXTRACTED_SAMPLES if self.outpost.biome == "coastal"
+               else BioWorkOrder.Channel.PREPARED_SAMPLES)
+    raise_if_error(self._comms.send(channel, work_order.to_json()))
 
   def _prepare_for_main_loop(self) -> None:
     # TODO: Support non-home outposts by implementing reagent transportation logistics.
@@ -116,7 +121,7 @@ class BioLabWrapper(wrapper.MachineWrapper):
       return True
 
     # Load all recipe reagents, buying any that aren't already owned.
-    self.buy_and_load_reagents()
+    self._buy_and_load_reagents()
 
     # Extract the sample.
     reagent_count = sum(self.loaded_reagents.values())
@@ -124,9 +129,7 @@ class BioLabWrapper(wrapper.MachineWrapper):
     raise_if_error(retry(self.extract, statuses=("busy",), attempts=5, wait_seconds=busy_sleep_seconds))
 
     # Send a message that a sample is ready.
-    channel = (BioWorkOrder.Channel.EXTRACTED_SAMPLES if self._value.outpost.biome == "coastal"
-               else BioWorkOrder.Channel.PREPARED_SAMPLES)
-    raise_if_error(self._comms.send(channel, work_order.to_json()))
+    self._send_to_next_machine(work_order)
 
     # Un-persist the work order after passing it along.
     raise_if_error(work_order.release(self.id, self._notebook))
