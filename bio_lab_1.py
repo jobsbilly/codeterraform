@@ -9,7 +9,6 @@ bio_lab = biolab.BioLabWrapper(
   self,
   signalbus.CommsWrapper(get_component("comms")),
   notebook.NotebookWrapper(get_component("notebook")),
-  get_component("inventory"),
   shop.ShopWrapper(get_component("shop"), get_component("commander"))
 )
 bio_lab.run()

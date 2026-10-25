@@ -1,6 +1,7 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
 from error import CodeTerraformError, raise_if_none
+import inventories
 import notebook as notebooklib
 import shop as shoplib
 import signalbus
@@ -14,16 +15,14 @@ class BioLabWrapper(wrapper.MachineWrapper):
       value: BioLab,
       comms: signalbus.CommsWrapper,
       notebook: notebooklib.NotebookWrapper,
-      inventory: Inventory,
       shop: shoplib.ShopWrapper):
-    super().__init__(value, required=(comms, notebook, inventory, shop))
+    super().__init__(value, required=(comms, notebook, shop))
     self._value: BioLab
     self._comms = (comms
                    .register(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, outpost=self._value.outpost.id)
                    .register(BioWorkOrder.Channel.EXTRACTED_SAMPLES, outpost=self._value.outpost.id)
                    .register(BioWorkOrder.Channel.PREPARED_SAMPLES, outpost=self._value.outpost.id))
     self._notebook = notebook
-    self._inventory = inventory
     self._shop = shop
 
     # TODO: Support non-home outposts by implementing reagent transportation logistics.
@@ -54,13 +53,14 @@ class BioLabWrapper(wrapper.MachineWrapper):
     return work_order
 
   def _buy_and_load_reagents(self, work_order: BioWorkOrder) -> None:
+    target_inventory = inventories.home()
     for reagent_id, required in self.specimen.recipe.items():
       if reagent_id in self.loaded_reagents:
         continue  # This reagent is already loaded (load only accepts the full required amount).
       if required > self._value.input.capacity():
         raise CodeTerraformError(f"Recipe for {self.specimen.fragment_id!r} requires {required} units of {reagent_id}, "
                                  f"but biolab input only has capacity for {self.input.capacity()}")
-      needed = required - self._inventory.count(reagent_id)
+      needed = required - target_inventory.count(reagent_id)
       if needed > 0:
         self._shop.buy(reagent_id, needed)
       # Move the full required quantity of the reagent into the input buffer.
