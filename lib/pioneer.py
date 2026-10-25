@@ -60,7 +60,22 @@ class PioneerWrapper(wrapper.MachineWrapper):
     self._value: Pioneer
     self._clock = clock
 
+  # TODO: move cargo-related functions into a new CargoWrapper class.
+  def space_for(self, item_id: str) -> int:
+    available = 0
+    for rack in self.cargo.racks():
+      for bin_ in rack.bins:
+        if bin_.item_id and bin_.item_id != item_id:
+          continue  # Bins can only contain one item_id.
+        available += bin_.capacity - bin_.count
+    return available
+
+  def has_space(self, item_id: str, quantity: int) -> bool:
+    return self.space_for(item_id) >= quantity
+
   def load(self, item_id: str, quantity: int = 1, source: str = "inventory") -> None:
+    if not self.has_space(item_id, quantity):
+      raise CodeTerraformError(f"Aborted; not enough space to load {quantity} {item_id}")
     raise_if_error(self.input.connect(source))
     raise_if_error(self.input.take(item_id, quantity))  # Blocks for 2.5 ticks per item (total rounded up).
     raise_if_error(self.input.disconnect())
@@ -82,12 +97,15 @@ class PioneerWrapper(wrapper.MachineWrapper):
         break
     raise_if_error(self.output.disconnect())
 
-  def unload_all(self, item_id: str | None = None, destination: str = "inventory") -> None:
+  def unload_all(self, item_id: str | None = None, destination: str = "inventory") -> int:
     raise_if_error(self.output.connect(destination))
+    total_count = 0
     for stack in self.cargo.stacks():
       if item_id is None or stack.id == item_id:
+        total_count += stack.count
         raise_if_error(self.output.send(stack.id, stack.count))  # Blocks for 2.5 ticks per item.
     raise_if_error(self.output.disconnect())
+    return total_count
 
   def coords(self) -> list[float]:
     return list(self.nav.get_position())
