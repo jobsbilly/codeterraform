@@ -28,6 +28,9 @@ class ShopWrapper(wrapper.WrapperBase):
     self._commander = commander
     self._min_credit_balance = min_credit_balance
 
+  def current_balance(self) -> int:
+    return int(self._commander.get_credits())
+
   def _refresh_catalog(self) -> None:
     self._cost_by_item_id = {item.id: int(item.cost) for item in self._value.get_catalogue()}
 
@@ -41,13 +44,19 @@ class ShopWrapper(wrapper.WrapperBase):
       raise ItemNotFoundError(item_id)
     return cost
 
-  def current_balance(self) -> int:
-    return int(self._commander.get_credits())
+  def total_cost(self, count_by_item_id: dict[str, int]) -> int:
+    return int(sum(self.get_cost(item_id) * count for item_id, count in count_by_item_id.items()))
+
+  def can_afford(self, count_by_item_id: dict[str, int]) -> bool:
+    return self.current_balance() - self.total_cost(count_by_item_id) >= self._min_credit_balance
+
+  def buy_all(self, count_by_item_id: dict[str, int]) -> None:
+    if not self.can_afford(count_by_item_id):
+      raise CreditSafetyError(f"Aborted: total cost ({self.total_cost(count_by_item_id)}) would reduce the current "
+                              f"balance below the configured minimum ({self._min_required_balance}); order: "
+                              f"{count_by_item_id}")
+    for item_id, count in count_by_item_id.items():
+      raise_if_error(self._value.buy(item_id, count), ShopError)
 
   def buy(self, item_id: str, quantity: int) -> None:
-    total_cost = self.get_cost(item_id) * quantity
-    balance_after_purchase = self.current_balance() - total_cost
-    if balance_after_purchase < self._min_credit_balance:
-      raise CreditSafetyError(f"Buying {quantity} of {item_id} would cost {total_cost}, which would reduce current "
-                              f"balance ({self.current_balance()} below the safety limit ({self._min_credit_balance}).")
-    raise_if_error(self._value.buy(item_id, quantity), ShopError)
+    self.buy_all({item_id: quantity})
