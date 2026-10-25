@@ -38,12 +38,18 @@ class BioLabWrapper(wrapper.MachineWrapper):
     raise_if_error(self._comms.broadcast(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, collector_id))
 
   def _block_until_specimen_arrives(self) -> BioWorkOrder:
-    # Wait for a collector's signal to take its fragment.
-    work_order = BioWorkOrder.from_comms_message(
-      assign_or_raise(self._comms.wait(BioWorkOrder.Channel.COLLECTED_FRAGMENTS)))
+    comms_message = assign_or_raise(self._comms.wait(BioWorkOrder.Channel.COLLECTED_FRAGMENTS))
 
-    # Persist the work order to make sure it isn't lost if the script stops mid-loop.
-    raise_if_error(work_order.claim(self.id, self._notebook))
+    work_order = BioWorkOrder.from_comms_message(comms_message)
+    work_order.lab = self.id
+
+    # Persist the work order while working on it; if it fails, put the unmodified work order back before letting the
+    # exception propagate.
+    try:
+      raise_if_error(work_order.claim(self.id, self._notebook))
+    except Exception:
+      raise_if_error(self._comms.send(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, comms_message.value))
+      raise
 
     return work_order
 
@@ -118,7 +124,6 @@ class BioLabWrapper(wrapper.MachineWrapper):
     raise_if_error(retry(self.extract, statuses=("busy",), attempts=5, wait_seconds=busy_sleep_seconds))
 
     # Send a message that a sample is ready.
-    work_order.lab = self.id
     channel = (BioWorkOrder.Channel.EXTRACTED_SAMPLES if self._value.outpost.biome == "coastal"
                else BioWorkOrder.Channel.PREPARED_SAMPLES)
     raise_if_error(self._comms.send(channel, work_order.to_json()))
