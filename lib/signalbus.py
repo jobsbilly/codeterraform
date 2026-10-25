@@ -31,10 +31,14 @@ def make_channel_id(*parts: str) -> str:
 # Helps prevent accidental channel ID collisions.
 class ChannelIDRoot(enum.StrEnum):
   """Directory of all channel ID roots (which may be the entire ID, if the ChannelScope is UNIVERSAL)."""
+  # BioOrders
   REQUESTED_FRAGMENTS = "requested_fragments"
   COLLECTED_FRAGMENTS = "collected_fragments"
   EXTRACTED_SAMPLES = "extracted_samples"
   PREPARED_SAMPLES = "prepared_samples"
+  # Couriers
+  COURIER_REQUESTS = "courier_requests"
+  COURIER_DELIVERIES = "courier_deliveries"
 
   # Makes sure all member values adhere to format rules.
   def __new__(cls, value: str):
@@ -48,6 +52,7 @@ class ChannelScope(enum.Enum):
   UNIVERSAL = enum.auto()
   BIOME = enum.auto()
   OUTPOST = enum.auto()
+  TARGET = enum.auto()
 
 
 class ChannelBase(enum.Enum):
@@ -55,7 +60,7 @@ class ChannelBase(enum.Enum):
       self._id_root = id_root
       self._scope = scope
 
-  def id(self, *, biome: str | None = None, outpost: str | None = None) -> str:
+  def id(self, *, biome: str | None = None, outpost: str | None = None, target: str | None = None) -> str:
     if self._scope is ChannelScope.UNIVERSAL:
       return make_channel_id(self._id_root)
     if self._scope is ChannelScope.BIOME:
@@ -66,6 +71,10 @@ class ChannelBase(enum.Enum):
       if not outpost:
         raise error.CodeTerraformError(f"`outpost` must be non-empty for {self.name} channel")
       return make_channel_id(self._id_root, outpost)
+    if self._scope is ChannelScope.TARGET:
+      if not target:
+        raise error.CodeTerraformError(f"`target` must be non-empty for {self.name} channel")
+      return make_channel_id(self._id_root, target)
     raise error.CodeTerraformError(f"Unrecognized scope: {self._scope!r}")
 
 

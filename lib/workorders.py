@@ -3,6 +3,7 @@ from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never ha
 import dataclasses
 from typing import Any, Callable, Self
 
+from error import CodeTerraformError
 import notebook as notebooklib
 from signalbus import ChannelBase, ChannelIDRoot, ChannelScope
 
@@ -66,3 +67,27 @@ class BioWorkOrder(_WorkOrderBase):
     COLLECTED_FRAGMENTS = (ChannelIDRoot.COLLECTED_FRAGMENTS, ChannelScope.OUTPOST)
     EXTRACTED_SAMPLES = (ChannelIDRoot.EXTRACTED_SAMPLES, ChannelScope.OUTPOST)
     PREPARED_SAMPLES = (ChannelIDRoot.PREPARED_SAMPLES, ChannelScope.OUTPOST)
+
+
+@dataclasses.dataclass
+class CourierWorkOrder(_WorkOrderBase):
+  requester: str | None
+  requested_count_by_item_id: dict[str, int]
+  pickup_coords: list[float]
+  pickup_inventory_id: str
+  delivery_coords: list[float]
+  delivery_inventory_id: str | None
+  courier: str | None = None
+  needed_count_by_item_id: dict[str, int] = None
+
+  def __post_init__(self):
+    if self.requester is None and self.delivery_inventory_id is None:
+      raise CodeTerraformError("`requester` and `delivery_inventory_id` were both None")
+
+    if self.needed_count_by_item_id is None:
+      self.needed_count_by_item_id = self.requested_count_by_item_id.copy()
+
+
+  class Channel(ChannelBase):
+    REQUESTS = (ChannelIDRoot.COURIER_REQUESTS, ChannelScope.UNIVERSAL)
+    DELIVERIES = (ChannelIDRoot.COURIER_DELIVERIES, ChannelScope.TARGET)
