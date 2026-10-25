@@ -98,8 +98,10 @@ class BioLabWrapper(wrapper.MachineWrapper):
 
     # If a work order was already in progress, it should be safe to assume that anything in the input should be a
     # required reagent, and should be the full required amount (i.e., loading should just work).
-    if input_stacks := self.input.stacks():
-      raise_if_error(self._value.load(input_stacks[0].id, input_stacks[0].count))
+    for stack in self.input.stacks():
+      while (result := self.load(stack.id, stack.count)).status == "busy":
+        sleep(0.25 * stack.count)
+      raise_if_error(result)
 
     self._main_loop_iteration(work_order)
 
