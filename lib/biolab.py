@@ -1,6 +1,6 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
-from error import CodeTerraformError
+from error import CodeTerraformError, raise_if_none
 import notebook as notebooklib
 import shop as shoplib
 import signalbus
@@ -37,7 +37,7 @@ class BioLabWrapper(wrapper.MachineWrapper):
     # Note: if multiple collectors are listening, they'll all wake up, so they need to check their cargo before leaving.
     raise_if_error(self._comms.broadcast(BioWorkOrder.Channel.COLLECTED_FRAGMENTS, collector_id))
 
-  def block_until_specimen_arrives(self) -> BioWorkOrder:
+  def _block_until_specimen_arrives(self) -> BioWorkOrder:
     # Wait for a collector's signal to take its fragment.
     work_order = BioWorkOrder.from_comms_message(
       assign_or_raise(self._comms.wait(BioWorkOrder.Channel.COLLECTED_FRAGMENTS)))
@@ -45,7 +45,6 @@ class BioLabWrapper(wrapper.MachineWrapper):
     # Persist the work order to make sure it isn't lost if the script stops mid-loop.
     raise_if_error(work_order.claim(self.id, self._notebook))
 
-    self._take_fragment_and_release_collector(work_order.collector)
     return work_order
 
   def buy_and_load_reagents(self) -> None:
@@ -94,9 +93,12 @@ class BioLabWrapper(wrapper.MachineWrapper):
     self._main_loop_iteration(work_order)
 
   def _main_loop_iteration(self, existing_work_order: BioWorkOrder | None = None) -> bool:
-    work_order: BioWorkOrder = existing_work_order or self.block_until_specimen_arrives()
+    work_order: BioWorkOrder = existing_work_order or self._block_until_specimen_arrives()
 
-    # Analyze the specimen, which provides the recipe.
+    if not self.specimen:
+      self._take_fragment_and_release_collector(raise_if_none(work_order.collector))
+
+    # Analyzing provides the reagent recipe for sample extraction.
     if self.specimen.stage == "collected":
       raise_if_error(self._value.analyze())  # Blocks for ~0.1 h.
 
