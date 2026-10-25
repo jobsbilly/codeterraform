@@ -4,7 +4,7 @@ import bioorder
 import error
 import notebook as notebooklib
 import signalbus
-from status import assign_or_raise, auto_feeder_retry, raise_if_error
+from status import assign_or_raise, raise_if_error
 from workorders import BioWorkOrder
 import wrapper
 
@@ -35,7 +35,11 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
 
     if self.input.count() == 0:
       raise_if_error(self.input.connect(work_order.luminizer or work_order.lab))
-      raise_if_error(auto_feeder_retry(lambda: self.input.take(work_order.fragment, 1)))
+      for _ in range(5):
+        if (result := self.input.take(work_order.fragment, 1)).status != "busy":
+          break
+        sleep(0.25)
+      raise_if_error(result)
 
     raise_if_error(self.deliver(), ignore=["complete"])
 
