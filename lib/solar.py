@@ -22,7 +22,7 @@ class SolarGeneratorWrapper(wrapper.MachineWrapper):
     current_time_game_hours = hour + minute / 60 + second / 3600
     game_hours_until_first_light = (
         FIRST_LIGHT_GAME_HOUR + (0 if hour < FIRST_LIGHT_GAME_HOUR else 24) - current_time_game_hours)
-    return game_hours_until_first_light * self._clock.real_seconds_per_hour()
+    return game_hours_until_first_light * self._clock.real_seconds_per_hour() + 1
 
   def _prepare_for_main_loop(self) -> None:
     pass
