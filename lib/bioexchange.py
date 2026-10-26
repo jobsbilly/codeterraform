@@ -72,21 +72,21 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
 
     # Send out work assignments for discovered fragments.
     while True:
-      fragment_id, coords = claimed_order.next_needed_fragment()
+      fragment = claimed_order.next_needed_fragment()
       # Once all work assignments (for discovered fragments) have been sent, unclaim the order.
-      if fragment_id is None:
+      if fragment is None:
         claimed_order.unclaim(self.id, self._notebook)
         break
       # Try to send a work assignment.
-      work_order = BioWorkOrder(order=claimed_order.id, fragment=fragment_id, requester=self.id, coords=coords,
-                                glow=claimed_order.target_glow)
+      work_order = BioWorkOrder(order=claimed_order.id, fragment=fragment.id, requester=self.id, coords=fragment.coords,
+                                glow=claimed_order.target_glow, required_genes=fragment.required_genes)
       result = self._comms.send(BioWorkOrder.Channel.REQUESTED_FRAGMENTS, work_order.to_json())
       # If the channel can't accept any more work right now, try again on the next main loop.
       if result.status == "queue_full":
         break
       raise_if_error(result)
       # Mark the work assignment as no longer needed.
-      claimed_order.one_less_needed(fragment_id, self.id, self._notebook)
+      claimed_order.one_less_needed(fragment.id, self.id, self._notebook)
 
     return True  # Work assignments were sent out (or the channel was full)
 

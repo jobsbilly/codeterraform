@@ -67,6 +67,7 @@ class BioWorkOrder(_WorkOrderBase):
   reagent_to_buy_by_id: dict[str, int] | None = None
   glow: list[int] | None = None
   luminizer: str | None = None
+  required_genes: list[str] | None = None
 
   class Channel(ChannelBase):
     REQUESTED_FRAGMENTS = (ChannelIDRoot.REQUESTED_FRAGMENTS, ChannelScope.BIOME)
