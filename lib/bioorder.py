@@ -49,10 +49,10 @@ class UnfinishedBioOrder:
     return dataclasses.asdict(self)
 
   def undiscovered_fragment_id_count(self) -> int:
-    return sum(1 for fragment in self.fragment_by_id.values() if not fragment.coords)
+    return int(sum(1 for fragment in self.fragment_by_id.values() if not fragment.coords))
 
   def total_needed_discovered_fragments(self) -> int:
-    return sum(fragment.needed for fragment in self.fragment_by_id.values() if fragment.coords)
+    return int(sum(fragment.needed for fragment in self.fragment_by_id.values() if fragment.coords))
 
   def next_needed_fragment(self) -> tuple[str | None, list[int | float] | None]:
     for fragment in self.fragment_by_id.values():
