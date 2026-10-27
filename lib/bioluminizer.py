@@ -1,5 +1,7 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
+from operator import attrgetter
+
 from error import CodeTerraformError, raise_if_none
 import notebook as notebooklib
 import signalbus
@@ -36,16 +38,17 @@ class BioLuminizerWrapper(wrapper.MachineWrapper):
 
     return work_order
 
-  def _take_sample(self, fragment_id: str, lab: str) -> None:
-    raise_if_error(self.input.connect(lab))
+  def _take_sample(self, work_order: BioWorkOrder) -> None:
+    raise_if_error(self.input.connect(raise_if_none(work_order.lab)))
     # TODO: move this (and other near-identical logic) to some kind of reusable retry function or decorator.
     for _ in range(5):
-      if (result := self.input.take(fragment_id, 1)).status != "busy":
+      result = self.input.take(raise_if_none(work_order.fragment), 1, work_order.properties, "exact")
+      if result.status != "busy":
         break
       sleep(0.25)  # Time it takes auto feeders to transfer 1 item.
     raise_if_error(result)
 
-  def _luminize(self, target_glow: list[int]) -> None:
+  def _adjust_lamps(self, target_glow: list[int]) -> None:
     target_delta_by_color = {}
     # How much a brightness step impacts the sample's glow.
     step_delta_by_effect_color_by_lamp_color = {}
@@ -70,9 +73,12 @@ class BioLuminizerWrapper(wrapper.MachineWrapper):
     for lamp_steps in product(*[range(min_steps_by_color[color], max_steps_by_color[color] + 1) for color in _COLORS]):
       raise_if_error(self.set_lamps(*lamp_steps))
       if self.glow() == target_glow:
-        raise_if_error(self.infuse())
         return
     raise CodeTerraformError(f"No solution found to get from {self.chamber.glow=} to {target_glow=}")
+
+  @wrapper.wait_until_clear(item_id_getter=attrgetter("chamber.fragment_id"), max_attempts=5)
+  def _infuse(self):
+    raise_if_error(self.infuse())
 
   def _prepare_for_main_loop(self) -> None:
     work_order = BioWorkOrder.get_claimed(self.id, self._notebook)
@@ -90,10 +96,14 @@ class BioLuminizerWrapper(wrapper.MachineWrapper):
 
     if not self.chamber:
       if self.input.count() == 0:
-        self._take_sample(raise_if_none(work_order.fragment), raise_if_none(work_order.lab))
+        self._take_sample(work_order)
       raise_if_error(self.load(work_order.fragment))
 
-    self._luminize(raise_if_none(work_order.glow))
+    if self.glow() != work_order.glow:
+      self._adjust_lamps(raise_if_none(work_order.glow))
+
+    self._infuse()
+    work_order.properties = next(stack.properties for stack in self.output.stacks() if stack.id == work_order.fragment)
 
     raise_if_error(self._comms.send(BioWorkOrder.Channel.PREPARED_SAMPLES, work_order.to_json()))
 

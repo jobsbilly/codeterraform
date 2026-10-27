@@ -49,16 +49,16 @@ class UnfinishedBioOrder:
     return dataclasses.asdict(self)
 
   def undiscovered_fragment_id_count(self) -> int:
-    return sum(1 for fragment in self.fragment_by_id.values() if not fragment.coords)
+    return int(sum(1 for fragment in self.fragment_by_id.values() if not fragment.coords))
 
   def total_needed_discovered_fragments(self) -> int:
-    return sum(fragment.needed for fragment in self.fragment_by_id.values() if fragment.coords)
+    return int(sum(fragment.needed for fragment in self.fragment_by_id.values() if fragment.coords))
 
-  def next_needed_fragment(self) -> tuple[str | None, list[int | float] | None]:
+  def next_needed_fragment(self) -> Fragment | None:
     for fragment in self.fragment_by_id.values():
       if fragment.coords and fragment.needed:
-        return fragment.id, fragment.coords
-    return None, None
+        return Fragment(**dataclasses.asdict(fragment))  # Deep copy.
+    return None
 
   def _save_fragment_by_id(self, owner_id: str, notebook: notebooklib.NotebookWrapper) -> None:
     fragment_by_id_json = self.to_json()["fragment_by_id"]
@@ -110,8 +110,6 @@ def _tx_claim_order(
       if order_json["biome"] == biome:
         order = UnfinishedBioOrder.from_json(order_json, coords_by_fragment_id)
         if order.total_needed_discovered_fragments() > 0:
-          if any(f.required_genes is not None for f in order.fragment_by_id.values()):
-            raise error.CodeTerraformError("Time to add support for required_genes")
           unclaimed_orders.append(order)
     if not unclaimed_orders:
       tx_return_values.order = None
