@@ -43,6 +43,11 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
         sleep(0.25)
       raise_if_error(result)
 
+    if (result := self.deliver()).status == "no_input":
+      result_error = error.CodeTerraformError(result.message)
+      if self.active_order().delivered[work_order.fragment] == self.active_order().requires[work_order.fragment]:
+        raise BioExchangeError(f"Already delivered all {work_order.fragment} for {work_order.order}") from result_error
+      raise result_error
     raise_if_error(self.deliver(), ignore=["complete"])
 
   def deliver_waiting_samples(self) -> None:
