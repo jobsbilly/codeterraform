@@ -72,7 +72,7 @@ def wait_until_clear(
       attempts = 0
       while any(_item_id == stack.id for stack in output.stacks()):
         if (attempts := attempts + 1) == _max_attempts:
-          raise CodeTerraformError(f"{self.specimen.fragment_id} in output did not clear")
+          raise CodeTerraformError(f"{_item_id} in output did not clear")
         sleep(seconds)
       return func(self, *args, **kwargs)
     return wrapper
