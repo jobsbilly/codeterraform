@@ -48,7 +48,7 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
       if self.active_order().delivered[work_order.fragment] == self.active_order().requires[work_order.fragment]:
         raise BioExchangeError(f"Already delivered all {work_order.fragment} for {work_order.order}") from result_error
       raise result_error
-    raise_if_error(self.deliver(), ignore=["complete"])
+    raise_if_error(result, ignore=["complete"])
 
   def deliver_waiting_samples(self) -> None:
     while True:
