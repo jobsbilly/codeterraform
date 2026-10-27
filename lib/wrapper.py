@@ -1,6 +1,8 @@
-from __builtins__ import Component, object_type
+from __builtins__ import Component, object_type, OutputSlot, sleep
 
-from typing import Any, Iterable
+from error import CodeTerraformError
+import functools
+from typing import Any, Callable, Iterable
 
 
 class WrapperBase:
@@ -51,3 +53,27 @@ class MachineWrapper(WrapperBase):
     print(f"START (single-loop): {self.id!r}")
     self._main_loop_iteration()
     print(f"SHUTDOWN (single-loop): {self.id!r}")
+
+
+def wait_until_clear(
+    seconds: float = 0.3,
+    max_attempts: int | None = None,
+    item_id: str | None = None,
+    item_id_getter: Callable[[MachineWrapper], str] | None = None,
+    output_getter: Callable[[MachineWrapper], OutputSlot] | None = None,
+):
+  """Only let an item move into an output when it can be safely disambiguated from other items in that output."""
+  def decorator(func):
+    @functools.wraps(func)
+    def wrapper(self, *args, **kwargs):
+      _max_attempts = max_attempts or 0  # Zero mean indefinitely.
+      _item_id = item_id or item_id_getter(self)
+      output = output_getter(self) if output_getter is not None else self.output
+      attempts = 0
+      while any(_item_id == stack.id for stack in output.stacks()):
+        if (attempts := attempts + 1) == _max_attempts:
+          raise CodeTerraformError(f"{self.specimen.fragment_id} in output did not clear")
+        sleep(seconds)
+      return func(self, *args, **kwargs)
+    return wrapper
+  return decorator

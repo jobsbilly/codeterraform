@@ -36,7 +36,7 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
     if self.input.count() == 0:
       raise_if_error(self.input.connect(work_order.luminizer or work_order.lab))
       for _ in range(5):
-        if (result := self.input.take(work_order.fragment, 1)).status != "busy":
+        if (result := self.input.take(work_order.fragment, 1, work_order.properties, "exact")).status != "busy":
           break
         sleep(0.25)
       raise_if_error(result)

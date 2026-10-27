@@ -1,7 +1,7 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
 import enum
-from operator import methodcaller
+from operator import attrgetter, methodcaller
 
 from error import CodeTerraformError, raise_if_none
 import inventories
@@ -181,6 +181,13 @@ class BioLabWrapper(wrapper.MachineWrapper):
         raise_if_error(self.input.take(reagent_id, required))  # Blocks for `0.01 * required` h
         raise_if_error(self._value.load(reagent_id, required))
 
+  # Only let a fragment move into `output` when it can be safely disambiguated from other items.
+  @wrapper.wait_until_clear(item_id_getter=attrgetter("specimen.fragment_id"), max_attempts=5)
+  def _extract(self) -> None:
+    reagent_count = sum(self.loaded_reagents.values())
+    busy_sleep_seconds = (0.1 + 0.05 * reagent_count) / 2
+    raise_if_error(retry(self.extract, statuses=("busy",), attempts=5, wait_seconds=busy_sleep_seconds))
+
   def _send_to_next_machine(self, work_order: BioWorkOrder) -> None:
     channel = (BioWorkOrder.Channel.EXTRACTED_SAMPLES if self.outpost.biome == "coastal"
                else BioWorkOrder.Channel.PREPARED_SAMPLES)
@@ -202,6 +209,8 @@ class BioLabWrapper(wrapper.MachineWrapper):
       # If output is empty, the specimen must have been taken by the next machine; otherwise, assume the notification
       # was never sent.
       if self.output.count() > 0:
+        work_order.properties = next(
+          stack.properties for stack in self.output.stacks() if stack.id == work_order.fragment)
         self._send_to_next_machine(work_order)
       raise_if_error(work_order.release(self.id, self._notebook))
       return
@@ -236,9 +245,8 @@ class BioLabWrapper(wrapper.MachineWrapper):
     self._buy_and_load_reagents(work_order)
 
     # Extract the sample.
-    reagent_count = sum(self.loaded_reagents.values())
-    busy_sleep_seconds = (0.1 + 0.05 * reagent_count) / 2
-    raise_if_error(retry(self.extract, statuses=("busy",), attempts=5, wait_seconds=busy_sleep_seconds))
+    self._extract()
+    work_order.properties = next(stack.properties for stack in self.output.stacks() if stack.id == work_order.fragment)
 
     # Send a message that a sample is ready.
     self._send_to_next_machine(work_order)
