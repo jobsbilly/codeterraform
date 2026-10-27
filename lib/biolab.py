@@ -178,7 +178,9 @@ class BioLabWrapper(wrapper.MachineWrapper):
     raise_if_error(self.input.connect(work_order.reagent_inventory))
     for reagent_id, required in self.specimen.recipe.items():
       if reagent_id not in self.loaded_reagents:
-        raise_if_error(self.input.take(reagent_id, required))  # Blocks for `0.01 * required` h
+        while (result := self.input.take(reagent_id, required)).status == "busy":
+          sleep(0.25)
+        raise_if_error(result)
         raise_if_error(self._value.load(reagent_id, required))
 
   # Only let a fragment move into `output` when it can be safely disambiguated from other items.
