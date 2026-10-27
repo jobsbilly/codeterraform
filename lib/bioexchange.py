@@ -34,7 +34,9 @@ class BioExchangeWrapper(wrapper.MachineWrapper):
     raise_if_error(self.set_order(work_order.order))
 
     if self.input.count() == 0:
-      raise_if_error(self.input.connect(work_order.luminizer or work_order.lab))
+      # The order of ids here matters - it should run from most recent in the pipeline to least recent.
+      # TODO: consider consolidating work_order's id fields (e.g., collector, lab) into one "sample_location" field.
+      raise_if_error(self.input.connect(work_order.luminizer or work_order.dna_sequencer or work_order.lab))
       for _ in range(5):
         if (result := self.input.take(work_order.fragment, 1, work_order.properties, "exact")).status != "busy":
           break

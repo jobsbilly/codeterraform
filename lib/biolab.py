@@ -189,8 +189,13 @@ class BioLabWrapper(wrapper.MachineWrapper):
     raise_if_error(retry(self.extract, statuses=("busy",), attempts=5, wait_seconds=busy_sleep_seconds))
 
   def _send_to_next_machine(self, work_order: BioWorkOrder) -> None:
-    channel = (BioWorkOrder.Channel.EXTRACTED_SAMPLES if self.outpost.biome == "coastal"
-               else BioWorkOrder.Channel.PREPARED_SAMPLES)
+    channel = BioWorkOrder.Channel.PREPARED_SAMPLES
+    if self.outpost.biome == "coastal":
+      channel = BioWorkOrder.Channel.EXTRACTED_SAMPLES
+    # The DNA Sequencer should be skipped if required_genes aren't specified for this fragment.
+    elif self.outpost.biome == "geothermal" and work_order.required_genes is not None:
+      channel = BioWorkOrder.Channel.EXTRACTED_SAMPLES
+
     raise_if_error(self._comms.send(channel, work_order.to_json()))
 
   def _prepare_for_main_loop(self) -> None:

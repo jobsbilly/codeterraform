@@ -69,6 +69,7 @@ class BioWorkOrder(_WorkOrderBase):
   luminizer: str | None = None
   required_genes: list[str] | None = None
   properties: ItemProperties | None = None
+  dna_sequencer: str | None = None
 
   class Channel(ChannelBase):
     REQUESTED_FRAGMENTS = (ChannelIDRoot.REQUESTED_FRAGMENTS, ChannelScope.BIOME)
