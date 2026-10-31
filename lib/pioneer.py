@@ -27,6 +27,7 @@ RANGE_AFFECTING_MODULES = (
   "constructor_module",
 )
 PROXIMITY_RADIUS_METERS = 2
+HIGH_PRECISION_PROXIMITY_RADIUS_METERS = 0.25
 BASE_TOP_SPEED_METERS_PER_HOUR = 100
 
 def in_proximity(coords: list[float], other_coords: list[float]) -> bool:
@@ -132,7 +133,7 @@ class PioneerWrapper(wrapper.MachineWrapper):
   def get_move_cost_wh(self, target: list[float], throttle: float = 1) -> float:
     return move_cost_wh(self.coords(), target, throttle, self.cargo.count(), modules=self.modules())
 
-  def goto(self, target: list[float], throttle: float | None = None) -> None:
+  def goto(self, target: list[float], throttle: float | None = None, *, high_precision: bool = False) -> None:
     if self.is_at(target):
       debug(f"Already at {target=}.")
       return
@@ -160,6 +161,12 @@ class PioneerWrapper(wrapper.MachineWrapper):
 
     while not in_proximity(self.coords(), target):
       pass
+    if high_precision:
+      raise_if_error(self.nav.set_throttle(0.1))
+      while (meters_to_target := math.dist(self.coords(), target)) > HIGH_PRECISION_PROXIMITY_RADIUS_METERS:
+        if meters_to_target > PROXIMITY_RADIUS_METERS:
+          warn("Overshot target!")
+          raise_if_error(self.nav.set_target(*target))
     raise_if_error(self.nav.brake())
     debug(f"{target=} reached.")
 
