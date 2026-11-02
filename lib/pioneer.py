@@ -163,12 +163,36 @@ class PioneerWrapper(wrapper.MachineWrapper):
   def is_at(self, target: list[float]) -> bool:
     return in_proximity(self.coords(), target)
 
-  def move_cost_wh(self, start: list[float], target: list[float], throttle: float = 1, distance_error: float = 0):
-    return move_cost_wh(start, target, throttle, self.cargo.count(), modules=self.modules(),
-                        distance_error=distance_error)
+  def move_cost_wh(
+      self,
+      start: list[float],
+      target: list[float],
+      throttle: float = 1,
+      cargo_count: int | None = None,
+      distance_error: float = 0,
+  ):
+    cargo_count = cargo_count if cargo_count is not None else self.cargo.count()
+    return move_cost_wh(start, target, throttle, cargo_count, modules=self.modules(), distance_error=distance_error)
 
   def goto_cost_wh(self, target: list[float], throttle: float = 1) -> float:
     return self.move_cost_wh(self.coords(), target, throttle)
+
+  def fastest_viable_throttle(
+      self,
+      target: list[float],
+      start: list[float] | None = None,
+      cargo_count: int | None = None,
+      available_wh: float | None = None,
+      distance_error: float = 0,
+  ) -> float | None:
+    throttle = 1
+    start = start or self.coords()
+    available_wh = available_wh if available_wh is not None else self.battery.wh()
+    while self.move_cost_wh(start, target, throttle, cargo_count, distance_error=distance_error) > available_wh:
+      throttle -= 0.05
+      if throttle < 0.049:
+        return None
+    return throttle
 
   def goto(self, target: list[float], throttle: float | None = None, *, high_precision: bool = False) -> None:
     if self.is_at(target):
@@ -176,12 +200,8 @@ class PioneerWrapper(wrapper.MachineWrapper):
       return
 
     if not throttle:
-      # Find the fastest throttle with the necessary range.
-      throttle = 1
-      while self.goto_cost_wh(target, throttle) > self.battery.wh():
-        throttle -= 0.05
-        if throttle < 0.049:
-          raise CodeTerraformError(f"{target} is unreachable at any throttle (with current loadout)")
+      throttle = raise_if_none(self.fastest_viable_throttle(target),
+                               CodeTerraformError(f"{target} is unreachable at any throttle (with current loadout)"))
     elif self.goto_cost_wh(target, throttle) > self.battery.wh():
       raise CodeTerraformError(f"{target} is unreachable at {throttle=} (with current loadout)")
 
