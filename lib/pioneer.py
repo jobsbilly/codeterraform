@@ -52,8 +52,9 @@ def move_cost_wh(
     cargo_count: int = 0,
     *,
     modules: Iterable[MountSlot],
+    distance_error: float = 0,
 ) -> float:
-  distance_meters = math.dist(coords, target)
+  distance_meters = math.dist(coords, target) + distance_error
   if distance_meters < PROXIMITY_RADIUS_METERS:
     return 0
   return distance_meters * wh_per_m(throttle, cargo_count, modules)
@@ -162,8 +163,9 @@ class PioneerWrapper(wrapper.MachineWrapper):
   def is_at(self, target: list[float]) -> bool:
     return in_proximity(self.coords(), target)
 
-  def move_cost_wh(self, start: list[float], target: list[float], throttle: float = 1):
-    return move_cost_wh(start, target, throttle, self.cargo.count(), modules=self.modules())
+  def move_cost_wh(self, start: list[float], target: list[float], throttle: float = 1, distance_error: float = 0):
+    return move_cost_wh(start, target, throttle, self.cargo.count(), modules=self.modules(),
+                        distance_error=distance_error)
 
   def goto_cost_wh(self, target: list[float], throttle: float = 1) -> float:
     return self.move_cost_wh(self.coords(), target, throttle)
@@ -358,7 +360,8 @@ class CourierPioneerWrapper(PioneerWrapper):
 
     # Find the fastest viable throttles to use when traveling to each waypoint, or raise an error if no solution exists.
     def get_wh_cost(chunk_: list[RouteWaypoint]) -> float:
-      return sum(move_cost_wh(prev.coords, curr.coords, curr.throttle, curr.cargo_count(), modules=self.modules())
+      return sum(move_cost_wh(prev.coords, curr.coords, curr.throttle, curr.cargo_count(), modules=self.modules(),
+                              distance_error=PROXIMITY_RADIUS_METERS)
                  for prev, curr in itertools.pairwise(chunk_))
     for chunk_index, chunk in enumerate(route_chunks):
       while get_wh_cost(chunk) > self.battery.capacity():
