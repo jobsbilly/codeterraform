@@ -10,7 +10,7 @@ class CodeTerraformError(Exception):
   pass
 
 
-def raise_if_none(value: _T | None, cls: type[Exception] = CodeTerraformError) -> _T:
+def raise_if_none(value: _T | None, exc: Exception | None = None) -> _T:
   if value is None:
-    raise cls("Cannot be None")
+    raise exc or CodeTerraformError("Cannot be None")
   return value
