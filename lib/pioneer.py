@@ -69,6 +69,38 @@ def closest_charging_station_coords(coords: list[float], outpost_network: Outpos
   return sorted(all_charger_coords, key=lambda charger_coords: math.dist(coords, charger_coords))[0]
 
 
+class WaypointAction(enum.StrEnum):
+  START = enum.auto()
+  PICKUP = enum.auto()
+  DELIVER = enum.auto()
+  RECHARGE = enum.auto()
+
+
+@dataclasses.dataclass
+class RouteWaypoint:
+  coords: list[float]
+  action: WaypointAction
+  cargo_count_by_item_id: dict[str, int] | None = None
+  throttle: float = 1
+
+  def __post_init__(self):
+    cargo_count = self.cargo_count()
+    if self.action is WaypointAction.DELIVER and cargo_count == 0:
+      raise CodeTerraformError(f"DELIVER waypoints must have 1+ cargo count: {self}")
+    if self.action is WaypointAction.PICKUP and cargo_count != 0:
+      raise CodeTerraformError(f"PICKUP waypoints cannot have cargo: {self}")
+
+  def cargo_count(self) -> int:
+    if self.cargo_count_by_item_id is None:
+      return 0
+    cargo_count = 0
+    for item_count in self.cargo_count_by_item_id.values():
+      if item_count < 0:
+        raise CodeTerraformError(f"Found negative count in {self.cargo_count_by_item_id=}")
+      cargo_count += item_count
+    return cargo_count
+
+
 class PioneerWrapper(wrapper.MachineWrapper):
   def __init__(self, value: Pioneer, clock: Clock, outpost_network: OutpostNetworkComponent, **kwargs):
     required = itertools.chain((clock, outpost_network), kwargs.pop("required", ()))
@@ -220,38 +252,6 @@ class PioneerWrapper(wrapper.MachineWrapper):
       debug(f"Sleeping {charge_duration_seconds} until estimated full charge...")
       sleep(charge_duration_seconds)
       waited_for_full_charge_count += 1
-
-
-class WaypointAction(enum.StrEnum):
-  START = enum.auto()
-  PICKUP = enum.auto()
-  DELIVER = enum.auto()
-  RECHARGE = enum.auto()
-
-
-@dataclasses.dataclass
-class RouteWaypoint:
-  coords: list[float]
-  action: WaypointAction
-  cargo_count_by_item_id: dict[str, int] | None = None
-  throttle: float = 1
-
-  def __post_init__(self):
-    cargo_count = self.cargo_count()
-    if self.action is WaypointAction.DELIVER and cargo_count == 0:
-      raise CodeTerraformError(f"DELIVER waypoints must have 1+ cargo count: {self}")
-    if self.action is WaypointAction.PICKUP and cargo_count != 0:
-      raise CodeTerraformError(f"PICKUP waypoints cannot have cargo: {self}")
-
-  def cargo_count(self) -> int:
-    if self.cargo_count_by_item_id is None:
-      return 0
-    cargo_count = 0
-    for item_count in self.cargo_count_by_item_id.values():
-      if item_count < 0:
-        raise CodeTerraformError(f"Found negative count in {self.cargo_count_by_item_id=}")
-      cargo_count += item_count
-    return cargo_count
 
 
 def _append_and_auto_chunk(
