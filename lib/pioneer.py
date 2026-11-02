@@ -227,9 +227,12 @@ class PioneerWrapper(wrapper.MachineWrapper):
     raise_if_error(self.nav.brake())
     debug(f"{target=} reached.")
 
+  def has_sonar_module(self) -> bool:
+    return any(m.module_id.startswith("sonar_") for m in self.modules() if m.module_id is not None)
+
   def survey_sites_in_range(self) -> None:
-    if not any(m.module_id.startswith("sonar_") for m in self._value.modules() if m.module_id is not None):
-      warn(f"Aborted: {self.id!r} has no sonar module mounted.")
+    if not self.has_sonar_module():
+      warn(f"Survey aborted: no sonar module found.")
       return
     for site in assign_or_raise(self.sonar.scan(), "sites"):
       if not site.surveyed:
