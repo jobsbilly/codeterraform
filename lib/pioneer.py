@@ -5,9 +5,10 @@ import dataclasses
 import enum
 import itertools
 import math
-from typing import Iterable
+from typing import Iterable, Self
 
 from error import CodeTerraformError, raise_if_none
+import moreitertools
 import notebook as notebooklib
 import signalbus
 from status import assign_or_raise, raise_if_error
@@ -29,6 +30,17 @@ RANGE_AFFECTING_MODULES = (
 PROXIMITY_RADIUS_METERS = 2
 HIGH_PRECISION_PROXIMITY_RADIUS_METERS = 0.25
 BASE_TOP_SPEED_METERS_PER_HOUR = 100
+SPIRAL_RING_WIDTH_COEFFICIENT = 1.789  # Value that seems to work best (on average), based on manual testing.
+WH_COST_BY_SONAR_TIER = {
+  "basic": 0.5,
+  "wide": 1,
+  "deep": 2,
+  "seismic": 3,
+}
+_HOME_BASE_POINT = (0, 0)
+
+def home_base_point() -> list[float]:
+  return list(_HOME_BASE_POINT)
 
 def in_proximity(coords: list[float], other_coords: list[float]) -> bool:
   return math.dist(coords, other_coords) < PROXIMITY_RADIUS_METERS
@@ -70,11 +82,50 @@ def closest_charging_station_coords(coords: list[float], outpost_network: Outpos
   return sorted(all_charger_coords, key=lambda charger_coords: math.dist(coords, charger_coords))[0]
 
 
+@dataclasses.dataclass
+class BoundingBox:
+  min_x: float
+  max_x: float
+  min_y: float
+  max_y: float
+
+  def width(self) -> float:
+    return self.max_x - self.min_x
+
+  def height(self) -> float:
+    return self.max_y - self.min_y
+
+  @classmethod
+  def from_points(cls, points: Iterable[list[float]]) -> Self:
+    # Based on the `more_itertools.minmax` implementation.
+    try:
+      first, it = moreitertools.first_and_following(points)
+    except StopIteration as e:
+      raise CodeTerraformError("Cannot create a bounding box around nothing") from e
+
+    lo_xy = first.copy()
+    hi_xy = first.copy()
+    for a, b in itertools.zip_longest(it, it, fillvalue=lo_xy):
+      for i in range(2):
+        if b[i] < a[i]:
+          if b[i] < lo_xy[i]:
+            lo_xy[i] = b[i]
+          if hi_xy[i] < a[i]:
+            hi_xy[i] = a[i]
+        else:
+          if a[i] < lo_xy[i]:
+            lo_xy[i] = a[i]
+          if hi_xy[i] < b[i]:
+            hi_xy[i] = b[i]
+    return cls(min_x=lo_xy[0], max_x=hi_xy[0], min_y=lo_xy[1], max_y=hi_xy[1])
+
+
 class WaypointAction(enum.StrEnum):
   START = enum.auto()
   PICKUP = enum.auto()
   DELIVER = enum.auto()
   RECHARGE = enum.auto()
+  SURVEY = enum.auto()
 
 
 @dataclasses.dataclass
@@ -501,3 +552,136 @@ class CourierPioneerWrapper(PioneerWrapper):
         raise CodeTerraformError(f"Not supported: {waypoint.action!r}")
 
     return True
+
+
+class SurveyorPioneerWrapper(PioneerWrapper):
+  def __init__(self, value: Pioneer, clock: Clock, outpost_network: OutpostNetworkComponent, planet: Nocturna):
+    super().__init__(value, clock, outpost_network, required=(planet,))
+    self._planet = planet
+
+    if not self.has_sonar_module():
+      raise CodeTerraformError("Surveyors need a sonar module")
+
+  def unscanned_pois(self) -> list[PointOfInterest]:
+    return [poi for poi in self._planet.points_of_interest() if not poi.scanned]
+
+  def _scan_points_as_hex_lattice(self, bounds: BoundingBox) -> list[list[float]]:
+    full_width = bounds.width()
+    full_height = bounds.height()
+    h_interval = self.sonar.range() * math.sqrt(3) - PROXIMITY_RADIUS_METERS
+    v_interval = self.sonar.range() * 1.5 - PROXIMITY_RADIUS_METERS
+
+    col_count = max(ceil(full_width / h_interval), 1)
+    row_count = max(ceil(full_height / v_interval), 1)
+
+    v_offset = (full_height - min((row_count - 1) * v_interval, full_height)) / 2
+
+    hex_center_points = []
+    for row in range(row_count):
+      for col in range(col_count):
+        x = min(col * h_interval + (row % 2) * (h_interval / 2), full_width) + bounds.min_x
+        y = min(row * v_interval, full_height) + bounds.min_y + v_offset
+        hex_center_points.append([x, y])
+
+    return hex_center_points
+
+  def _spiral_out_clockwise_from_origin(self, points: Iterable[list[float]]) -> list[list[float]]:
+    ring_width = self.sonar.range() * SPIRAL_RING_WIDTH_COEFFICIENT
+    return sorted(points, key=lambda pt: (math.hypot(*pt) // ring_width, math.atan2(pt[1], pt[0])))
+
+  # Usually returns an overestimate, as some POI surveys are gated behind missing research or sonar tiers.
+  def _scan_and_surveys_cost_wh(
+      self,
+      scan_point: list[float],
+      distance_error: float,
+      unscanned_pois: Iterable[PointOfInterest],
+  ) -> float:
+    cost_wh = WH_COST_BY_SONAR_TIER[self.sonar.tier()]
+    sonar_range = self.sonar.range()
+    surveys_cost_wh = sum(cost_wh
+                          for poi in unscanned_pois
+                          if math.dist(scan_point, (poi.x, poi.y)) - distance_error < sonar_range)
+    if surveys_cost_wh == 0:
+      return 0
+    return cost_wh + surveys_cost_wh
+
+  def _make_route(
+      self,
+      scan_points: Iterable[list[float]],
+      distance_error: float,
+      unscanned_pois: list[PointOfInterest],
+  ) -> list[RouteWaypoint]:
+    # Start by recharging at the nearest station.
+    if (start_point := closest_charging_station_coords(self.coords(), self._outpost_network)) is None:
+      raise CodeTerraformError("No (powered) charging stations found")
+    # distance_error is only needed for simulated start points.
+    start_throttle = raise_if_none(self.fastest_viable_throttle(target=start_point))
+    route_waypoints = [RouteWaypoint(start_point, WaypointAction.RECHARGE, throttle=start_throttle)]
+
+    # Always reserve enough Wh to get from the scan point furthest away from a charger, to that charger, @ 5% throttle.
+    scan_points = list(scan_points)  # Just in case scan_points is an iterator.
+    max_meters_to_charge = max(math.dist(pt, closest_charging_station_coords(pt, self._outpost_network))
+                               for pt in scan_points)
+    worst_case_move_wh = self.move_cost_wh([0, 0], [max_meters_to_charge, 0], 0.05, distance_error=distance_error)
+    recharge_threshold_wh = max(self.battery.capacity() * 0.125, worst_case_move_wh)
+
+    # Convert scan_points to Waypoints; use full throttle, except on recharge detours.
+    available_wh = self.battery.capacity()
+    prev_point = start_point
+    for point in scan_points:
+      # Skip if there are no unscanned POIs in range.
+      if not (sonar_wh := self._scan_and_surveys_cost_wh(point, distance_error, unscanned_pois)):
+        debug(f"Skipping scan at {point}; no unscanned POIs in range.")
+        continue
+      move_wh = self.move_cost_wh(prev_point, point)
+      # Insert a detour to recharge if the next move would risk not having enough battery to get to a charge station.
+      if available_wh - move_wh - sonar_wh < recharge_threshold_wh:
+        charge_point = closest_charging_station_coords(point, self._outpost_network)
+        throttle = raise_if_none(
+          self.fastest_viable_throttle(charge_point, start=prev_point, available_wh=available_wh,
+                                       distance_error=distance_error),
+          CodeTerraformError(f"Route is not viable; not enough power (at any throttle) to get from {prev_point} to "
+                             f"recharge at {charge_point}"))
+        route_waypoints.append(RouteWaypoint(charge_point, WaypointAction.RECHARGE, throttle=throttle))
+        # Reset available battery to full and recalculate the movement cost coming from the charging station.
+        available_wh = self.battery.capacity()
+        move_wh = self.move_cost_wh(charge_point, point)
+      route_waypoints.append(RouteWaypoint(point, WaypointAction.SURVEY))
+      available_wh -= (move_wh + sonar_wh)
+      prev_point = point
+    # Return home after the last scan.
+    throttle = raise_if_none(
+      self.fastest_viable_throttle(home_base_point(), start=prev_point, available_wh=available_wh,
+                                   distance_error=distance_error),
+      CodeTerraformError(f"Route is not viable; not enough power (at any throttle) to get home from {prev_point}"))
+    route_waypoints.append(RouteWaypoint(home_base_point(), WaypointAction.RECHARGE, throttle=throttle))
+
+    return route_waypoints
+
+  def _prepare_for_main_loop(self) -> None:
+    pass  # No prep needed.
+
+  def _main_loop_iteration(self) -> bool:
+    if not (unscanned_pois := self.unscanned_pois()):
+      print("Survey aborted: no unscanned POIs.")
+      return False
+
+    points_to_scan = self._scan_points_as_hex_lattice(BoundingBox.from_points([poi.x, poi.y] for poi in unscanned_pois))
+    ordered_points_to_scan = self._spiral_out_clockwise_from_origin(points_to_scan)
+
+    route = self._make_route(ordered_points_to_scan, HIGH_PRECISION_PROXIMITY_RADIUS_METERS, unscanned_pois)
+    debug(f"Route:\n  {"\n  ".join(repr(waypoint) for waypoint in route)}")
+
+    # Run the route.
+    for waypoint in route:
+      debug(f"Current state: {self.battery.wh()} Wh available at {self.coords()}; next waypoint: {repr(waypoint)}")
+      self.goto(waypoint.coords, waypoint.throttle, high_precision=True)  # Blocks until arrival.
+      if waypoint.action is WaypointAction.SURVEY:
+        self.survey_sites_in_range()
+      elif waypoint.action is WaypointAction.RECHARGE:
+        self.recharge(disallow_movement=True)
+      else:
+        raise CodeTerraformError(f"Not supported: {waypoint.action!r}")
+
+    print("Survey of entire map completed.")
+    return False
