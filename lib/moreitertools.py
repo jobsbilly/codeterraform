@@ -1,5 +1,8 @@
 import itertools
+from typing import Iterable, Iterator, TypeVar
 
+
+_T = TypeVar("_T")
 
 _marker = object()
 
@@ -87,3 +90,7 @@ def minmax(iterable_or_value, *others, key=None, default=_marker):
           hi, hi_key = y, y_key
 
   return lo, hi
+
+def first_and_following(values: Iterable[_T]) -> tuple[_T, Iterator[_T]]:
+  it = iter(values)
+  return next(it), it
