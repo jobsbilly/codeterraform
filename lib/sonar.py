@@ -53,13 +53,14 @@ def populate_table_if_not_exists(notebook: NotebookWrapper, planet: Nocturna, jo
     return
   print(f"{UNRESOLVED_CONTACTS_KEY!r} table not found in Data Archive; populating now...")
 
+  all_research_ids = list(_RESEARCH_IDS)
   sites_by_point = {point_key(site): site for site in journal.surveyed_sites(planet.id)}
   table_json = {}
   fully_resolved_count = 0
   for poi in pois:
     key = point_key(poi)
     if not poi.scanned or not is_fully_resolved(sites_by_point.get(key, None)):
-      table_json[key] = {"sonar_tier": None, "missing_research_ids": None, "reason": None, "message": None}
+      table_json[key] = {"sonar_tier": None, "missing_research_ids": all_research_ids, "reason": None, "message": None}
     else:
       fully_resolved_count += 1
   raise_if_error(notebook.transaction(UNRESOLVED_CONTACTS_KEY, None, _tx_populate_table_if_not_exists(table_json)))
