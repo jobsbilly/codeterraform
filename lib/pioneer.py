@@ -289,14 +289,6 @@ class PioneerWrapper(wrapper.MachineWrapper):
   def has_sonar_module(self) -> bool:
     return any(m.module_id.startswith("sonar_") for m in self.modules() if m.module_id is not None)
 
-  def survey_sites_in_range(self) -> None:
-    if not self.has_sonar_module():
-      warn(f"Survey aborted: no sonar module found.")
-      return
-    for site in assign_or_raise(self.sonar.scan(), "sites"):
-      if not site.surveyed:
-        print(f"Surveyed new site: {assign_or_raise(self.sonar.survey(site))}")
-
   def recharge(self, *, disallow_movement: bool = False) -> None:
     if not self.current_station():
       if disallow_movement:
@@ -575,6 +567,11 @@ class SurveyorPioneerWrapper(PioneerWrapper):
 
     if not self.has_sonar_module():
       raise CodeTerraformError("Surveyors need a sonar module")
+
+  def survey_sites_in_range(self) -> None:
+    for site in assign_or_raise(self.sonar.scan(), "sites"):
+      if not site.surveyed:
+        print(f"Surveyed new site: {assign_or_raise(self.sonar.survey(site))}")
 
   def unscanned_pois(self) -> list[PointOfInterest]:
     return [poi for poi in self._planet.points_of_interest() if not poi.scanned]
