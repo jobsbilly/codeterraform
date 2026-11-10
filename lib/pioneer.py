@@ -154,12 +154,20 @@ class RouteWaypoint:
 
 
 class PioneerWrapper(wrapper.MachineWrapper):
-  def __init__(self, value: Pioneer, clock: Clock, outpost_network: OutpostNetworkComponent, **kwargs):
-    required = itertools.chain((clock, outpost_network), kwargs.pop("required", ()))
+  def __init__(
+      self,
+      value: Pioneer,
+      clock: Clock,
+      outpost_network: OutpostNetworkComponent,
+      notebook: notebooklib.NotebookWrapper,
+      **kwargs,
+  ):
+    required = itertools.chain((clock, outpost_network, notebook), kwargs.pop("required", ()))
     super().__init__(value, required=required)
     self._value: Pioneer
     self._clock = clock
     self._outpost_network = outpost_network
+    self._notebook = notebook
 
   # TODO: move cargo-related functions into a new CargoWrapper class.
   def space_for(self, item_id: str) -> int:
@@ -351,12 +359,11 @@ class CourierPioneerWrapper(PioneerWrapper):
       value: Pioneer,
       clock: Clock,
       outpost_network: OutpostNetworkComponent,
-      comms: signalbus.CommsWrapper,
       notebook: notebooklib.NotebookWrapper,
+      comms: signalbus.CommsWrapper,
   ):
-    super().__init__(value, clock, outpost_network, required=(comms, notebook))
+    super().__init__(value, clock, outpost_network, notebook, required=(comms,))
     self._comms = comms.register(CourierWorkOrder.Channel.REQUESTS)
-    self._notebook = notebook
 
     if not self.cargo.capacity():
       raise CodeTerraformError("Couriers must be able to carry cargo")
@@ -555,8 +562,15 @@ class CourierPioneerWrapper(PioneerWrapper):
 
 
 class SurveyorPioneerWrapper(PioneerWrapper):
-  def __init__(self, value: Pioneer, clock: Clock, outpost_network: OutpostNetworkComponent, planet: Nocturna):
-    super().__init__(value, clock, outpost_network, required=(planet,))
+  def __init__(
+      self,
+      value: Pioneer,
+      clock: Clock,
+      outpost_network: OutpostNetworkComponent,
+      notebook: notebooklib.NotebookWrapper,
+      planet: Nocturna,
+  ):
+    super().__init__(value, clock, outpost_network, notebook, required=(planet,))
     self._planet = planet
 
     if not self.has_sonar_module():
