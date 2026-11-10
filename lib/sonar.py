@@ -39,7 +39,7 @@ def _tx_populate_table_if_not_exists(value_to_populate: JsonValue) -> Callable[[
     return value_to_populate
   return fn
 
-def populate_table_if_not_exists(planet: Nocturna, journal: Journal, notebook: NotebookWrapper) -> None:
+def populate_table_if_not_exists(notebook: NotebookWrapper, planet: Nocturna, journal: Journal) -> None:
   # TODO: add support for populating new-to-the-game PointOfInterests.
   pois = planet.points_of_interest()
   # noinspection unsupported-operator
@@ -127,7 +127,7 @@ def _update_unresolved_contacts(
     return table
   raise_if_error(notebook.transaction(UNRESOLVED_CONTACTS_KEY, None, tx_fn))
 
-def scan_and_survey(sonar: SonarModule, research: Research, notebook: NotebookWrapper) -> None:
+def scan_and_survey(sonar: SonarModule, notebook: NotebookWrapper, research: Research) -> None:
   if (scan_result := raise_if_error(sonar.scan(), ignore=_BLOCKED_CONTACT_REASONS)).status in _BLOCKED_CONTACT_REASONS:
     debug(f"Scan result was {scan_result.status!r} with message: {scan_result.message!r}")
 

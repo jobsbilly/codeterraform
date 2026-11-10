@@ -11,6 +11,7 @@ from error import CodeTerraformError, raise_if_none
 import moreitertools
 import notebook as notebooklib
 import signalbus
+import sonar
 from status import assign_or_raise, raise_if_error
 from workorders import CourierWorkOrder
 import wrapper
@@ -561,17 +562,19 @@ class SurveyorPioneerWrapper(PioneerWrapper):
       outpost_network: OutpostNetworkComponent,
       notebook: notebooklib.NotebookWrapper,
       planet: Nocturna,
+      journal: Journal,
+      research: Research,
   ):
-    super().__init__(value, clock, outpost_network, notebook, required=(planet,))
+    super().__init__(value, clock, outpost_network, notebook, required=(planet, journal, research))
     self._planet = planet
+    self._journal = journal
+    self._research = research
 
     if not self.has_sonar_module():
       raise CodeTerraformError("Surveyors need a sonar module")
 
   def survey_sites_in_range(self) -> None:
-    for site in assign_or_raise(self.sonar.scan(), "sites"):
-      if not site.surveyed:
-        print(f"Surveyed new site: {assign_or_raise(self.sonar.survey(site))}")
+    sonar.scan_and_survey(self.sonar, self._notebook, self._research)
 
   def unscanned_pois(self) -> list[PointOfInterest]:
     return [poi for poi in self._planet.points_of_interest() if not poi.scanned]
@@ -670,7 +673,7 @@ class SurveyorPioneerWrapper(PioneerWrapper):
     return route_waypoints
 
   def _prepare_for_main_loop(self) -> None:
-    pass  # No prep needed.
+    sonar.populate_table_if_not_exists(self._notebook, self._planet, self._journal)
 
   def _main_loop_iteration(self) -> bool:
     if not (unscanned_pois := self.unscanned_pois()):
