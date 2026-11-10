@@ -60,7 +60,13 @@ def populate_table_if_not_exists(notebook: NotebookWrapper, planet: Nocturna, jo
   for poi in pois:
     key = point_key(poi)
     if not poi.scanned or not is_fully_resolved(sites_by_point.get(key, None)):
-      table_json[key] = {"sonar_tier": None, "missing_research_ids": all_research_ids, "reason": None, "message": None}
+      table_json[key] = {
+        "sonar_tier": None,
+        "missing_research_ids": all_research_ids,
+        "reason": None,
+        "message": None,
+        "kind": poi.kind,
+      }
     else:
       fully_resolved_count += 1
   raise_if_error(notebook.transaction(UNRESOLVED_CONTACTS_KEY, None, _tx_populate_table_if_not_exists(table_json)))
@@ -69,12 +75,13 @@ def populate_table_if_not_exists(notebook: NotebookWrapper, planet: Nocturna, jo
 def missing_research_ids(research: Research) -> list[str]:
   return [_id for _id in _RESEARCH_IDS if not research.is_unlocked(_id)]
 
-def _make_unresolved_contact(tier: str, missing_research: list[str], reason: str, message: str) -> JsonValue:
+def _make_unresolved_contact(tier: str, missing_research: list[str], reason: str, message: str, kind: str) -> JsonValue:
   return {
     "sonar_tier": tier,
     "missing_research_ids": missing_research,
     "reason": reason,
     "message": message,
+    "kind": kind,
   }
 
 def _from_unresolved_survey(site: Site, tier: str, missing_research: list[str]) -> JsonValue:
@@ -88,6 +95,7 @@ def _from_unresolved_survey(site: Site, tier: str, missing_research: list[str]) 
         reason="research_required",
         message=(f"Inert sites require both {_PETROLEUM_SURVEY_ID!r} and {_ADVANCED_OIL_EXTRACTION_ID!r} to reveal any "
                  "deep oil wells."),
+        kind=site_kind,
       )
     if tier != "seismic":
       return _make_unresolved_contact(
@@ -95,6 +103,7 @@ def _from_unresolved_survey(site: Site, tier: str, missing_research: list[str]) 
         missing_research=missing_research,
         reason="tier_too_low",
         message="Inert sites require Seismic-tier sonar to reveal any deep oil wells.",
+        kind=site_kind,
       )
   if site_kind in ("thermal", "exotic") and tier not in ("deep", "seismic"):
     return _make_unresolved_contact(
@@ -102,6 +111,7 @@ def _from_unresolved_survey(site: Site, tier: str, missing_research: list[str]) 
       missing_research=missing_research,
       reason="tier_too_low",
       message=f"{site_kind.capitalize()} sites require Deep- or Seismic-tier sonar to fully resolve.",
+      kind=site_kind,
     )
   raise CodeTerraformError(f"Unable to determine why surveyed site is unresolved: {site!r}")
 
@@ -113,8 +123,10 @@ def _update_unresolved_contacts(
     newly_resolved_point_keys: Iterable[str],
     notebook: NotebookWrapper,
 ) -> None:
-  unresolved_contacts_by_point = {point_key(b): _make_unresolved_contact(tier, missing_research, b.reason, b.message)
-                                  for b in blocked}
+  unresolved_contacts_by_point = {
+    point_key(b): _make_unresolved_contact(tier, missing_research, b.reason, b.message, kind="unknown")
+    for b in blocked
+  }
   for key, site in unresolved_surveys_by_point_key.items():
     unresolved_contacts_by_point[key] = _from_unresolved_survey(site, tier, missing_research)
   def tx_fn(table: dict[str, JsonValue]) -> dict[str, JsonValue]:
