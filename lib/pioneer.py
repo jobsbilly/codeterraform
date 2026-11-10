@@ -576,9 +576,6 @@ class SurveyorPioneerWrapper(PioneerWrapper):
   def survey_sites_in_range(self) -> None:
     sonar.scan_and_survey(self.sonar, self._notebook, self._research)
 
-  def unscanned_pois(self) -> list[PointOfInterest]:
-    return [poi for poi in self._planet.points_of_interest() if not poi.scanned]
-
   def _scan_points_as_hex_lattice(self, bounds: BoundingBox) -> list[list[float]]:
     full_width = bounds.width()
     full_height = bounds.height()
@@ -608,13 +605,13 @@ class SurveyorPioneerWrapper(PioneerWrapper):
       self,
       scan_point: list[float],
       distance_error: float,
-      unscanned_pois: Iterable[PointOfInterest],
+      unresolved_points: Iterable[list[float]],
   ) -> float:
     cost_wh = WH_COST_BY_SONAR_TIER[self.sonar.tier()]
     sonar_range = self.sonar.range()
     surveys_cost_wh = sum(cost_wh
-                          for poi in unscanned_pois
-                          if math.dist(scan_point, (poi.x, poi.y)) - distance_error < sonar_range)
+                          for contact_point in unresolved_points
+                          if math.dist(scan_point, contact_point) - distance_error < sonar_range)
     if surveys_cost_wh == 0:
       return 0
     return cost_wh + surveys_cost_wh
@@ -623,7 +620,7 @@ class SurveyorPioneerWrapper(PioneerWrapper):
       self,
       scan_points: Iterable[list[float]],
       distance_error: float,
-      unscanned_pois: list[PointOfInterest],
+      unresolved_points: Iterable[list[float]],
   ) -> list[RouteWaypoint]:
     # Start by recharging at the nearest station.
     if (start_point := closest_charging_station_coords(self.coords(), self._outpost_network)) is None:
@@ -643,8 +640,8 @@ class SurveyorPioneerWrapper(PioneerWrapper):
     available_wh = self.battery.capacity()
     prev_point = start_point
     for point in scan_points:
-      # Skip if there are no unscanned POIs in range.
-      if not (sonar_wh := self._scan_and_surveys_cost_wh(point, distance_error, unscanned_pois)):
+      # Skip if there are no unresolved POIs in range.
+      if not (sonar_wh := self._scan_and_surveys_cost_wh(point, distance_error, unresolved_points)):
         debug(f"Skipping scan at {point}; no unscanned POIs in range.")
         continue
       move_wh = self.move_cost_wh(prev_point, point)
@@ -676,14 +673,14 @@ class SurveyorPioneerWrapper(PioneerWrapper):
     sonar.populate_table_if_not_exists(self._notebook, self._planet, self._journal)
 
   def _main_loop_iteration(self) -> bool:
-    if not (unscanned_pois := self.unscanned_pois()):
-      print("Survey aborted: no unscanned POIs.")
+    if not (unresolved_points := sonar.unresolved_contact_points(self._notebook)):
+      print("Survey aborted: all POIs are fully resolved.")
       return False
 
-    points_to_scan = self._scan_points_as_hex_lattice(BoundingBox.from_points([poi.x, poi.y] for poi in unscanned_pois))
+    points_to_scan = self._scan_points_as_hex_lattice(BoundingBox.from_points(unresolved_points))
     ordered_points_to_scan = self._spiral_out_clockwise_from_origin(points_to_scan)
 
-    route = self._make_route(ordered_points_to_scan, HIGH_PRECISION_PROXIMITY_RADIUS_METERS, unscanned_pois)
+    route = self._make_route(ordered_points_to_scan, HIGH_PRECISION_PROXIMITY_RADIUS_METERS, unresolved_points)
     debug(f"Route:\n  {"\n  ".join(repr(waypoint) for waypoint in route)}")
 
     # Run the route.

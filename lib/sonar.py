@@ -25,6 +25,9 @@ _RESEARCH_IDS = {
 def point_key(poi_or_site: PointOfInterest | Site | BlockedContact) -> str:
   return repr([poi_or_site.x, poi_or_site.y])
 
+def from_point_key(key: str) -> list[float]:
+  return list(map(int, key.strip("[]").split(",")))
+
 def is_fully_resolved(site: Site | None) -> bool:
   # noinspection bad-argument-type,calling-non-callable
   return (site is not None
@@ -127,11 +130,17 @@ def _update_unresolved_contacts(
     return table
   raise_if_error(notebook.transaction(UNRESOLVED_CONTACTS_KEY, None, tx_fn))
 
+def unresolved_contact_points(notebook: NotebookWrapper) -> list[list[float]]:
+  return list(map(from_point_key, unresolved_contacts_by_point_str(notebook)))
+
+def unresolved_contacts_by_point_str(notebook: NotebookWrapper) -> dict[str, JsonValue]:
+  return raise_if_none(notebook.get(UNRESOLVED_CONTACTS_KEY))
+
 def scan_and_survey(sonar: SonarModule, notebook: NotebookWrapper, research: Research) -> None:
   if (scan_result := raise_if_error(sonar.scan(), ignore=_BLOCKED_CONTACT_REASONS)).status in _BLOCKED_CONTACT_REASONS:
     debug(f"Scan result was {scan_result.status!r} with message: {scan_result.message!r}")
 
-  existing_unresolved_contacts_by_point = raise_if_none(notebook.get(UNRESOLVED_CONTACTS_KEY))
+  existing_unresolved_contacts_by_point = unresolved_contacts_by_point_str(notebook)
 
   newly_resolved_point_keys = []
   unresolved_surveys_by_point_key = {}
