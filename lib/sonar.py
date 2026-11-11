@@ -1,5 +1,6 @@
 from __builtins__ import *  # Just to make PyCharm... less grumpy; it's never happy.
 
+import enum
 from typing import Callable, Iterable
 
 from error import CodeTerraformError, raise_if_none
@@ -10,7 +11,7 @@ from status import assign_or_raise, raise_if_error
 UNRESOLVED_CONTACTS_KEY = "unresolved_sonar_contacts_by_point"
 
 _TOTAL_POI_COUNT = 115
-_BLOCKED_CONTACT_REASONS = {"too_hard", "tier_too_low", "research_required", "wrong_scanner"}
+
 _PETROLEUM_SURVEY_ID = "research_petroleum_survey"
 _ADVANCED_OIL_EXTRACTION_ID = "research_advanced_oil_extraction"
 _RESEARCH_IDS = {
@@ -22,6 +23,31 @@ _RESEARCH_IDS = {
   "research_deep_exotics",
 }
 
+
+class _SonarTier(enum.StrEnum):
+  BASIC = "basic"
+  WIDE = "wide"
+  DEEP = "deep"
+  SEISMIC = "seismic"
+
+
+class _Reason(enum.StrEnum):
+  WRONG_SCANNER = "wrong_scanner"
+  TOO_HARD = "too_hard"
+  TIER_TOO_LOW = "tier_too_low"
+  RESEARCH_REQUIRED = "research_required"
+
+
+class SiteKind(enum.StrEnum):
+  UNKNOWN = "unknown"
+  MINERAL = "mineral"
+  THERMAL = "thermal"
+  WATER = "water"
+  OIL = "oil"
+  EXOTIC = "exotic"
+  INERT = "inert"
+
+
 def point_key(poi_or_site: PointOfInterest | Site | BlockedContact) -> str:
   return repr([poi_or_site.x, poi_or_site.y])
 
@@ -32,7 +58,7 @@ def is_fully_resolved(site: Site | None) -> bool:
   # noinspection bad-argument-type,calling-non-callable
   return (site is not None
           and getattr(site, "seismic_status", "N/A") in ("dry", "N/A")  # "potential" means a survey is still needed.
-          and getattr(site, "survey_level", lambda: "N/A")() in ("deep", "seismic", "N/A"))
+          and getattr(site, "survey_level", lambda: "N/A")() in (_SonarTier.DEEP, _SonarTier.SEISMIC, "N/A"))
 
 def _tx_populate_table_if_not_exists(value_to_populate: JsonValue) -> Callable[[JsonValue], JsonValue]:
   def fn(existing_value: JsonValue) -> JsonValue:
@@ -85,31 +111,31 @@ def _make_unresolved_contact(tier: str, missing_research: list[str], reason: str
   }
 
 def _from_unresolved_survey(site: Site, tier: str, missing_research: list[str]) -> JsonValue:
-  site_kind = site.kind()
+  site_kind: str = site.kind()
   # I *think* all other cases should just show up in the scan's blocked sites (and thus not flow through this function).
-  if site_kind == "inert":
+  if site_kind == SiteKind.INERT:
     if any(_id in missing_research for _id in (_PETROLEUM_SURVEY_ID, _ADVANCED_OIL_EXTRACTION_ID)):
       return _make_unresolved_contact(
         tier=tier,
         missing_research=missing_research,
-        reason="research_required",
+        reason=_Reason.RESEARCH_REQUIRED,
         message=(f"Inert sites require both {_PETROLEUM_SURVEY_ID!r} and {_ADVANCED_OIL_EXTRACTION_ID!r} to reveal any "
                  "deep oil wells."),
         kind=site_kind,
       )
-    if tier != "seismic":
+    if tier != _SonarTier.SEISMIC:
       return _make_unresolved_contact(
         tier=tier,
         missing_research=missing_research,
-        reason="tier_too_low",
+        reason=_Reason.TIER_TOO_LOW,
         message="Inert sites require Seismic-tier sonar to reveal any deep oil wells.",
         kind=site_kind,
       )
-  if site_kind in ("thermal", "exotic") and tier not in ("deep", "seismic"):
+  if site_kind in (SiteKind.THERMAL, SiteKind.EXOTIC) and tier not in (_SonarTier.DEEP, _SonarTier.SEISMIC):
     return _make_unresolved_contact(
       tier=tier,
       missing_research=missing_research,
-      reason="tier_too_low",
+      reason=_Reason.TIER_TOO_LOW,
       message=f"{site_kind.capitalize()} sites require Deep- or Seismic-tier sonar to fully resolve.",
       kind=site_kind,
     )
@@ -124,7 +150,7 @@ def _update_unresolved_contacts(
     notebook: NotebookWrapper,
 ) -> None:
   unresolved_contacts_by_point = {
-    point_key(b): _make_unresolved_contact(tier, missing_research, b.reason, b.message, kind="unknown")
+    point_key(b): _make_unresolved_contact(tier, missing_research, b.reason, b.message, SiteKind.UNKNOWN)
     for b in blocked
   }
   for key, site in unresolved_surveys_by_point_key.items():
@@ -150,7 +176,7 @@ def unresolved_contacts_by_point_str(notebook: NotebookWrapper) -> dict[str, Jso
   return raise_if_none(notebook.get(UNRESOLVED_CONTACTS_KEY))
 
 def scan_and_survey(sonar: SonarModule, notebook: NotebookWrapper, research: Research) -> None:
-  if (scan_result := raise_if_error(sonar.scan(), ignore=_BLOCKED_CONTACT_REASONS)).status in _BLOCKED_CONTACT_REASONS:
+  if (scan_result := raise_if_error(sonar.scan(), ignore=_Reason)).status in _Reason:
     debug(f"Scan result was {scan_result.status!r} with message: {scan_result.message!r}")
 
   existing_unresolved_contacts_by_point = unresolved_contacts_by_point_str(notebook)
