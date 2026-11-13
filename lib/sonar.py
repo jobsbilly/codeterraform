@@ -31,6 +31,7 @@ class SonarTier(enum.StrEnum):
 
 
 class _Reason(enum.StrEnum):
+  NEVER_SCANNED = "never_scanned"
   WRONG_SCANNER = "wrong_scanner"
   TOO_HARD = "too_hard"
   TIER_TOO_LOW = "tier_too_low"
@@ -101,8 +102,8 @@ class UnresolvedContact:
       kind=kind,
       tier=None,  # type: ignore[bad-argument-type]
       locked_research=locked_research,
-      reason=None,  # type: ignore[bad-argument-type]
-      message=None,  # type: ignore[bad-argument-type]
+      reason=_Reason.NEVER_SCANNED,
+      message="No attempts to scan have been recorded."
     )
 
   @classmethod
