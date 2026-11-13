@@ -9,7 +9,7 @@ from notebook import NotebookWrapper
 from status import assign_or_raise, raise_if_error
 
 
-UNRESOLVED_CONTACTS_KEY = "unresolved_sonar_contact_by_point"
+UNRESOLVED_CONTACTS_KEY = "unresolved_contact_by_point_str"
 
 _TOTAL_POI_COUNT = 115
 
