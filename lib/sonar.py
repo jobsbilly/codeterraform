@@ -138,13 +138,15 @@ class UnresolvedContact:
       locked_research: list[str],
       last_locked_research: Iterable[str],
   ) -> Self:
+    message = blocked.message
+    if blocked.reason != _Reason.WRONG_SCANNER:
+      message = _annotate(message, _required_locked_research(SiteKind.UNKNOWN, locked_research, last_locked_research))
     return cls(
       kind=SiteKind.UNKNOWN,
       tier=tier,
       locked_research=locked_research,
       reason=blocked.reason,
-      message=_annotate(blocked.message,
-                        _required_locked_research(SiteKind.UNKNOWN, locked_research, last_locked_research)),
+      message=message,
     )
 
   @classmethod
