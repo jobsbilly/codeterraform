@@ -29,6 +29,15 @@ class SonarTier(enum.StrEnum):
   DEEP = "deep"
   SEISMIC = "seismic"
 
+  def is_better_than(self, other: str) -> bool:
+    if other in (SonarTier.SEISMIC, self):
+      return False
+    # Whichever is encountered first is lower-tier (ties are handled above).
+    for member in SonarTier:
+      if member in (self, other):
+        return member == other
+    raise RuntimeError("Impossible: neither self nor other was a SonarTier member (both should be, always)")
+
 
 class _Reason(enum.StrEnum):
   NEVER_SCANNED = "never_scanned"
@@ -91,6 +100,21 @@ class UnresolvedContact:
 
   def to_json(self) -> dict[str, JsonValue]:
     return dataclasses.asdict(self)
+
+  def should_scan(self, current_tier: SonarTier, current_locked_research: set[_ResearchId]) -> bool:
+    if self.reason == _Reason.NEVER_SCANNED:
+      return True
+    if self.reason == _Reason.WRONG_SCANNER:
+      return False  # Needs bio scanner.
+    if self.reason == _Reason.RESEARCH_REQUIRED:
+      # Scan if any required research from the last scan has been unlocked since then.
+      if not (last_scan_required_research := _required_research(self.kind, self.locked_research)):
+        raise CodeTerraformError(f"Research blocked this site on the last scan, but no required research found")
+      unlocked_since_last_scan = set(self.locked_research).difference(current_locked_research)
+      return not unlocked_since_last_scan.isdisjoint(last_scan_required_research)
+    if self.reason in (_Reason.TIER_TOO_LOW, _Reason.TOO_HARD):
+      return current_tier.is_better_than(self.tier)
+    raise CodeTerraformError(f"Unrecognized UnresolvedContact.reason={self.reason!r}")
 
   @classmethod
   def from_json(cls, value: dict[str, JsonValue]) -> Self:
@@ -211,18 +235,18 @@ def _update_unresolved_contacts(
     return table
   raise_if_error(notebook.transaction(UNRESOLVED_CONTACTS_KEY, None, tx_fn))
 
-def unresolved_contact_points(notebook: NotebookWrapper) -> list[list[float]]:
-  return list(map(from_point_str, raise_if_none(notebook.get(UNRESOLVED_CONTACTS_KEY))))
-
 def get_unresolved_contact_by_point_str(notebook: NotebookWrapper) -> dict[str, UnresolvedContact]:
   return {k: UnresolvedContact.from_json(v) for k, v in  raise_if_none(notebook.get(UNRESOLVED_CONTACTS_KEY)).items()}
+
+def _get_locked(research: Research) -> list[str]:
+  return [_id.value for _id in _ResearchId if not research.is_unlocked(_id.value)]
 
 def scan_and_survey(sonar: SonarModule, notebook: NotebookWrapper, research: Research) -> None:
   if (scan_result := raise_if_error(sonar.scan(), ignore=_Reason)).status in _Reason:
     debug(f"Scan result was {scan_result.status!r} with message: {scan_result.message!r}")
 
   tier = sonar.tier()
-  locked_research = [_id.value for _id in _ResearchId if not research.is_unlocked(_id.value)]
+  locked_research = _get_locked(research)
   last_locked_research_by_point_str = {k: v.locked_research
                                        for k, v in get_unresolved_contact_by_point_str(notebook).items()}
   unresolved_contact_by_point_str = {}
@@ -247,3 +271,15 @@ def scan_and_survey(sonar: SonarModule, notebook: NotebookWrapper, research: Res
   if newly_resolved_point_strs:
     count = len(newly_resolved_point_strs)
     print(f"Fully resolved {count} site{"s" if count > 1 else ""}.")
+
+def resolvable_contact_points(notebook: NotebookWrapper, sonar_tier: str, research: Research) -> list[list[float]]:
+  tier = SonarTier(sonar_tier)
+  locked_research = {_ResearchId(_id) for _id in _get_locked(research)}
+  return [from_point_str(point_str)
+          for point_str, contact in get_unresolved_contact_by_point_str(notebook).items()
+          if contact.should_scan(tier, locked_research)]
+
+def all_contacts_resolved(notebook: NotebookWrapper) -> bool:
+  # TODO: Add Bio-scanner support.
+  return not any(contact.reason != _Reason.WRONG_SCANNER
+                 for contact in get_unresolved_contact_by_point_str(notebook).values())

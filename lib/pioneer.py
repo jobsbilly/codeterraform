@@ -555,6 +555,8 @@ class CourierPioneerWrapper(PioneerWrapper):
 
 
 class SurveyorPioneerWrapper(PioneerWrapper):
+  _SLEEP_SECONDS = 5 * 60
+
   def __init__(
       self,
       value: Pioneer,
@@ -673,14 +675,18 @@ class SurveyorPioneerWrapper(PioneerWrapper):
     sonar.populate_table_if_not_exists(self._notebook, self._planet, self._journal)
 
   def _main_loop_iteration(self) -> bool:
-    if not (unresolved_points := sonar.unresolved_contact_points(self._notebook)):
-      print("Survey aborted: all POIs are fully resolved.")
-      return False
+    resolvable_contact_points = sonar.resolvable_contact_points(self._notebook, self.sonar.tier(), self._research)
+    if not resolvable_contact_points:
+      if sonar.all_contacts_resolved(self._notebook):
+        print("All Pioneer-scannable POIs are fully resolved.")
+        return False
+      sleep(self._SLEEP_SECONDS)
+      return True
 
-    points_to_scan = self._scan_points_as_hex_lattice(BoundingBox.from_points(unresolved_points))
+    points_to_scan = self._scan_points_as_hex_lattice(BoundingBox.from_points(resolvable_contact_points))
     ordered_points_to_scan = self._spiral_out_clockwise_from_origin(points_to_scan)
 
-    route = self._make_route(ordered_points_to_scan, HIGH_PRECISION_PROXIMITY_RADIUS_METERS, unresolved_points)
+    route = self._make_route(ordered_points_to_scan, HIGH_PRECISION_PROXIMITY_RADIUS_METERS, resolvable_contact_points)
     debug(f"Route:\n  {"\n  ".join(repr(waypoint) for waypoint in route)}")
 
     # Run the route.
@@ -695,4 +701,4 @@ class SurveyorPioneerWrapper(PioneerWrapper):
         raise CodeTerraformError(f"Not supported: {waypoint.action!r}")
 
     print("Survey of entire map completed.")
-    return False
+    return True
