@@ -572,6 +572,8 @@ class SurveyorPioneerWrapper(PioneerWrapper):
     self._journal = journal
     self._research = research
 
+    self._last_action_was_sleep = False
+
     if not self.has_sonar_module():
       raise CodeTerraformError("Surveyors need a sonar module")
 
@@ -680,8 +682,13 @@ class SurveyorPioneerWrapper(PioneerWrapper):
       if sonar.all_contacts_resolved(self._notebook):
         print("All Pioneer-scannable POIs are fully resolved.")
         return False
+      if not self._last_action_was_sleep:
+        debug(f"No contacts are resolvable with the current loaddout/research. Will check every {self._SLEEP_SECONDS}s "
+              f"until something changes.")
       sleep(self._SLEEP_SECONDS)
+      self._last_action_was_sleep = True
       return True
+    self._last_action_was_sleep = False
 
     points_to_scan = self._scan_points_as_hex_lattice(BoundingBox.from_points(resolvable_contact_points))
     ordered_points_to_scan = self._spiral_out_clockwise_from_origin(points_to_scan)
