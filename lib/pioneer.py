@@ -11,6 +11,7 @@ from error import CodeTerraformError, raise_if_none
 import moreitertools
 import notebook as notebooklib
 import signalbus
+import sonar
 from status import assign_or_raise, raise_if_error
 from workorders import CourierWorkOrder
 import wrapper
@@ -154,12 +155,20 @@ class RouteWaypoint:
 
 
 class PioneerWrapper(wrapper.MachineWrapper):
-  def __init__(self, value: Pioneer, clock: Clock, outpost_network: OutpostNetworkComponent, **kwargs):
-    required = itertools.chain((clock, outpost_network), kwargs.pop("required", ()))
+  def __init__(
+      self,
+      value: Pioneer,
+      clock: Clock,
+      outpost_network: OutpostNetworkComponent,
+      notebook: notebooklib.NotebookWrapper,
+      **kwargs,
+  ):
+    required = itertools.chain((clock, outpost_network, notebook), kwargs.pop("required", ()))
     super().__init__(value, required=required)
     self._value: Pioneer
     self._clock = clock
     self._outpost_network = outpost_network
+    self._notebook = notebook
 
   # TODO: move cargo-related functions into a new CargoWrapper class.
   def space_for(self, item_id: str) -> int:
@@ -281,14 +290,6 @@ class PioneerWrapper(wrapper.MachineWrapper):
   def has_sonar_module(self) -> bool:
     return any(m.module_id.startswith("sonar_") for m in self.modules() if m.module_id is not None)
 
-  def survey_sites_in_range(self) -> None:
-    if not self.has_sonar_module():
-      warn(f"Survey aborted: no sonar module found.")
-      return
-    for site in assign_or_raise(self.sonar.scan(), "sites"):
-      if not site.surveyed:
-        print(f"Surveyed new site: {assign_or_raise(self.sonar.survey(site))}")
-
   def recharge(self, *, disallow_movement: bool = False) -> None:
     if not self.current_station():
       if disallow_movement:
@@ -351,12 +352,11 @@ class CourierPioneerWrapper(PioneerWrapper):
       value: Pioneer,
       clock: Clock,
       outpost_network: OutpostNetworkComponent,
-      comms: signalbus.CommsWrapper,
       notebook: notebooklib.NotebookWrapper,
+      comms: signalbus.CommsWrapper,
   ):
-    super().__init__(value, clock, outpost_network, required=(comms, notebook))
+    super().__init__(value, clock, outpost_network, notebook, required=(comms,))
     self._comms = comms.register(CourierWorkOrder.Channel.REQUESTS)
-    self._notebook = notebook
 
     if not self.cargo.capacity():
       raise CodeTerraformError("Couriers must be able to carry cargo")
@@ -555,15 +555,30 @@ class CourierPioneerWrapper(PioneerWrapper):
 
 
 class SurveyorPioneerWrapper(PioneerWrapper):
-  def __init__(self, value: Pioneer, clock: Clock, outpost_network: OutpostNetworkComponent, planet: Nocturna):
-    super().__init__(value, clock, outpost_network, required=(planet,))
+  _SLEEP_SECONDS = 5 * 60
+
+  def __init__(
+      self,
+      value: Pioneer,
+      clock: Clock,
+      outpost_network: OutpostNetworkComponent,
+      notebook: notebooklib.NotebookWrapper,
+      planet: Nocturna,
+      journal: Journal,
+      research: Research,
+  ):
+    super().__init__(value, clock, outpost_network, notebook, required=(planet, journal, research))
     self._planet = planet
+    self._journal = journal
+    self._research = research
+
+    self._last_action_was_sleep = False
 
     if not self.has_sonar_module():
       raise CodeTerraformError("Surveyors need a sonar module")
 
-  def unscanned_pois(self) -> list[PointOfInterest]:
-    return [poi for poi in self._planet.points_of_interest() if not poi.scanned]
+  def survey_sites_in_range(self) -> None:
+    sonar.scan_and_survey(self.sonar, self._notebook, self._research)
 
   def _scan_points_as_hex_lattice(self, bounds: BoundingBox) -> list[list[float]]:
     full_width = bounds.width()
@@ -594,13 +609,13 @@ class SurveyorPioneerWrapper(PioneerWrapper):
       self,
       scan_point: list[float],
       distance_error: float,
-      unscanned_pois: Iterable[PointOfInterest],
+      unresolved_points: Iterable[list[float]],
   ) -> float:
     cost_wh = WH_COST_BY_SONAR_TIER[self.sonar.tier()]
     sonar_range = self.sonar.range()
     surveys_cost_wh = sum(cost_wh
-                          for poi in unscanned_pois
-                          if math.dist(scan_point, (poi.x, poi.y)) - distance_error < sonar_range)
+                          for contact_point in unresolved_points
+                          if math.dist(scan_point, contact_point) - distance_error < sonar_range)
     if surveys_cost_wh == 0:
       return 0
     return cost_wh + surveys_cost_wh
@@ -609,7 +624,7 @@ class SurveyorPioneerWrapper(PioneerWrapper):
       self,
       scan_points: Iterable[list[float]],
       distance_error: float,
-      unscanned_pois: list[PointOfInterest],
+      unresolved_points: Iterable[list[float]],
   ) -> list[RouteWaypoint]:
     # Start by recharging at the nearest station.
     if (start_point := closest_charging_station_coords(self.coords(), self._outpost_network)) is None:
@@ -629,8 +644,8 @@ class SurveyorPioneerWrapper(PioneerWrapper):
     available_wh = self.battery.capacity()
     prev_point = start_point
     for point in scan_points:
-      # Skip if there are no unscanned POIs in range.
-      if not (sonar_wh := self._scan_and_surveys_cost_wh(point, distance_error, unscanned_pois)):
+      # Skip if there are no unresolved POIs in range.
+      if not (sonar_wh := self._scan_and_surveys_cost_wh(point, distance_error, unresolved_points)):
         debug(f"Skipping scan at {point}; no unscanned POIs in range.")
         continue
       move_wh = self.move_cost_wh(prev_point, point)
@@ -659,17 +674,26 @@ class SurveyorPioneerWrapper(PioneerWrapper):
     return route_waypoints
 
   def _prepare_for_main_loop(self) -> None:
-    pass  # No prep needed.
+    sonar.populate_table_if_not_exists(self._notebook, self._planet, self._journal)
 
   def _main_loop_iteration(self) -> bool:
-    if not (unscanned_pois := self.unscanned_pois()):
-      print("Survey aborted: no unscanned POIs.")
-      return False
+    resolvable_contact_points = sonar.resolvable_contact_points(self._notebook, self.sonar.tier(), self._research)
+    if not resolvable_contact_points:
+      if sonar.all_contacts_resolved(self._notebook):
+        print("All Pioneer-scannable POIs are fully resolved.")
+        return False
+      if not self._last_action_was_sleep:
+        debug(f"No contacts are resolvable with the current loaddout/research. Will check every {self._SLEEP_SECONDS}s "
+              f"until something changes.")
+      sleep(self._SLEEP_SECONDS)
+      self._last_action_was_sleep = True
+      return True
+    self._last_action_was_sleep = False
 
-    points_to_scan = self._scan_points_as_hex_lattice(BoundingBox.from_points([poi.x, poi.y] for poi in unscanned_pois))
+    points_to_scan = self._scan_points_as_hex_lattice(BoundingBox.from_points(resolvable_contact_points))
     ordered_points_to_scan = self._spiral_out_clockwise_from_origin(points_to_scan)
 
-    route = self._make_route(ordered_points_to_scan, HIGH_PRECISION_PROXIMITY_RADIUS_METERS, unscanned_pois)
+    route = self._make_route(ordered_points_to_scan, HIGH_PRECISION_PROXIMITY_RADIUS_METERS, resolvable_contact_points)
     debug(f"Route:\n  {"\n  ".join(repr(waypoint) for waypoint in route)}")
 
     # Run the route.
@@ -684,4 +708,4 @@ class SurveyorPioneerWrapper(PioneerWrapper):
         raise CodeTerraformError(f"Not supported: {waypoint.action!r}")
 
     print("Survey of entire map completed.")
-    return False
+    return True

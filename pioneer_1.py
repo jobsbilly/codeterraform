@@ -10,8 +10,8 @@ pioneer = pioneerlib.CourierPioneerWrapper(
   self,
   raise_if_none(get_component("clock")),
   raise_if_none(get_component("outpost_network")),
-  signalbus.CommsWrapper(raise_if_none(get_component("comms"))),
   notebook.NotebookWrapper(raise_if_none(get_component("notebook"))),
+  signalbus.CommsWrapper(raise_if_none(get_component("comms"))),
 )
 pioneer.run()
 
