@@ -238,7 +238,7 @@ def _update_unresolved_contacts(
   raise_if_error(notebook.transaction(UNRESOLVED_CONTACTS_KEY, None, tx_fn))
 
 def get_unresolved_contact_by_point_str(notebook: NotebookWrapper) -> dict[str, UnresolvedContact]:
-  return {k: UnresolvedContact.from_json(v) for k, v in  raise_if_none(notebook.get(UNRESOLVED_CONTACTS_KEY)).items()}
+  return {k: UnresolvedContact.from_json(v) for k, v in raise_if_none(notebook.get(UNRESOLVED_CONTACTS_KEY)).items()}
 
 def _get_locked(research: Research) -> list[str]:
   return [_id.value for _id in _ResearchId if not research.is_unlocked(_id.value)]
