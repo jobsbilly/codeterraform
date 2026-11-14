@@ -82,7 +82,7 @@ def _required_locked_research(
     locked_research: Iterable[str],
     last_locked_research: Iterable[str],
 ) -> list[str]:
-  return [_id.value for _id in _required_research(site_kind, last_locked_research).difference(locked_research)]
+  return [_id.value for _id in _required_research(site_kind, last_locked_research).intersection(locked_research)]
 
 def _annotate(message: str, required_locked_research: Iterable[str]) -> str:
   if required_locked_research:
