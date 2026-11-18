@@ -1,8 +1,10 @@
-from __builtins__ import Component, object_type, OutputSlot, sleep
+from __builtins__ import *
 
-from error import CodeTerraformError
 import functools
 from typing import Any, Callable, Iterable
+
+from error import CodeTerraformError
+from status import retry_while_busy
 
 
 class WrapperBase:
@@ -24,11 +26,48 @@ class WrapperBase:
     return repr(self._value)
 
 
+class InputWrapper(WrapperBase):
+  def __init__(self, value: InputSlot | VehicleInputSlot):
+    super().__init__(value)
+    self._value: InputSlot | VehicleInputSlot
+
+  @retry_while_busy(seconds_between=0.3)
+  def take(
+      self,
+      item_id: str,
+      count: int,
+      properties: ItemProperties | None = None,
+      property_match: str | None = None,
+  ):
+    return self._value.take(item_id, count, properties, property_match)
+
+
+class OutputWrapper(WrapperBase):
+  def __init__(self, value: OutputSlot):
+    super().__init__(value)
+    self._value: OutputSlot
+
+  @retry_while_busy(seconds_between=0.3)
+  def send(
+      self,
+      item_id: str,
+      count: int,
+      properties: ItemProperties | None = None,
+      property_match: str | None = None,
+  ):
+    return self._value.send(item_id, count, properties, property_match)
+
+
 class MachineWrapper(WrapperBase):
   def __init__(self, value: Component, *, required: Iterable[Any] = ()):
     super().__init__(value, required=required)
     if (obj_type := object_type(value)) != "Component":
       raise TypeError(f"{type(self)} cannot wrap non-Component {obj_type} type")
+
+    if hasattr(self._value, "input") and hasattr(self._value.input, "take"):
+      self.input = InputWrapper(self._value.input)
+    if hasattr(self._value, "output") and hasattr(self._value.output, "send"):
+      self.output = OutputWrapper(self._value.output)
 
   def _prepare_for_main_loop(self) -> None:
     raise NotImplementedError()
