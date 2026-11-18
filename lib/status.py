@@ -30,3 +30,19 @@ def _retry(func: Callable[[], _T], statuses: Iterable[str], attempts: int, wait_
       break
     sleep(wait_seconds)
   return result
+
+def retry(statuses: Iterable[str], *, seconds_between: float | None = None, max_attempts: int | None = None):
+  def decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+      attempt = 0
+      while (result := func(*args, **kwargs)).status in statuses:
+        if (attempt := attempt + 1) == max_attempts:
+          break
+        if seconds_between is not None:
+          sleep(seconds_between)
+      return result
+    return wrapper
+  return decorator
+
+retry_while_busy = functools.partial(retry, statuses=("busy",))
