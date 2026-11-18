@@ -23,7 +23,8 @@ def assign_or_raise(statusor: Any, value_name: str | None = None, cls: type[Exce
     return values_by_name.values()[0]
   return values_by_name
 
-def retry(func: Callable[[], _T], statuses: Iterable[str], attempts: int, wait_seconds: float) -> _T:
+# DEPRECATED
+def _retry(func: Callable[[], _T], statuses: Iterable[str], attempts: int, wait_seconds: float) -> _T:
   for _ in range(attempts):
     if (result := func()).status not in statuses:
       break

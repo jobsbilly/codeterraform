@@ -188,7 +188,8 @@ class BioLabWrapper(wrapper.MachineWrapper):
   def _extract(self) -> None:
     reagent_count = sum(self.loaded_reagents.values())
     busy_sleep_seconds = (0.1 + 0.05 * reagent_count) / 2
-    raise_if_error(retry(self.extract, statuses=("busy",), attempts=5, wait_seconds=busy_sleep_seconds))
+    # TODO: Migrate away from the deprecated `_retry` function once an alternative is available.
+    raise_if_error(_retry(self.extract, statuses=("busy",), attempts=5, wait_seconds=busy_sleep_seconds))
 
   def _send_to_next_machine(self, work_order: BioWorkOrder) -> None:
     channel = BioWorkOrder.Channel.PREPARED_SAMPLES
