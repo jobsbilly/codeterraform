@@ -5,7 +5,7 @@ from operator import attrgetter
 from error import CodeTerraformError, raise_if_none
 import notebook as notebooklib
 import signalbus
-from status import assign_or_raise, raise_if_error
+from status import assign_or_raise, raise_if_error, retry_while_busy
 from workorders import BioWorkOrder
 import wrapper
 
@@ -35,23 +35,9 @@ class DNASequencerWrapper(wrapper.MachineWrapper):
 
     return work_order
 
-  def _take_sample(self, work_order: BioWorkOrder) -> None:
-    raise_if_error(self.input.connect(raise_if_none(work_order.lab)))
-    # TODO: move this (and other near-identical logic) to some kind of reusable retry function or decorator.
-    for _ in range(5):
-      result = self.input.take(raise_if_none(work_order.fragment), 1, work_order.properties, "exact")
-      if result.status != "busy":
-        break
-      sleep(0.25)  # Time it takes auto feeders to transfer 1 item.
-    raise_if_error(result)
-
-  def _load_sample(self, fragment_id: str) -> None:
-    # TODO: move this (and other near-identical logic) to some kind of reusable retry function or decorator.
-    for _ in range(5):
-      if (result := self.load(fragment_id)).status != "busy":
-        break
-      sleep(0.25)  # Time it takes auto feeders to transfer 1 item.
-    raise_if_error(result)
+  @retry_while_busy(seconds_between=0.3)
+  def load(self, fragment_id: str, properties: ItemProperties | None = None, property_match: str | None = None):
+    return self._value.load(fragment_id, properties, property_match)
 
   @wrapper.wait_until_clear(item_id_getter=attrgetter("chamber.fragment_id"), max_attempts=5)
   def _splice(self, required_genes: list[str]) -> None:
@@ -76,8 +62,9 @@ class DNASequencerWrapper(wrapper.MachineWrapper):
 
     if not self.chamber:
       if self.input.count() == 0:
-        self._take_sample(work_order)
-      raise_if_error(self.load(work_order.fragment))
+        raise_if_error(self.input.connect(raise_if_none(work_order.lab)))
+        raise_if_error(self.input.take(raise_if_none(work_order.fragment), 1, work_order.properties, "exact"))
+      raise_if_error(self.load(raise_if_none(work_order.fragment)))
 
     self._splice(raise_if_none(work_order.required_genes))
     work_order.properties = next(stack.properties for stack in self.output.stacks() if stack.id == work_order.fragment)

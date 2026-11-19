@@ -8,7 +8,7 @@ import inventories
 import notebook as notebooklib
 import shop as shoplib
 import signalbus
-from status import assign_or_raise, raise_if_error, retry
+from status import assign_or_raise, raise_if_error, retry_while_busy
 from workorders import BioWorkOrder, CourierWorkOrder
 import wrapper
 
@@ -146,12 +146,19 @@ class BioLabWrapper(wrapper.MachineWrapper):
 
     home_inventory = inventories.home()
     for reagent_id, count in raise_if_none(work_order.reagent_to_buy_by_id).copy().items():
-      while (result := home_inventory.transfer_to(target.id, reagent_id, count)).status == "busy":
-        sleep(0.25 * count)
-      raise_if_error(result)
-      # raise_if_error(retry_while_busy(lambda: home_inventory.transfer_to(target.id, reagent_id, count)))
+      raise_if_error(home_inventory.transfer_to(target.id, reagent_id, count))
       del raise_if_none(work_order.reagent_to_buy_by_id)[reagent_id]
       raise_if_error(work_order.save(self.id, self._notebook))
+
+  @retry_while_busy(seconds_between=0.3)
+  def load(
+      self,
+      reagent_id: str,
+      qty: int,
+      properties: ItemProperties | None = None,
+      property_match: str | None = None,
+  ):
+    return self._value.load(reagent_id, qty, properties, property_match)
 
   def _buy_and_load_reagents(self, work_order: BioWorkOrder) -> None:
     reagent_to_buy_by_id, target_inventory = self._get_reagent_order(work_order)
@@ -178,18 +185,14 @@ class BioLabWrapper(wrapper.MachineWrapper):
     raise_if_error(self.input.connect(work_order.reagent_inventory))
     for reagent_id, required in self.specimen.recipe.items():
       if reagent_id not in self.loaded_reagents:
-        while (result := self.input.take(reagent_id, required)).status == "busy":
-          sleep(0.25)
-        raise_if_error(result)
-        raise_if_error(self._value.load(reagent_id, required))
+        raise_if_error(self.input.take(reagent_id, required))
+        raise_if_error(self.load(reagent_id, required))
 
   # Only let a fragment move into `output` when it can be safely disambiguated from other items.
   @wrapper.wait_until_clear(item_id_getter=attrgetter("specimen.fragment_id"), max_attempts=5)
+  @retry_while_busy(seconds_between=0.3)
   def _extract(self) -> None:
-    reagent_count = sum(self.loaded_reagents.values())
-    busy_sleep_seconds = (0.1 + 0.05 * reagent_count) / 2
-    # TODO: Migrate away from the deprecated `_retry` function once an alternative is available.
-    raise_if_error(_retry(self.extract, statuses=("busy",), attempts=5, wait_seconds=busy_sleep_seconds))
+    raise_if_error(self._value.extract())
 
   def _send_to_next_machine(self, work_order: BioWorkOrder) -> None:
     channel = BioWorkOrder.Channel.PREPARED_SAMPLES
@@ -226,9 +229,7 @@ class BioLabWrapper(wrapper.MachineWrapper):
     # If a work order was already in progress, it should be safe to assume that anything in the input should be a
     # required reagent, and should be the full required amount (i.e., loading should just work).
     for stack in self.input.stacks():
-      while (result := self.load(stack.id, stack.count)).status == "busy":
-        sleep(0.25 * stack.count)
-      raise_if_error(result)
+      raise_if_error(self.load(stack.id, stack.count))
 
     self._main_loop_iteration(work_order)
 

@@ -4,6 +4,7 @@ import dataclasses
 from typing import Any
 
 from error import CodeTerraformError, raise_if_none
+from status import retry_while_busy
 
 
 @dataclasses.dataclass
@@ -64,6 +65,7 @@ class InventoryWrapper:
   def has_space(self, item_id: str, amount: int, properties: ItemProperties | None = None) -> bool:
     return self.space_for(item_id, properties) >= amount
 
+  @retry_while_busy(seconds_between=0.3)
   def transfer_to(
       self,
       target: str,
